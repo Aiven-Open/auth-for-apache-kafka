@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<!--
+// Copyright (c) 2019 Aiven, Helsinki, Finland. https://aiven.io/
+-->
+<!DOCTYPE suppressions PUBLIC
+        "-//Checkstyle//DTD SuppressionFilter Configuration 1.2//EN"
+        "https://checkstyle.org/dtds/suppressions_1_2.dtd">
+<suppressions>
+     <suppress checks="VariableDeclarationUsageDistance" files=".*Test\.java"/>
+     <suppress checks="JavadocMethod" files=".*/test/java/.*/BenchmarkRunner\.java"/>
+</suppressions>
