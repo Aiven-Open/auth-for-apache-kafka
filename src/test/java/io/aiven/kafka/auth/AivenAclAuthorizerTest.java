@@ -2,16 +2,16 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
 import io.aiven.kafka.auth.AivenAclAuthorizer;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class AivenAclAuthorizerTest {
     static final String ACL_JSON =
@@ -45,15 +45,17 @@ public class AivenAclAuthorizerTest {
         + "{\"principal_type\":\"User\",\"principal\":\"^pass-11$\","
         + "\"operation\":\"^Read$\",\"resource\":\"^Topic:(.*)$\"},"
         + "{\"principal_type\":\"User\",\"principal\":\"^pass-12$\","
-        + "\"operation\":\"^Read$\",\"resource\":\"^Topic:(.*)$\"}"
+        + "\"operation\":\"^Read$\",\"resource\":\"^Topic:(.*)$\"},"
         + "{\"principal\":\"^pass-notype$\",\"operation\":\"^Read$\","
         + "\"resource\":\"^Topic:(.*)$\"}"
         + "]";
 
+    @TempDir
+    Path tmpDir;
+
     @Test
     public void testAivenAclAuthorizer() throws IOException {
-        final Path tempPath = Files.createTempDirectory("test-aiven-kafka-authorizer");
-        final Path configFilePath = Paths.get(tempPath.toString(), "acl.json");
+        final Path configFilePath = tmpDir.resolve("acl.json");
 
         Files.write(configFilePath, ACL_JSON.getBytes());
 

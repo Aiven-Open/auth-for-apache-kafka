@@ -12,5 +12,4 @@
     <!-- FIXME will remove after cleaning the code -->
     <suppress checks="CyclomaticComplexity" files="AivenAclAuthorizer.java"/>
     <suppress checks="NPathComplexity" files="AivenAclAuthorizer.java"/>
-    <suppress checks="ClassFanOutComplexity" files="AivenAclAuthorizer.java" />
 </suppressions>

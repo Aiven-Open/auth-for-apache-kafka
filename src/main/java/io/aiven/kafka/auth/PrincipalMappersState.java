@@ -6,6 +6,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+import io.aiven.kafka.auth.json.AivenKafkaPrincipalMapping;
+
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 
@@ -21,11 +23,11 @@ import com.google.common.cache.CacheBuilder;
 class PrincipalMappersState {
     private static final FileTime LAST_MODIFIED_MIN = FileTime.fromMillis(-1);
 
-    private final List<AivenKafkaPrincipalMappingEntry> principalMappers;
+    private final List<AivenKafkaPrincipalMapping> principalMappers;
     private final FileTime configLastModified;
-    private final Cache<String, AivenKafkaPrincipalMappingEntry> mappersCache;
+    private final Cache<String, AivenKafkaPrincipalMapping> mappersCache;
 
-    private PrincipalMappersState(final Collection<AivenKafkaPrincipalMappingEntry> principalMappers,
+    private PrincipalMappersState(final Collection<AivenKafkaPrincipalMapping> principalMappers,
                                   final FileTime configLastModified,
                                   final long cacheCapacity) {
         this.principalMappers = Collections.unmodifiableList(new ArrayList<>(principalMappers));
@@ -33,7 +35,7 @@ class PrincipalMappersState {
         this.mappersCache = CacheBuilder.newBuilder().maximumSize(cacheCapacity).build();
     }
 
-    static PrincipalMappersState build(final Collection<AivenKafkaPrincipalMappingEntry> principalMappers,
+    static PrincipalMappersState build(final Collection<AivenKafkaPrincipalMapping> principalMappers,
                                        final FileTime configLastModified,
                                        final long cacheCapacity) {
         return new PrincipalMappersState(principalMappers, configLastModified, cacheCapacity);
@@ -44,7 +46,7 @@ class PrincipalMappersState {
         return new PrincipalMappersState(Collections.emptyList(), LAST_MODIFIED_MIN, 0);
     }
 
-    final List<AivenKafkaPrincipalMappingEntry> getPrincipalMappers() {
+    final List<AivenKafkaPrincipalMapping> getPrincipalMappers() {
         return principalMappers;
     }
 
@@ -52,7 +54,7 @@ class PrincipalMappersState {
         return configLastModified;
     }
 
-    final Cache<String, AivenKafkaPrincipalMappingEntry> getMappersCache() {
+    final Cache<String, AivenKafkaPrincipalMapping> getMappersCache() {
         return mappersCache;
     }
 }

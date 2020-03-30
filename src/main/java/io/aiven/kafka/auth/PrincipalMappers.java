@@ -1,28 +1,23 @@
 /**
- * Copyright (c) 2019 Aiven, Helsinki, Finland. https://aiven.io/
+ * Copyright (c) 2020 Aiven, Helsinki, Finland. https://aiven.io/
  */
 
 package io.aiven.kafka.auth;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
-import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.attribute.FileTime;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.apache.kafka.common.security.auth.KafkaPrincipal;
 
+import io.aiven.kafka.auth.json.AivenKafkaPrincipalMapping;
+import io.aiven.kafka.auth.json.reader.JsonReader;
+import io.aiven.kafka.auth.json.reader.JsonReaderException;
+import io.aiven.kafka.auth.json.reader.KafkaPrincipalJsonReader;
 import io.aiven.kafka.auth.utils.TimeWithTimer;
 import io.aiven.kafka.auth.utils.Timer;
 
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,6 +28,8 @@ class PrincipalMappers {
     private final long refrestTimeoutMs;
     private final Timer refreshTimer;
     private final long cacheCapacity;
+
+    private final JsonReader<AivenKafkaPrincipalMapping> jsonReader;
 
     // must be volatile to be safely readable without explicit synchronization
     private volatile PrincipalMappersState state = PrincipalMappersState.empty();
@@ -45,25 +42,26 @@ class PrincipalMappers {
         this.refrestTimeoutMs = refreshTimeoutMs;
         this.refreshTimer = time.timer(0); // first update without a delay
         this.cacheCapacity = cacheCapacity;
+        this.jsonReader = new KafkaPrincipalJsonReader(this.configFile.toPath());
     }
 
     KafkaPrincipal match(final String sslPrincipal) {
         final PrincipalMappersState state = getState();
 
-        final AivenKafkaPrincipalMappingEntry mapping = state.getMappersCache().getIfPresent(sslPrincipal);
+        final AivenKafkaPrincipalMapping mapping = state.getMappersCache().getIfPresent(sslPrincipal);
         if (mapping != null) {
             return mapping.buildKafkaPrincipal(sslPrincipal);
         }
 
-        for (final AivenKafkaPrincipalMappingEntry mapper : state.getPrincipalMappers()) {
+        for (final AivenKafkaPrincipalMapping mapper : state.getPrincipalMappers()) {
             if (mapper.matches(sslPrincipal)) {
                 state.getMappersCache().put(sslPrincipal, mapper);
                 return mapper.buildKafkaPrincipal(sslPrincipal);
             }
         }
 
-        final AivenKafkaPrincipalMappingEntry forUnknownPrincipal =
-            AivenKafkaPrincipalMappingEntry.forUnknownSslPrincipal();
+        final AivenKafkaPrincipalMapping forUnknownPrincipal =
+            AivenKafkaPrincipalMapping.forUnknownSslPrincipal();
         state.getMappersCache().put(sslPrincipal, forUnknownPrincipal);
         return forUnknownPrincipal.buildKafkaPrincipal(sslPrincipal);
     }
@@ -90,14 +88,14 @@ class PrincipalMappers {
                 final boolean reloadNeeded = !currentConfigLastModified.equals(state.getConfigLastModified());
                 if (reloadNeeded) {
                     state = PrincipalMappersState.build(
-                        loadPrincipalMappers(),
+                        jsonReader.read(),
                         currentConfigLastModified,
                         cacheCapacity);
                 }
                 // The timer must be reset despite if reload happened.
                 refreshTimer.updateAndReset(refrestTimeoutMs);
                 return state;
-            } catch (final IOException | ParseException ex) {
+            } catch (final IOException | JsonReaderException ex) {
                 LOGGER.error("Failed to read configuration file", ex);
                 state = PrincipalMappersState.empty();
                 refreshTimer.updateAndReset(0);
@@ -106,23 +104,4 @@ class PrincipalMappers {
         }
     }
 
-    private List<AivenKafkaPrincipalMappingEntry> loadPrincipalMappers()
-        throws IOException, ParseException {
-        try (final Reader reader = new BufferedReader(new FileReader(configFile))) {
-            final JSONArray rootArray = (JSONArray) new JSONParser().parse(reader);
-            final List<AivenKafkaPrincipalMappingEntry> newPrincipalMappers =
-                new ArrayList<>(rootArray.size());
-            for (final Object itemObj : rootArray) {
-                final JSONObject item = (JSONObject) itemObj;
-                final AivenKafkaPrincipalMappingEntry principalMapper =
-                    new AivenKafkaPrincipalMappingEntry(
-                        (String) item.get("subject_matcher"),
-                        (String) item.get("principal_name"),
-                        (String) item.get("principal_type")
-                    );
-                newPrincipalMappers.add(principalMapper);
-            }
-            return newPrincipalMappers;
-        }
-    }
 }

@@ -1,16 +1,16 @@
-import io.aiven.kafka.auth.AivenAclEntry;
+import io.aiven.kafka.auth.json.AivenAcl;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class AivenAclEntryTest {
+public class AivenAclTest {
 
     @Test
     public void testAivenAclEntry() {
         // Basic test: defined principal type plus principal, operation and resource regex
-        AivenAclEntry entry = new AivenAclEntry(
+        AivenAcl entry = new AivenAcl(
             "User", // principal type
             "^CN=p_(.*)_s$", // principal
             "^(Describe|Read)$", // operation
@@ -25,7 +25,7 @@ public class AivenAclEntryTest {
         assertFalse(entry.check("NonUser", "CN=p_pass_s", "Read", "Topic:p_pass_s"));
 
         // Test with principal undefined
-        entry = new AivenAclEntry(
+        entry = new AivenAcl(
             null, // principal type
             "^CN=p_(.*)_s$", // principal
             "^(Describe|Read)$", // operation
@@ -39,7 +39,7 @@ public class AivenAclEntryTest {
         assertFalse(entry.check("User", "CN=p_pass_s", "Read", "Topic:fail"));
 
         // Test resources defined by pattern
-        entry = new AivenAclEntry(
+        entry = new AivenAcl(
             "User", // principal type
             "^CN=p_(?<username>[a-z0-9]+)_s$", // principal
             "^(Describe|Read)$", // operation

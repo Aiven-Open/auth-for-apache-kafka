@@ -1,3 +1,7 @@
+/**
+ * Copyright (c) 2020 Aiven, Helsinki, Finland. https://aiven.io/
+ */
+
 package io.aiven.kafka.auth;
 
 import javax.security.auth.callback.Callback;
@@ -5,10 +9,7 @@ import javax.security.auth.callback.NameCallback;
 import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.login.AppConfigurationEntry;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.Iterator;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 
@@ -18,10 +19,11 @@ import org.apache.kafka.common.security.auth.AuthenticateCallbackHandler;
 import org.apache.kafka.common.security.plain.PlainAuthenticateCallback;
 import org.apache.kafka.common.security.plain.PlainLoginModule;
 
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
+import io.aiven.kafka.auth.json.UsernamePassword;
+import io.aiven.kafka.auth.json.reader.JsonReader;
+import io.aiven.kafka.auth.json.reader.JsonReaderException;
+import io.aiven.kafka.auth.json.reader.UsernamePasswordJsonReader;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,7 +31,10 @@ import org.slf4j.LoggerFactory;
 public class AivenSaslPlainServerCallbackHandler implements AuthenticateCallbackHandler {
     private static final Logger LOGGER =
         LoggerFactory.getLogger(AivenSaslPlainServerCallbackHandler.class);
+
     private String configFileLocation;
+
+    private JsonReader<UsernamePassword> jsonReader;
 
     @Override
     public void configure(final Map<String, ?> configs,
@@ -38,6 +43,7 @@ public class AivenSaslPlainServerCallbackHandler implements AuthenticateCallback
         configFileLocation = JaasContext.configEntryOption(
             jaasConfigEntries, "users.config", PlainLoginModule.class.getName());
         LOGGER.info("Using configuration file {}", configFileLocation);
+        jsonReader = new UsernamePasswordJsonReader(Paths.get(configFileLocation));
     }
 
     @Override
@@ -64,18 +70,13 @@ public class AivenSaslPlainServerCallbackHandler implements AuthenticateCallback
         if (configFileLocation == null || username == null) {
             return false;
         } else {
-            final File configFile = new File(configFileLocation);
             final String strPassword = new String(password);
 
-            final JSONParser parser = new JSONParser();
             try {
-                final Object obj = parser.parse(new FileReader(configFile));
-                final JSONArray root = (JSONArray) obj;
-                final Iterator<JSONObject> iter = root.iterator();
-                while (iter.hasNext()) {
-                    final JSONObject node = iter.next();
-                    if (username.equals(node.get("username"))) {
-                        final String storedPassword = (String) node.get("password");
+                final List<UsernamePassword> usernamePasswords = jsonReader.read();
+                for (final UsernamePassword usernamePassword : usernamePasswords) {
+                    if (username.equals(usernamePassword.name())) {
+                        final String storedPassword = usernamePassword.password();
                         if (storedPassword == null) {
                             LOGGER.error("Authentication failed for {}, no password set", username);
                             return false;
@@ -88,7 +89,7 @@ public class AivenSaslPlainServerCallbackHandler implements AuthenticateCallback
                         }
                     }
                 }
-            } catch (final IOException | ParseException ex) {
+            } catch (final JsonReaderException ex) {
                 LOGGER.error("Failed to read configuration file", ex);
                 return false;
             }

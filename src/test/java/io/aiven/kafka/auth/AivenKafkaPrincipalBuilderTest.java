@@ -1,7 +1,6 @@
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.attribute.FileTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -12,22 +11,24 @@ import io.aiven.kafka.auth.AivenKafkaPrincipalBuilder;
 import io.aiven.kafka.auth.utils.TimeWithTimer;
 import io.aiven.kafka.auth.utils.Timer;
 
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.anyLong;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class AivenKafkaPrincipalBuilderTest {
+
     static final String MAPPING_JSON = "["
         + "{\"subject_matcher\":\"^CN=test1-(.*)\","
-        + "\"principal_name\":\"user1\",\"principal_type\":\"ServiceUser\"}"
+        + "\"principal_name\":\"user1\",\"principal_type\":\"ServiceUser\"},"
         + "{\"subject_matcher\":\"^CN=test2-(.*)\"}"
         + "]";
 
@@ -41,25 +42,26 @@ public class AivenKafkaPrincipalBuilderTest {
             + "\"principal_name\":\"user2\","
             + "\"principal_type\":\"ServiceUser\"}]";
 
+    @TempDir
+    Path tmpDir;
+
     Path configFilePath;
+
     AivenKafkaPrincipalBuilder builder;
+
     @Mock
     TimeWithTimer time;
     @Mock
     Timer timer;
 
-    /**
-     * Set up test.
-     */
-    @Before
-    public void setUp() throws IOException {
-        final Path tempPath = Files.createTempDirectory("test-aiven-kafka-principal-builder");
-        configFilePath = Paths.get(tempPath.toString(), "mapping.json");
+    @BeforeEach
+    public void initTests() throws IOException {
+        configFilePath = tmpDir.resolve("mapping.json");
 
         Mockito.doReturn(timer).when(time).timer(anyLong());
         Mockito.doNothing().when(timer).update();
         // Always expire the timer, apart from some particular test cases.
-        Mockito.doReturn(true).when(timer).isExpired();
+        Mockito.lenient().doReturn(true).when(timer).isExpired();
 
         builder = new AivenKafkaPrincipalBuilder(time);
         final Map<String, String> configs = new HashMap<>();
