@@ -1,12 +1,13 @@
 package io.aiven.kafka.auth;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
 import java.nio.file.attribute.FileTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 
 /**
  * The state for {@code PrincipalMappers}.
@@ -18,40 +19,40 @@ import java.util.List;
  * excessive synchronization.
  */
 class PrincipalMappersState {
-  private static final FileTime LAST_MODIFIED_MIN = FileTime.fromMillis(-1);
+    private static final FileTime LAST_MODIFIED_MIN = FileTime.fromMillis(-1);
 
-  private final List<AivenKafkaPrincipalMappingEntry> principalMappers;
-  private final FileTime configLastModified;
-  private final Cache<String, AivenKafkaPrincipalMappingEntry> mappersCache;
+    private final List<AivenKafkaPrincipalMappingEntry> principalMappers;
+    private final FileTime configLastModified;
+    private final Cache<String, AivenKafkaPrincipalMappingEntry> mappersCache;
 
-  private PrincipalMappersState(Collection<AivenKafkaPrincipalMappingEntry> principalMappers,
-                                FileTime configLastModified,
-                                long cacheCapacity) {
-    this.principalMappers = Collections.unmodifiableList(new ArrayList<>(principalMappers));
-    this.configLastModified = configLastModified;
-    this.mappersCache = CacheBuilder.newBuilder().maximumSize(cacheCapacity).build();
-  }
+    private PrincipalMappersState(final Collection<AivenKafkaPrincipalMappingEntry> principalMappers,
+                                  final FileTime configLastModified,
+                                  final long cacheCapacity) {
+        this.principalMappers = Collections.unmodifiableList(new ArrayList<>(principalMappers));
+        this.configLastModified = configLastModified;
+        this.mappersCache = CacheBuilder.newBuilder().maximumSize(cacheCapacity).build();
+    }
 
-  final List<AivenKafkaPrincipalMappingEntry> getPrincipalMappers() {
-    return principalMappers;
-  }
+    static PrincipalMappersState build(final Collection<AivenKafkaPrincipalMappingEntry> principalMappers,
+                                       final FileTime configLastModified,
+                                       final long cacheCapacity) {
+        return new PrincipalMappersState(principalMappers, configLastModified, cacheCapacity);
+    }
 
-  final FileTime getConfigLastModified() {
-    return configLastModified;
-  }
+    static PrincipalMappersState empty() {
+        // This should always create a new empty state to keep its cache clean.
+        return new PrincipalMappersState(Collections.emptyList(), LAST_MODIFIED_MIN, 0);
+    }
 
-  final Cache<String, AivenKafkaPrincipalMappingEntry> getMappersCache() {
-    return mappersCache;
-  }
+    final List<AivenKafkaPrincipalMappingEntry> getPrincipalMappers() {
+        return principalMappers;
+    }
 
-  static PrincipalMappersState build(Collection<AivenKafkaPrincipalMappingEntry> principalMappers,
-                                     FileTime configLastModified,
-                                     long cacheCapacity) {
-    return new PrincipalMappersState(principalMappers, configLastModified, cacheCapacity);
-  }
+    final FileTime getConfigLastModified() {
+        return configLastModified;
+    }
 
-  static PrincipalMappersState empty() {
-    // This should always create a new empty state to keep its cache clean.
-    return new PrincipalMappersState(Collections.emptyList(), LAST_MODIFIED_MIN, 0);
-  }
+    final Cache<String, AivenKafkaPrincipalMappingEntry> getMappersCache() {
+        return mappersCache;
+    }
 }
