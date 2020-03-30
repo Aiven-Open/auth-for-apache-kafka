@@ -1,4 +1,5 @@
-/** Copyright (c) 2019 Aiven, Helsinki, Finland. https://aiven.io/
+/**
+ * Copyright (c) 2019 Aiven, Helsinki, Finland. https://aiven.io/
  */
 
 package io.aiven.kafka.auth.utils;
@@ -10,13 +11,13 @@ import org.apache.kafka.common.utils.Time;
  * the lack of {@code Timer} in Kafka before 2.1.0.
  */
 public class TimeWithTimer {
-  private final Time time;
+    private final Time time;
 
-  public TimeWithTimer(Time time) {
-    this.time = time;
-  }
+    public TimeWithTimer(final Time time) {
+        this.time = time;
+    }
 
-  public Timer timer(long timeoutMs) {
-    return new Timer(time, timeoutMs);
-  }
+    public Timer timer(final long timeoutMs) {
+        return new Timer(time, timeoutMs);
+    }
 }

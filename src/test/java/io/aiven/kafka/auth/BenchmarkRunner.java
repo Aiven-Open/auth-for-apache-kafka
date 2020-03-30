@@ -5,6 +5,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
+
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Mode;
@@ -21,28 +22,28 @@ import org.openjdk.jmh.infra.Blackhole;
 @State(Scope.Benchmark)
 @BenchmarkMode(Mode.Throughput)
 public class BenchmarkRunner {
-  AivenKafkaPrincipalBuilder builder;
-  Path configFilePath;
+    AivenKafkaPrincipalBuilder builder;
+    Path configFilePath;
 
-  @Setup
-  public void setup() throws IOException {
-    configFilePath = Files.createTempDirectory("test-aiven-kafka-principal-builder")
+    @Setup
+    public void setup() throws IOException {
+        configFilePath = Files.createTempDirectory("test-aiven-kafka-principal-builder")
             .resolve("benchmark_config.json");
-    Files.copy(this.getClass().getResourceAsStream("/benchmark_config.json"), configFilePath);
+        Files.copy(this.getClass().getResourceAsStream("/benchmark_config.json"), configFilePath);
 
-    builder = new AivenKafkaPrincipalBuilder();
-    Map<String, String> config = new HashMap<>();
-    config.put("aiven.kafka.principal.builder.configuration", configFilePath.toString());
-    builder.configure(config);
-  }
+        builder = new AivenKafkaPrincipalBuilder();
+        final Map<String, String> config = new HashMap<>();
+        config.put("aiven.kafka.principal.builder.configuration", configFilePath.toString());
+        builder.configure(config);
+    }
 
-  @Benchmark
-  public void benchmarkLastEntry(Blackhole bh) {
-    bh.consume(builder.mapSslPrincipal("bbb"));
-  }
+    @Benchmark
+    public void benchmarkLastEntry(final Blackhole bh) {
+        bh.consume(builder.mapSslPrincipal("bbb"));
+    }
 
-  @Benchmark
-  public void benchmarkNonExistent(Blackhole bh) {
-    bh.consume(builder.mapSslPrincipal("non-existent"));
-  }
+    @Benchmark
+    public void benchmarkNonExistent(final Blackhole bh) {
+        bh.consume(builder.mapSslPrincipal("non-existent"));
+    }
 }

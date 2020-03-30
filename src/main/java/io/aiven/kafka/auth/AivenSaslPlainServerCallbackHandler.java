@@ -1,21 +1,23 @@
 package io.aiven.kafka.auth;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.NameCallback;
 import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.login.AppConfigurationEntry;
+
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.security.JaasContext;
 import org.apache.kafka.common.security.auth.AuthenticateCallbackHandler;
 import org.apache.kafka.common.security.plain.PlainAuthenticateCallback;
 import org.apache.kafka.common.security.plain.PlainLoginModule;
+
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -25,75 +27,78 @@ import org.slf4j.LoggerFactory;
 
 
 public class AivenSaslPlainServerCallbackHandler implements AuthenticateCallbackHandler {
-  private static final Logger logger =
-      LoggerFactory.getLogger(AivenSaslPlainServerCallbackHandler.class);
-  private String configFileLocation;
+    private static final Logger LOGGER =
+        LoggerFactory.getLogger(AivenSaslPlainServerCallbackHandler.class);
+    private String configFileLocation;
 
-  @Override
-  public void configure(Map<String, ?> configs, String mechanism,
-          List<AppConfigurationEntry> jaasConfigEntries) {
-    configFileLocation = JaasContext.configEntryOption(
+    @Override
+    public void configure(final Map<String, ?> configs,
+                          final String mechanism,
+                          final List<AppConfigurationEntry> jaasConfigEntries) {
+        configFileLocation = JaasContext.configEntryOption(
             jaasConfigEntries, "users.config", PlainLoginModule.class.getName());
-    logger.info("Using configuration file {}", configFileLocation);
-  }
-
-  @Override
-  public void handle(Callback[] callbacks) throws UnsupportedCallbackException {
-    String username = null;
-    for (Callback callback : callbacks) {
-      if (callback instanceof NameCallback) {
-        NameCallback nameCallback = (NameCallback) callback;
-        username = nameCallback.getDefaultName();
-      } else if (callback instanceof PlainAuthenticateCallback) {
-        PlainAuthenticateCallback plainCallback = (PlainAuthenticateCallback) callback;
-        boolean authenticated = authenticate(username, plainCallback.password());
-        plainCallback.authenticated(authenticated);
-      } else {
-        throw new UnsupportedCallbackException(callback);
-      }
+        LOGGER.info("Using configuration file {}", configFileLocation);
     }
-  }
 
-  /** Check whether the given username is found and whether password is valid. */
-  public boolean authenticate(String username, char[] password) {
-    if (configFileLocation == null || username == null) {
-      return false;
-    } else {
-      File configFile = new File(configFileLocation);
-      String strPassword = new String(password);
-
-      JSONParser parser = new JSONParser();
-      try {
-        Object obj = parser.parse(new FileReader(configFile));
-        JSONArray root = (JSONArray) obj;
-        Iterator<JSONObject> iter = root.iterator();
-        while (iter.hasNext()) {
-          JSONObject node = iter.next();
-          if (username.equals(node.get("username"))) {
-            String storedPassword = (String)node.get("password");
-            if (storedPassword == null) {
-              logger.error("Authentication failed for {}, no password set", username);
-              return false;
-            } else if (storedPassword.equals(strPassword)) {
-              logger.info("Authentication successful for {}", username);
-              return true;
+    @Override
+    public void handle(final Callback[] callbacks) throws UnsupportedCallbackException {
+        String username = null;
+        for (final Callback callback : callbacks) {
+            if (callback instanceof NameCallback) {
+                final NameCallback nameCallback = (NameCallback) callback;
+                username = nameCallback.getDefaultName();
+            } else if (callback instanceof PlainAuthenticateCallback) {
+                final PlainAuthenticateCallback plainCallback = (PlainAuthenticateCallback) callback;
+                final boolean authenticated = authenticate(username, plainCallback.password());
+                plainCallback.authenticated(authenticated);
             } else {
-              logger.error("Authentication failed for {}, invalid password", username);
-              return false;
+                throw new UnsupportedCallbackException(callback);
             }
-          }
         }
-      } catch (IOException | ParseException ex) {
-        logger.error("Failed to read configuration file", ex);
-        return false;
-      }
     }
 
-    logger.error("Authentication failed for {}, unknown user", username);
-    return false;
-  }
+    /**
+     * Check whether the given username is found and whether password is valid.
+     */
+    public boolean authenticate(final String username, final char[] password) {
+        if (configFileLocation == null || username == null) {
+            return false;
+        } else {
+            final File configFile = new File(configFileLocation);
+            final String strPassword = new String(password);
 
-  @Override
-  public void close() throws KafkaException {
-  }
+            final JSONParser parser = new JSONParser();
+            try {
+                final Object obj = parser.parse(new FileReader(configFile));
+                final JSONArray root = (JSONArray) obj;
+                final Iterator<JSONObject> iter = root.iterator();
+                while (iter.hasNext()) {
+                    final JSONObject node = iter.next();
+                    if (username.equals(node.get("username"))) {
+                        final String storedPassword = (String) node.get("password");
+                        if (storedPassword == null) {
+                            LOGGER.error("Authentication failed for {}, no password set", username);
+                            return false;
+                        } else if (storedPassword.equals(strPassword)) {
+                            LOGGER.info("Authentication successful for {}", username);
+                            return true;
+                        } else {
+                            LOGGER.error("Authentication failed for {}, invalid password", username);
+                            return false;
+                        }
+                    }
+                }
+            } catch (final IOException | ParseException ex) {
+                LOGGER.error("Failed to read configuration file", ex);
+                return false;
+            }
+        }
+
+        LOGGER.error("Authentication failed for {}, unknown user", username);
+        return false;
+    }
+
+    @Override
+    public void close() throws KafkaException {
+    }
 }
