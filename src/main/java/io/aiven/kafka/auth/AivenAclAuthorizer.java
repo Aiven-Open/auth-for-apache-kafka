@@ -5,7 +5,6 @@
 package io.aiven.kafka.auth;
 
 import java.io.File;
-import java.nio.file.Paths;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -14,6 +13,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.apache.kafka.common.security.auth.KafkaPrincipal;
 
+import io.aiven.kafka.auth.audit.Auditor;
 import io.aiven.kafka.auth.json.AivenAcl;
 import io.aiven.kafka.auth.json.reader.AclJsonReader;
 import io.aiven.kafka.auth.json.reader.JsonReader;
@@ -28,15 +28,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class AivenAclAuthorizer implements Authorizer {
+
     private static final Logger LOGGER = LoggerFactory.getLogger(AivenAclAuthorizer.class);
-    private String configFileLocation;
+    private File configFile;
     private ReentrantReadWriteLock lock = new ReentrantReadWriteLock(true);
     private long lastUpdateCheckTimestamp = 0;
     private long lastModifiedTimestamp = 0;
     private List<AivenAcl> aclEntries;
     private Map<String, Boolean> verdictCache;
-
     private JsonReader<AivenAcl> jsonReader;
+    private Auditor auditor;
 
     public AivenAclAuthorizer() {
     }
@@ -58,8 +59,11 @@ public class AivenAclAuthorizer implements Authorizer {
 
     @Override
     public void configure(final java.util.Map<String, ?> configs) {
-        configFileLocation = (String) configs.get("aiven.acl.authorizer.configuration");
-        jsonReader = new AclJsonReader(Paths.get(configFileLocation));
+        final AivenAclAuthorizerConfig aivenAclAuthorizerConfig = new AivenAclAuthorizerConfig(configs);
+
+        configFile = aivenAclAuthorizerConfig.getConfigFile();
+        jsonReader = new AclJsonReader(configFile.toPath());
+        auditor = aivenAclAuthorizerConfig.getAuditor();
         checkAndUpdateConfig();
     }
 
@@ -68,11 +72,10 @@ public class AivenAclAuthorizer implements Authorizer {
      * This function assumes appropriate synchronization by caller.
      */
     private void checkAndUpdateConfig() {
-        final File configFile = new File(configFileLocation);
         final long configFileLastModified = configFile.lastModified();
 
         if (configFileLastModified != lastModifiedTimestamp) {
-            LOGGER.info("Reloading ACL configuration {}", configFileLocation);
+            LOGGER.info("Reloading ACL configuration {}", configFile);
             try {
                 final List<AivenAcl> newAclEntries = jsonReader.read();
                 // initialize cache for non-trivial ACLs
@@ -95,6 +98,7 @@ public class AivenAclAuthorizer implements Authorizer {
 
     @Override
     public void close() {
+        auditor.stop();
     }
 
     @Override
@@ -111,7 +115,9 @@ public class AivenAclAuthorizer implements Authorizer {
         final String operation = operationObj.name();
         final String resource = resourceObj.resourceType() + ":" + resourceObj.name();
 
-        return checkAcl(principalType, principalName, operation, resource);
+        final boolean verdict = checkAcl(principalName, principalType, operation, resource);
+        auditor.addActivity(session, operationObj, resourceObj, verdict);
+        return verdict;
     }
 
     /**
