@@ -2,18 +2,20 @@ package io.aiven.kafka.auth;
 
 import org.apache.kafka.common.security.auth.KafkaPrincipal;
 
-import org.junit.Test;
+import io.aiven.kafka.auth.json.AivenKafkaPrincipalMapping;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import org.junit.jupiter.api.Test;
 
-public class AivenKafkaPrincipalMappingEntryTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+public class AivenKafkaPrincipalMappingTest {
 
     @Test
     public void testAivenKafkaPrincipalMappingEntry() {
-        AivenKafkaPrincipalMappingEntry entry = new AivenKafkaPrincipalMappingEntry(
+        AivenKafkaPrincipalMapping entry = new AivenKafkaPrincipalMapping(
             "^CN=p_(.*)_s$", // subject_matcher
             "pass", // principal_name
             "SpecialUser" // principal_type
@@ -28,7 +30,7 @@ public class AivenKafkaPrincipalMappingEntryTest {
         assertFalse(entry.matches("CN=fail"));
 
         // Omit principal_name and principal_type
-        entry = new AivenKafkaPrincipalMappingEntry(
+        entry = new AivenKafkaPrincipalMapping(
             "^CN=p_(.*)_s$", // subject_matcher
             null, // principal_name
             null // principal_type

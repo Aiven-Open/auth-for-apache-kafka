@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2019 Aiven, Helsinki, Finland. https://aiven.io/
+ * Copyright (c) 2020 Aiven, Helsinki, Finland. https://aiven.io/
  */
 
 package io.aiven.kafka.auth;

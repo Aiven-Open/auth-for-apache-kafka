@@ -1,26 +1,37 @@
 /**
- * Copyright (c) 2019 Aiven, Helsinki, Finland. https://aiven.io/
+ * Copyright (c) 2020 Aiven, Helsinki, Finland. https://aiven.io/
  */
 
-package io.aiven.kafka.auth;
+package io.aiven.kafka.auth.json;
 
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class AivenAclEntry {
+import com.google.gson.annotations.SerializedName;
+
+public class AivenAcl {
+    @SerializedName("principal_type")
     private final String principalType;
+
+    @SerializedName("principal")
     private final Pattern principalRe;
+
+    @SerializedName("operation")
     private final Pattern operationRe;
+
+    @SerializedName("resource")
     private final Pattern resourceRe;
+
+    @SerializedName("resource_pattern")
     private final String resourceRePattern;
 
     /** Constructor. */
-    public AivenAclEntry(final String principalType,
-                         final String principal,
-                         final String operation,
-                         final String resource,
-                         final String resourcePattern) {
+    public AivenAcl(final String principalType,
+                    final String principal,
+                    final String operation,
+                    final String resource,
+                    final String resourcePattern) {
         this.principalType = principalType;
         this.principalRe = Pattern.compile(principal);
         this.operationRe = Pattern.compile(operation);

@@ -1,13 +1,11 @@
 /**
- * Copyright (c) 2019 Aiven, Helsinki, Finland. https://aiven.io/
+ * Copyright (c) 2020 Aiven, Helsinki, Finland. https://aiven.io/
  */
 
 package io.aiven.kafka.auth;
 
 import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.ArrayList;
+import java.nio.file.Paths;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -16,15 +14,16 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.apache.kafka.common.security.auth.KafkaPrincipal;
 
+import io.aiven.kafka.auth.json.AivenAcl;
+import io.aiven.kafka.auth.json.reader.AclJsonReader;
+import io.aiven.kafka.auth.json.reader.JsonReader;
+import io.aiven.kafka.auth.json.reader.JsonReaderException;
+
 import kafka.network.RequestChannel.Session;
 import kafka.security.auth.Acl;
 import kafka.security.auth.Authorizer;
 import kafka.security.auth.Operation;
 import kafka.security.auth.Resource;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,58 +33,12 @@ public class AivenAclAuthorizer implements Authorizer {
     private ReentrantReadWriteLock lock = new ReentrantReadWriteLock(true);
     private long lastUpdateCheckTimestamp = 0;
     private long lastModifiedTimestamp = 0;
-    private List<AivenAclEntry> aclEntries;
+    private List<AivenAcl> aclEntries;
     private Map<String, Boolean> verdictCache;
 
+    private JsonReader<AivenAcl> jsonReader;
+
     public AivenAclAuthorizer() {
-    }
-
-    /**
-     * Read config file and populate ACL entries, if the config file has changed.
-     * This function assumes appropriate synchronization by caller.
-     */
-    private void checkAndUpdateConfig() {
-        final File configFile = new File(configFileLocation);
-        final long configFileLastModified = configFile.lastModified();
-
-        if (configFileLastModified != lastModifiedTimestamp) {
-            LOGGER.info("Reloading ACL configuration {}", configFileLocation);
-            final List<AivenAclEntry> newAclEntries = new ArrayList<>();
-            final JSONParser parser = new JSONParser();
-            try {
-                final Object obj = parser.parse(new FileReader(configFile));
-                final JSONArray root = (JSONArray) obj;
-                final Iterator<JSONObject> iter = root.iterator();
-                while (iter.hasNext()) {
-                    final JSONObject node = iter.next();
-                    newAclEntries.add(
-                        new AivenAclEntry(
-                            (String) node.get("principal_type"),
-                            (String) node.get("principal"),
-                            (String) node.get("operation"),
-                            (String) node.get("resource"),
-                            (String) node.get("resource_pattern")
-                        )
-                    );
-                }
-
-                // initialize cache for non-trivial ACLs
-                if (newAclEntries.size() > 10) {
-                    if (verdictCache != null) {
-                        verdictCache.clear();
-                    } else {
-                        verdictCache = new ConcurrentHashMap<String, Boolean>();
-                    }
-                } else {
-                    verdictCache = null;
-                }
-
-                aclEntries = newAclEntries;
-            } catch (final IOException | ParseException ex) {
-                LOGGER.error("Failed to read configuration file", ex);
-            }
-        }
-        lastModifiedTimestamp = configFileLastModified;
     }
 
     /**
@@ -106,7 +59,38 @@ public class AivenAclAuthorizer implements Authorizer {
     @Override
     public void configure(final java.util.Map<String, ?> configs) {
         configFileLocation = (String) configs.get("aiven.acl.authorizer.configuration");
+        jsonReader = new AclJsonReader(Paths.get(configFileLocation));
         checkAndUpdateConfig();
+    }
+
+    /**
+     * Read config file and populate ACL entries, if the config file has changed.
+     * This function assumes appropriate synchronization by caller.
+     */
+    private void checkAndUpdateConfig() {
+        final File configFile = new File(configFileLocation);
+        final long configFileLastModified = configFile.lastModified();
+
+        if (configFileLastModified != lastModifiedTimestamp) {
+            LOGGER.info("Reloading ACL configuration {}", configFileLocation);
+            try {
+                final List<AivenAcl> newAclEntries = jsonReader.read();
+                // initialize cache for non-trivial ACLs
+                if (newAclEntries.size() > 10) {
+                    if (verdictCache != null) {
+                        verdictCache.clear();
+                    } else {
+                        verdictCache = new ConcurrentHashMap<>();
+                    }
+                } else {
+                    verdictCache = null;
+                }
+                aclEntries = newAclEntries;
+            } catch (final JsonReaderException ex) {
+                LOGGER.error("Failed to load config file", ex);
+            }
+        }
+        lastModifiedTimestamp = configFileLastModified;
     }
 
     @Override
@@ -168,9 +152,9 @@ public class AivenAclAuthorizer implements Authorizer {
                         }
                     }
 
-                    final Iterator<AivenAclEntry> iter = aclEntries.iterator();
+                    final Iterator<AivenAcl> iter = aclEntries.iterator();
                     while (!verdict && iter.hasNext()) {
-                        final AivenAclEntry aclEntry = iter.next();
+                        final AivenAcl aclEntry = iter.next();
                         if (aclEntry.check(principalType, principalName, operation, resource)) {
                             verdict = true;
                         }

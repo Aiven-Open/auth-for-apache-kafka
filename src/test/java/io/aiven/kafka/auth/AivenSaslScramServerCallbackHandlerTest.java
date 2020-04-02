@@ -15,11 +15,11 @@ import org.apache.kafka.common.security.scram.ScramLoginModule;
 
 import io.aiven.kafka.auth.AivenSaslScramServerCallbackHandler;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class AivenSaslScramServerCallbackHandlerTest {
     static final String USERS_JSON = "[{\"username\":\"testuser\",\"password\":\"testpassword\"}]";
