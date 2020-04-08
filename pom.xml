@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.aiven</groupId>
     <artifactId>aiven-kafka-auth</artifactId>
-    <version>${authorizerVersion}</version>
+    <version>3.1.0</version>
     <properties>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
