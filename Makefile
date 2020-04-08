@@ -1,12 +1,6 @@
 short_ver = $(shell git describe --abbrev=0 2>/dev/null || echo 0.0.1)
 long_ver = $(shell git describe --long 2>/dev/null || echo $(short_ver)-0-unknown-g`git describe --always`)
 
-SOURCES := \
-	src/main/java/io/aiven/kafka/auth/AivenAclAuthorizer.java \
-	src/main/java/io/aiven/kafka/auth/AivenAclEntry.java \
-	pom.xml \
-	aiven-kafka-auth.spec
-
 all: rpm
 
 build-dep:
@@ -18,7 +12,7 @@ build-dep:
 clean:
 	$(RM) -rf rpm/ rpmbuild/
 
-rpm: $(SOURCES)
+rpm:
 	mkdir -p rpmbuild/
 	git archive --output=rpmbuild/aiven-kafka-auth-rpm-src.tar --prefix=aiven-kafka-auth-$(short_ver)/ HEAD
 	rpmbuild -bb aiven-kafka-auth.spec \
