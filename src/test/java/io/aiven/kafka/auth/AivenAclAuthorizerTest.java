@@ -1,12 +1,21 @@
 import java.io.File;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.kafka.common.acl.AclOperation;
+import org.apache.kafka.common.resource.PatternType;
+import org.apache.kafka.common.security.auth.KafkaPrincipal;
+
 import io.aiven.kafka.auth.AivenAclAuthorizer;
 
+import kafka.network.RequestChannel.Session;
+import kafka.security.auth.Operation;
+import kafka.security.auth.Resource;
+import kafka.security.auth.ResourceType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -65,11 +74,76 @@ public class AivenAclAuthorizerTest {
         auth.configure(configs);
 
         // basic ACL checks
-        assertTrue(auth.checkAcl("User", "pass", "Read", "Topic:Target"));
-        assertFalse(auth.checkAcl("User", "fail", "Read", "Topic:Target"));
-        assertFalse(auth.checkAcl("User", "pass", "Read", "Fail:Target"));
-        assertFalse(auth.checkAcl("User", "pass", "FailRead", "Topic:Target"));
-        assertFalse(auth.checkAcl("NonUser", "pass", "Read", "Topic:Target"));
+        assertTrue(
+            auth.authorize(
+                new Session(
+                    new KafkaPrincipal("User", "pass"),
+                    InetAddress.getLocalHost()
+                ),
+                Operation.fromJava(AclOperation.READ),
+                new Resource(
+                    ResourceType.fromJava(org.apache.kafka.common.resource.ResourceType.TOPIC),
+                    "Target",
+                    PatternType.LITERAL
+                )
+            )
+        );
+        assertFalse(
+            auth.authorize(
+                new Session(
+                    new KafkaPrincipal("User", "fail"),
+                    InetAddress.getLocalHost()
+                ),
+                Operation.fromJava(AclOperation.READ),
+                new Resource(
+                    ResourceType.fromJava(org.apache.kafka.common.resource.ResourceType.TOPIC),
+                    "Target",
+                    PatternType.LITERAL
+                )
+            )
+        );
+        assertFalse(
+            auth.authorize(
+                new Session(
+                    new KafkaPrincipal("User", "pass"),
+                    InetAddress.getLocalHost()
+                ),
+                Operation.fromJava(AclOperation.READ),
+                new Resource(
+                    ResourceType.fromJava(org.apache.kafka.common.resource.ResourceType.GROUP),
+                    "Target",
+                    PatternType.LITERAL
+                )
+            )
+        );
+        assertFalse(
+            auth.authorize(
+                new Session(
+                    new KafkaPrincipal("User", "pass"),
+                    InetAddress.getLocalHost()
+                ),
+                Operation.fromJava(AclOperation.CREATE),
+                new Resource(
+                    ResourceType.fromJava(org.apache.kafka.common.resource.ResourceType.TOPIC),
+                    "Target",
+                    PatternType.LITERAL
+                )
+            )
+        );
+        assertFalse(
+            auth.authorize(
+                new Session(
+                    new KafkaPrincipal("NonUser", "pass"),
+                    InetAddress.getLocalHost()
+                ),
+                Operation.fromJava(AclOperation.READ),
+                new Resource(
+                    ResourceType.fromJava(org.apache.kafka.common.resource.ResourceType.TOPIC),
+                    "Target",
+                    PatternType.LITERAL
+                )
+            )
+        );
 
         // reload logic
         assertFalse(auth.reloadAcls());
@@ -82,8 +156,32 @@ public class AivenAclAuthorizerTest {
         aclJson.setLastModified(aclJson.lastModified() + 20000);
         assertTrue(auth.reloadAcls());
 
-        assertTrue(auth.checkAcl("User", "pass", "Read", "Topic:Target"));
-        assertTrue(auth.checkAcl("NonUser", "pass", "Read", "Topic:Target"));
+        assertTrue(auth.authorize(
+            new Session(
+                new KafkaPrincipal("User", "pass"),
+                InetAddress.getLocalHost()
+            ),
+            Operation.fromJava(AclOperation.READ),
+            new Resource(
+                ResourceType.fromJava(org.apache.kafka.common.resource.ResourceType.TOPIC),
+                "Target",
+                PatternType.LITERAL
+            )
+        ));
+        assertTrue(
+            auth.authorize(
+                new Session(
+                    new KafkaPrincipal("NonUser", "pass"),
+                    InetAddress.getLocalHost()
+                ),
+                Operation.fromJava(AclOperation.READ),
+                new Resource(
+                    ResourceType.fromJava(org.apache.kafka.common.resource.ResourceType.TOPIC),
+                    "Target",
+                    PatternType.LITERAL
+                )
+            )
+        );
 
         // Longer configs trigger caching of results
         Files.write(configFilePath, ACL_JSON_LONG.getBytes());
@@ -91,11 +189,63 @@ public class AivenAclAuthorizerTest {
         assertTrue(auth.reloadAcls());
 
         // first iteration without cache
-        assertTrue(auth.checkAcl("User", "pass-1", "Read", "Topic:Target"));
-        assertFalse(auth.checkAcl("User", "fail-1", "Read", "Topic:Target"));
+        assertTrue(
+            auth.authorize(
+                new Session(
+                    new KafkaPrincipal("User", "pass-1"),
+                    InetAddress.getLocalHost()
+                ),
+                Operation.fromJava(AclOperation.READ),
+                new Resource(
+                    ResourceType.fromJava(org.apache.kafka.common.resource.ResourceType.TOPIC),
+                    "Target",
+                    PatternType.LITERAL
+                )
+            )
+        );
+        assertFalse(
+            auth.authorize(
+                new Session(
+                    new KafkaPrincipal("User", "fail-1"),
+                    InetAddress.getLocalHost()
+                ),
+                Operation.fromJava(AclOperation.READ),
+                new Resource(
+                    ResourceType.fromJava(org.apache.kafka.common.resource.ResourceType.TOPIC),
+                    "Target",
+                    PatternType.LITERAL
+                )
+            )
+        );
 
         // second iteration from cache
-        assertTrue(auth.checkAcl("User", "pass-1", "Read", "Topic:Target"));
-        assertFalse(auth.checkAcl("User", "fail-1", "Read", "Topic:Target"));
+        assertTrue(
+            auth.authorize(
+                new Session(
+                    new KafkaPrincipal("User", "pass-1"),
+                    InetAddress.getLocalHost()
+                ),
+                Operation.fromJava(AclOperation.READ),
+                new Resource(
+                    ResourceType.fromJava(org.apache.kafka.common.resource.ResourceType.TOPIC),
+                    "Target",
+                    PatternType.LITERAL
+                )
+            )
+        );
+        assertFalse(
+            auth.authorize(
+                new Session(
+                    new KafkaPrincipal("User", "fail-1"),
+                    InetAddress.getLocalHost()
+                ),
+                Operation.fromJava(AclOperation.READ),
+                new Resource(
+                    ResourceType.fromJava(org.apache.kafka.common.resource.ResourceType.TOPIC),
+                    "Target",
+                    PatternType.LITERAL
+                )
+            )
+        );
     }
 }
