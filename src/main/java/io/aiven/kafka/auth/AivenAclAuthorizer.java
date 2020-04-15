@@ -8,6 +8,7 @@ import java.io.File;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -103,20 +104,22 @@ public class AivenAclAuthorizer implements Authorizer {
 
     @Override
     public boolean authorize(final Session session,
-                             final Operation operationObj,
-                             final Resource resourceObj) {
-        KafkaPrincipal principal = session.principal();
-        if (principal == null) {
-            principal = KafkaPrincipal.ANONYMOUS;
-        }
-
-        final String principalName = principal.getName();
-        final String principalType = principal.getPrincipalType();
-        final String operation = operationObj.name();
-        final String resource = resourceObj.resourceType() + ":" + resourceObj.name();
-
-        final boolean verdict = checkAcl(principalName, principalType, operation, resource);
-        auditor.addActivity(session, operationObj, resourceObj, verdict);
+                             final Operation operation,
+                             final Resource resource) {
+        final KafkaPrincipal principal =
+            Objects.nonNull(session.principal())
+                ? session.principal()
+                : KafkaPrincipal.ANONYMOUS;
+        final String resourceToCheck =
+            resource.resourceType() + ":" + resource.name();
+        final boolean verdict =
+            checkAcl(
+                principal.getPrincipalType(),
+                principal.getName(),
+                operation.name(),
+                resourceToCheck
+            );
+        auditor.addActivity(session, operation, resource, verdict);
         return verdict;
     }
 
@@ -124,10 +127,10 @@ public class AivenAclAuthorizer implements Authorizer {
      * Authorize a single request.
      */
     //FIXME split code here in functions !!!!!
-    public boolean checkAcl(final String principalType,
-                            final String principalName,
-                            final String operation,
-                            final String resource) {
+    private boolean checkAcl(final String principalType,
+                             final String principalName,
+                             final String operation,
+                             final String resource) {
         final long now = System.nanoTime() / 1000000; // nanoTime is monotonic, convert to milliseconds
         boolean verdict = false;
         String cacheKey = null;

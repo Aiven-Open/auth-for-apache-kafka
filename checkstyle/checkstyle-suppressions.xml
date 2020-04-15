@@ -13,4 +13,5 @@
     <suppress checks="CyclomaticComplexity" files="AivenAclAuthorizer.java" />
     <suppress checks="ClassFanOutComplexity" files="AivenAclAuthorizer.java" />
     <suppress checks="NPathComplexity" files="AivenAclAuthorizer.java" />
+    <suppress checks="MethodLength" files="AivenAclAuthorizerTest.java"/>
 </suppressions>
