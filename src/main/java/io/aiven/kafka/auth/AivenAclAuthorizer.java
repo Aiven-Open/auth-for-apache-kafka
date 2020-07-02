@@ -39,6 +39,7 @@ public class AivenAclAuthorizer implements Authorizer {
     private Map<String, Boolean> verdictCache;
     private JsonReader<AivenAcl> jsonReader;
     private Auditor auditor;
+    private boolean logDenials;
 
     public AivenAclAuthorizer() {
     }
@@ -60,11 +61,13 @@ public class AivenAclAuthorizer implements Authorizer {
 
     @Override
     public void configure(final java.util.Map<String, ?> configs) {
-        final AivenAclAuthorizerConfig aivenAclAuthorizerConfig = new AivenAclAuthorizerConfig(configs);
+        final AivenAclAuthorizerConfig config = new AivenAclAuthorizerConfig(configs);
 
-        configFile = aivenAclAuthorizerConfig.getConfigFile();
+        auditor = config.getAuditor();
+        logDenials = config.logDenials();
+
+        configFile = config.getConfigFile();
         jsonReader = new AclJsonReader(configFile.toPath());
-        auditor = aivenAclAuthorizerConfig.getAuditor();
         checkAndUpdateConfig();
     }
 
@@ -150,13 +153,7 @@ public class AivenAclAuthorizer implements Authorizer {
                         final Boolean cachedVerdict = verdictCache.get(cacheKey);
                         if (cachedVerdict != null) {
                             verdict = cachedVerdict.booleanValue();
-                            if (verdict) {
-                                LOGGER.debug("[ALLOW] Auth request {} on {} by {} {} (cached)",
-                                    operation, resource, principalType, principalName);
-                            } else {
-                                LOGGER.info("[DENY] Auth request {} on {} by {} {} (cached)",
-                                    operation, resource, principalType, principalName);
-                            }
+                            logAuthVerdict(verdict, operation, resource, principalType, principalName, true);
                             return verdict;
                         }
                     }
@@ -168,13 +165,7 @@ public class AivenAclAuthorizer implements Authorizer {
                             verdict = true;
                         }
                     }
-                    if (verdict) {
-                        LOGGER.debug("[ALLOW] Auth request {} on {} by {} {}",
-                            operation, resource, principalType, principalName);
-                    } else {
-                        LOGGER.info("[DENY] Auth request {} on {} by {} {}",
-                            operation, resource, principalType, principalName);
-                    }
+                    logAuthVerdict(verdict, operation, resource, principalType, principalName, false);
                     if (cacheKey != null && verdictCache != null) {
                         verdictCache.put(cacheKey, verdict);
                     }
@@ -195,6 +186,27 @@ public class AivenAclAuthorizer implements Authorizer {
                 }
             } finally {
                 lock.writeLock().unlock();
+            }
+        }
+    }
+
+    private void logAuthVerdict(final boolean verdict,
+                                final String operation,
+                                final String resource,
+                                final String principalType,
+                                final String principalName,
+                                final boolean cached) {
+        final String cachedStr = cached ? " (cached)" : "";
+        if (verdict) {
+            LOGGER.debug("[ALLOW] Auth request {} on {} by {} {}{}",
+                    operation, resource, principalType, principalName, cachedStr);
+        } else {
+            if (logDenials) {
+                LOGGER.info("[DENY] Auth request {} on {} by {} {}{}",
+                        operation, resource, principalType, principalName, cachedStr);
+            } else {
+                LOGGER.debug("[DENY] Auth request {} on {} by {} {}{}",
+                        operation, resource, principalType, principalName, cachedStr);
             }
         }
     }

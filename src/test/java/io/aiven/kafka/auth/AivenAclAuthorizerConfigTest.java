@@ -17,7 +17,9 @@ import io.aiven.kafka.auth.audit.UserActivityAuditor;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AivenAclAuthorizerConfigTest {
 
@@ -29,6 +31,7 @@ class AivenAclAuthorizerConfigTest {
         final AivenAclAuthorizerConfig config = new AivenAclAuthorizerConfig(properties);
         assertEquals("/test", config.getConfigFile().getAbsolutePath());
         assertEquals(NoAuditor.class, config.getAuditor().getClass());
+        assertTrue(config.logDenials());
     }
 
     @Test
@@ -37,10 +40,12 @@ class AivenAclAuthorizerConfigTest {
         properties.put("aiven.acl.authorizer.configuration", "/test");
         properties.put("aiven.acl.authorizer.auditor.class.name", UserActivityAuditor.class.getName());
         properties.put("aiven.acl.authorizer.auditor.aggregation.period", "123");
+        properties.put("aiven.acl.authorizer.log.denials", "false");
 
         final AivenAclAuthorizerConfig config = new AivenAclAuthorizerConfig(properties);
         assertEquals("/test", config.getConfigFile().getAbsolutePath());
         assertEquals(UserActivityAuditor.class, config.getAuditor().getClass());
+        assertFalse(config.logDenials());
     }
 
     @Test
