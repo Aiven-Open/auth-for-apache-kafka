@@ -16,6 +16,7 @@ import io.aiven.kafka.auth.audit.NoAuditor;
 public final class AivenAclAuthorizerConfig extends AbstractConfig {
     private static final String CONFIGURATION_CONF = "aiven.acl.authorizer.configuration";
     private static final String AUDITOR_CLASS_NAME_CONF = "aiven.acl.authorizer.auditor.class.name";
+    private static final String LOG_DENIALS_CONF = "aiven.acl.authorizer.log.denials";
 
     public AivenAclAuthorizerConfig(final Map<?, ?> originals) {
         super(configDef(), originals);
@@ -35,6 +36,12 @@ public final class AivenAclAuthorizerConfig extends AbstractConfig {
                 NoAuditor.class,
                 ConfigDef.Importance.MEDIUM,
                 "The auditor class fully qualified name"
+            ).define(
+                LOG_DENIALS_CONF,
+                ConfigDef.Type.BOOLEAN,
+                true,
+                ConfigDef.Importance.LOW,
+                "Whether to log denials on INFO level"
             );
     }
 
@@ -44,5 +51,9 @@ public final class AivenAclAuthorizerConfig extends AbstractConfig {
 
     public final Auditor getAuditor() {
         return getConfiguredInstance(AUDITOR_CLASS_NAME_CONF, Auditor.class);
+    }
+
+    public final boolean logDenials() {
+        return getBoolean(LOG_DENIALS_CONF);
     }
 }
