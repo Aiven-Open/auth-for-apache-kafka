@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!--
-// Copyright 2019 Aiven Oy
+// Copyright 2019 Aiven Oy https://aiven.io
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -28,10 +28,9 @@
 <!-- See http://checkstyle.sourceforge.net/config.html#Checker -->
 <module name="Checker">
     <!-- See http://checkstyle.sourceforge.net/config_filters.html#SuppressionFilter -->
-    <!-- FIXME uncomment wioth normal headers later-->
-    <!--    <module name="SuppressionFilter">-->
-    <!--        <property name="file" value="${config_loc}/suppressions.xml" default="config/checkstyle/suppressions.xml"/>-->
-    <!--    </module>-->
+    <module name="SuppressionFilter">
+        <property name="file" value="${config_loc}/checkstyle-suppressions.xml" default="checkstyle/checkstyle-suppressions.xml"/>
+    </module>
 
     <property name="charset" value="UTF-8"/>
     <!--    <property name="severity" value="warning"/>-->
@@ -45,11 +44,10 @@
     </module>
 
     <!-- See http://checkstyle.sourceforge.net/config_header.html#RegexpHeader -->
-    <!-- FIXME uncomment wioth normal headers later-->
-    <!--    <module name="RegexpHeader">-->
-    <!--        <property name="fileExtensions" value="java"/>-->
-    <!--        <property name="headerFile" value="${config_loc}/java.header" default="config/checkstyle/java.header"/>-->
-    <!--    </module>-->
+    <module name="RegexpHeader">
+        <property name="fileExtensions" value="java"/>
+        <property name="headerFile" value="${config_loc}/java.header" default="checkstyle/java.header"/>
+    </module>
 
     <!-- See http://checkstyle.sourceforge.net/config_whitespace.html#FileTabCharacter -->
     <module name="FileTabCharacter">

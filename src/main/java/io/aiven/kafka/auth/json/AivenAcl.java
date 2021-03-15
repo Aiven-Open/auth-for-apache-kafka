@@ -1,5 +1,17 @@
-/**
- * Copyright (c) 2020 Aiven, Helsinki, Finland. https://aiven.io/
+/*
+ * Copyright 2019 Aiven Oy https://aiven.io
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package io.aiven.kafka.auth.json;
@@ -10,7 +22,7 @@ import java.util.regex.Pattern;
 
 import com.google.gson.annotations.SerializedName;
 
-public class AivenAcl {
+public class  AivenAcl {
     @SerializedName("principal_type")
     private final String principalType;
 
@@ -26,7 +38,6 @@ public class AivenAcl {
     @SerializedName("resource_pattern")
     private final String resourceRePattern;
 
-    /** Constructor. */
     public AivenAcl(final String principalType,
                     final String principal,
                     final String operation,
@@ -40,7 +51,9 @@ public class AivenAcl {
         this.resourceRePattern = resourcePattern;
     }
 
-    /** Check if request matches this rule. */
+    /**
+     * Check if request matches this rule.
+     */
     public Boolean check(final String principalType,
                          final String principal,
                          final String operation,
