@@ -47,7 +47,7 @@ java {
 }
 
 compileJava {
-    options.compilerArgs = ["-Xlint:all", "-Werror"]
+    options.compilerArgs = ["-Xlint:-serial", "-Xlint:all", "-Werror"]
 }
 
 jmh {
