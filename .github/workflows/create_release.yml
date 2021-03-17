@@ -38,15 +38,12 @@ jobs:
 
       - name: Build
         run: |
-          ./gradlew distTar distZip
+          ./gradlew clean build
 
-          export tar_file=$(ls ./build/distributions/ | grep tar)
-          export zip_file=$(ls ./build/distributions/ | grep zip)
-          echo tar_file=${tar_file} >> $GITHUB_ENV
-          echo zip_file=${zip_file} >> $GITHUB_ENV
+          export jar_file=$(ls ./build/libs/ | grep jar)
+          echo jar_file=${jar_file} >> $GITHUB_ENV
 
-          echo tar_path=`realpath ./build/distributions/${tar_file}` >> $GITHUB_ENV
-          echo zip_path=`realpath ./build/distributions/${zip_file}` >> $GITHUB_ENV
+          echo jar_path=`realpath ./build/libs/${jar_file}` >> $GITHUB_ENV
 
       - name: Create tag
         run: |
@@ -69,22 +66,11 @@ jobs:
           draft: true
           prerelease: false
 
-      - name: Upload tar
+      - name: Upload jar
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ env.tar_path }}
-          asset_name: ${{ env.tar_file }}
-          asset_content_type: application/tar
-
-      - name: Upload zip
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ env.zip_path }}
-          asset_name: ${{ env.zip_file }}
-          asset_content_type: application/zip
+          asset_path: ${{ env.jar_path }}
+          asset_content_type: application/java-archive
