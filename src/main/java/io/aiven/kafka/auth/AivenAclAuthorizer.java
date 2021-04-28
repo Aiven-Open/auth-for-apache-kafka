@@ -26,7 +26,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.apache.kafka.common.security.auth.KafkaPrincipal;
 
-import io.aiven.kafka.auth.audit.Auditor;
+import io.aiven.kafka.auth.audit.AuditorAPI;
 import io.aiven.kafka.auth.json.AivenAcl;
 import io.aiven.kafka.auth.json.reader.AclJsonReader;
 import io.aiven.kafka.auth.json.reader.JsonReader;
@@ -50,7 +50,7 @@ public class AivenAclAuthorizer implements Authorizer {
     private List<AivenAcl> aclEntries;
     private Map<String, Boolean> verdictCache;
     private JsonReader<AivenAcl> jsonReader;
-    private Auditor auditor;
+    private AuditorAPI auditor;
     private boolean logDenials;
 
     public AivenAclAuthorizer() {

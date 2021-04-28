@@ -17,23 +17,31 @@
 package io.aiven.kafka.auth.audit;
 
 import java.time.ZonedDateTime;
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 
 class UserActivity {
-
     public final ZonedDateTime activeSince;
 
-    public final Set<UserOperation> operations;
+    /**
+     * Ordered in the order the order the operations are added.
+     */
+    public final List<UserOperation> operations;
 
     public UserActivity() {
-        this.activeSince = ZonedDateTime.now();
-        this.operations = new HashSet<>();
+        this(ZonedDateTime.now());
+    }
+
+    public UserActivity(final ZonedDateTime activeSince) {
+        this.activeSince = activeSince;
+        this.operations = new ArrayList<>();
     }
 
     public void addOperation(final UserOperation userOperation) {
-        operations.add(userOperation);
+        if (!operations.contains(userOperation)) {
+            operations.add(userOperation);
+        }
     }
 
     public boolean hasOperations() {

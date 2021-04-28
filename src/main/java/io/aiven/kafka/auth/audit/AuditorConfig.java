@@ -21,9 +21,28 @@ import java.util.Map;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
 
+import static io.aiven.kafka.auth.audit.AuditorConfig.AggregationGrouping.AGGREGATION_GROUPING_PRINCIPAL;
+import static io.aiven.kafka.auth.audit.AuditorConfig.AggregationGrouping.AGGREGATION_GROUPING_PRINCIPAL_AND_SOURCE_IP;
+
 public class AuditorConfig extends AbstractConfig {
 
     static final String AGGREGATION_PERIOD_CONF = "aiven.acl.authorizer.auditor.aggregation.period";
+    static final String AGGREGATION_GROUPING_CONF = "aiven.acl.authorizer.auditor.aggregation.grouping";
+
+    public enum AggregationGrouping {
+        AGGREGATION_GROUPING_PRINCIPAL("Principal"),
+        AGGREGATION_GROUPING_PRINCIPAL_AND_SOURCE_IP("PrincipalAndSourceIp");
+
+        private final String configValue;
+
+        AggregationGrouping(final String configValue) {
+            this.configValue = configValue;
+        }
+
+        public String getConfigValue() {
+            return configValue;
+        }
+    }
 
     public AuditorConfig(final Map<?, ?> originals) {
         super(configDef(), originals);
@@ -38,10 +57,22 @@ public class AuditorConfig extends AbstractConfig {
                 ConfigDef.Range.atLeast(1),
                 ConfigDef.Importance.HIGH,
                 "The auditor aggregation period in seconds."
+            ).define(
+                AGGREGATION_GROUPING_CONF,
+                ConfigDef.Type.STRING,
+                AGGREGATION_GROUPING_PRINCIPAL_AND_SOURCE_IP.getConfigValue(),
+                ConfigDef.ValidString.in(AGGREGATION_GROUPING_PRINCIPAL.getConfigValue(),
+                        AGGREGATION_GROUPING_PRINCIPAL_AND_SOURCE_IP.getConfigValue()),
+                ConfigDef.Importance.HIGH,
+                "The auditor aggregation grouping key."
             );
     }
 
     public long getAggregationPeriodInSeconds() {
         return getLong(AGGREGATION_PERIOD_CONF);
+    }
+
+    public String getAggregationGrouping() {
+        return getString(AGGREGATION_GROUPING_CONF);
     }
 }

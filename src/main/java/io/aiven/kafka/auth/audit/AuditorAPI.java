@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Aiven Oy https://aiven.io
+ * Copyright 2021 Aiven Oy https://aiven.io
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,33 +16,25 @@
 
 package io.aiven.kafka.auth.audit;
 
-import java.util.Map;
+import org.apache.kafka.common.Configurable;
 
 import kafka.network.RequestChannel;
 import kafka.security.auth.Operation;
 import kafka.security.auth.Resource;
 
-/**
- * A no-op {@link AuditorAPI}.
- */
-public class NoAuditor implements AuditorAPI {
+public interface AuditorAPI extends Configurable {
+    /**
+     * A callback to audit a user activity.
+     *
+     * @param session the associated session
+     * @param operation the associated operation
+     * @param resource the associated resource
+     * @param hasAccess whether access was granted
+     */
+    void addActivity(RequestChannel.Session session,
+                     Operation operation,
+                     Resource resource,
+                     boolean hasAccess);
 
-    public NoAuditor() {
-        super();
-    }
-
-    @Override
-    public void addActivity(final RequestChannel.Session session,
-                            final Operation operation,
-                            final Resource resource,
-                            final boolean hasAccess) {
-    }
-
-    @Override
-    public void configure(final Map<String, ?> map) {
-    }
-
-    @Override
-    public void stop() {
-    }
+    void stop();
 }

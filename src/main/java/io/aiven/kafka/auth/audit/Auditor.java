@@ -17,7 +17,6 @@
 package io.aiven.kafka.auth.audit;
 
 import java.net.InetAddress;
-import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -26,9 +25,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.stream.Collectors;
 
-import org.apache.kafka.common.Configurable;
 import org.apache.kafka.common.security.auth.KafkaPrincipal;
 
 import kafka.network.RequestChannel.Session;
@@ -37,7 +34,10 @@ import kafka.security.auth.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class Auditor implements Configurable {
+import static io.aiven.kafka.auth.audit.AuditorConfig.AggregationGrouping.AGGREGATION_GROUPING_PRINCIPAL;
+import static io.aiven.kafka.auth.audit.AuditorConfig.AggregationGrouping.AGGREGATION_GROUPING_PRINCIPAL_AND_SOURCE_IP;
+
+public abstract class Auditor implements AuditorAPI {
 
     private final Logger logger;
 
@@ -48,8 +48,10 @@ public abstract class Auditor implements Configurable {
     private final ScheduledExecutorService auditScheduler =
         Executors.newScheduledThreadPool(1);
 
+    private AuditorDumpFormatter formatter;
+
     public Auditor() {
-        this.logger = LoggerFactory.getLogger("aiven.auditor.logger");
+        this(LoggerFactory.getLogger("aiven.auditor.logger"));
     }
 
     // visible for test
@@ -66,34 +68,61 @@ public abstract class Auditor implements Configurable {
             auditorConfig.getAggregationPeriodInSeconds(),
             TimeUnit.SECONDS
         );
+
+        formatter = createFormatter(auditorConfig);
     }
 
+    private AuditorDumpFormatter createFormatter(final AuditorConfig auditorConfig) {
+        final String grouping = auditorConfig.getAggregationGrouping();
+        if (AGGREGATION_GROUPING_PRINCIPAL_AND_SOURCE_IP.getConfigValue().equals(grouping)) {
+            return new PrincipalAndIpFormatter();
+        } else if (AGGREGATION_GROUPING_PRINCIPAL.getConfigValue().equals(grouping)) {
+            return new PrincipalFormatter();
+        } else {
+            throw new RuntimeException("Not implemented");
+        }
+    }
+
+    @Override
     public void addActivity(final Session session,
                             final Operation operation,
                             final Resource resource,
-                            final Boolean hasAccess) {
+                            final boolean hasAccess) {
 
-        final AuditKey auditKey = new AuditKey(session.principal(), session.clientAddress());
+        final AuditKey auditKey = AuditKey.fromSession(session);
         auditLock.lock();
         try {
-            auditStorage.compute(auditKey, (key, userActivity) -> {
-                if (Objects.isNull(userActivity)) {
-                    return onUserActivity(new UserActivity(), operation, resource, hasAccess);
-                } else {
-                    return onUserActivity(userActivity, operation, resource, hasAccess);
-                }
-            });
+            auditStorage.compute(auditKey, (key, userActivity) ->
+                onUserActivity(Objects.isNull(userActivity)
+                        ? new UserActivity()
+                        : userActivity, operation, resource, hasAccess)
+            );
         } finally {
             auditLock.unlock();
         }
     }
 
+    @Override
     public void stop() {
         auditScheduler.shutdownNow();
-        dump();
+        try {
+            auditScheduler.awaitTermination(5, TimeUnit.SECONDS);
+            dump();
+        } catch (final InterruptedException e) {
+            // Intentionally ignored
+        }
     }
 
     protected void dump() {
+        try {
+            formatter.format(makeDump())
+                    .forEach(logger::info);
+        } catch (final Exception e) {
+            // handle or the background thread can die!
+        }
+    }
+
+    private Map<AuditKey, UserActivity> makeDump() {
         final Map<AuditKey, UserActivity> auditStorageDump;
         auditLock.lock();
         try {
@@ -102,33 +131,7 @@ public abstract class Auditor implements Configurable {
         } finally {
             auditLock.unlock();
         }
-        auditStorageDump.forEach((key, userActivity) -> logger.info(auditMessage(key, userActivity)));
-    }
-
-    private String auditMessage(final AuditKey key, final UserActivity userActivity) {
-        final StringBuilder auditMessage = new StringBuilder(key.principal.toString());
-        auditMessage
-            .append(" (").append(key.sourceIp).append(")")
-            .append(" was active since ")
-            .append(userActivity.activeSince.format(DateTimeFormatter.ISO_INSTANT));
-        if (userActivity.hasOperations()) {
-            auditMessage.append(": ")
-                .append(
-                    userActivity
-                        .operations
-                        .stream()
-                        .map(this::userOperationMessage)
-                        .collect(Collectors.joining(", "))
-                );
-        }
-        return auditMessage.toString();
-    }
-
-    private String userOperationMessage(final UserOperation op) {
-        return (op.hasAccess ? "Allow" : "Deny")
-            + " " + op.operation.name() + " on "
-            + op.resource.resourceType() + ":"
-            + op.resource.name();
+        return auditStorageDump;
     }
 
     protected abstract UserActivity onUserActivity(final UserActivity userActivity,
@@ -164,6 +167,9 @@ public abstract class Auditor implements Configurable {
         public int hashCode() {
             return Objects.hash(principal, sourceIp);
         }
-    }
 
+        public static AuditKey fromSession(final Session session) {
+            return new AuditKey(session.principal(), session.clientAddress());
+        }
+    }
 }
