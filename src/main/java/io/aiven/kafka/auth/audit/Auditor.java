@@ -34,8 +34,8 @@ import kafka.security.auth.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static io.aiven.kafka.auth.audit.AuditorConfig.AggregationGrouping.AGGREGATION_GROUPING_PRINCIPAL;
-import static io.aiven.kafka.auth.audit.AuditorConfig.AggregationGrouping.AGGREGATION_GROUPING_PRINCIPAL_AND_SOURCE_IP;
+import static io.aiven.kafka.auth.audit.AuditorConfig.AggregationGrouping.PRINCIPAL;
+import static io.aiven.kafka.auth.audit.AuditorConfig.AggregationGrouping.PRINCIPAL_AND_SOURCE_IP;
 
 public abstract class Auditor implements AuditorAPI {
 
@@ -74,9 +74,9 @@ public abstract class Auditor implements AuditorAPI {
 
     private AuditorDumpFormatter createFormatter(final AuditorConfig auditorConfig) {
         final String grouping = auditorConfig.getAggregationGrouping();
-        if (AGGREGATION_GROUPING_PRINCIPAL_AND_SOURCE_IP.getConfigValue().equals(grouping)) {
+        if (PRINCIPAL_AND_SOURCE_IP.getConfigValue().equals(grouping)) {
             return new PrincipalAndIpFormatter();
-        } else if (AGGREGATION_GROUPING_PRINCIPAL.getConfigValue().equals(grouping)) {
+        } else if (PRINCIPAL.getConfigValue().equals(grouping)) {
             return new PrincipalFormatter();
         } else {
             throw new RuntimeException("Not implemented");
