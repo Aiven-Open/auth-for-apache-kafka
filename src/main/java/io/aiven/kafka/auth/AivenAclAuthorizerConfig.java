@@ -22,7 +22,7 @@ import java.util.Map;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
 
-import io.aiven.kafka.auth.audit.Auditor;
+import io.aiven.kafka.auth.audit.AuditorAPI;
 import io.aiven.kafka.auth.audit.NoAuditor;
 
 public final class AivenAclAuthorizerConfig extends AbstractConfig {
@@ -61,8 +61,8 @@ public final class AivenAclAuthorizerConfig extends AbstractConfig {
         return new File(getString(CONFIGURATION_CONF));
     }
 
-    public final Auditor getAuditor() {
-        return getConfiguredInstance(AUDITOR_CLASS_NAME_CONF, Auditor.class);
+    public final AuditorAPI getAuditor() {
+        return getConfiguredInstance(AUDITOR_CLASS_NAME_CONF, AuditorAPI.class);
     }
 
     public final boolean logDenials() {

@@ -78,7 +78,7 @@ class UserOperationsActivityAuditorTest {
 
     @Test
     public void shouldDumpMessagesWhenStop() {
-        final Auditor auditor = spy(createAuditor());
+        final UserOperationsActivityAuditor auditor = spy(createAuditor());
         auditor.addActivity(session, operation, resource, false);
         auditor.stop();
         verify(auditor).dump();
@@ -137,9 +137,9 @@ class UserOperationsActivityAuditorTest {
         final UserOperationsActivityAuditor auditor = createAuditor();
         final Operation anotherOperation = Operation.fromJava(AclOperation.ALTER);
         final Resource anotherResource = new Resource(
-            ResourceType.fromJava(org.apache.kafka.common.resource.ResourceType.DELEGATION_TOKEN),
-            "ANOTHER_RESOURCE_NAME",
-            PatternType.LITERAL
+                ResourceType.fromJava(org.apache.kafka.common.resource.ResourceType.DELEGATION_TOKEN),
+                "ANOTHER_RESOURCE_NAME",
+                PatternType.LITERAL
         );
 
         final ArgumentCaptor<String> logCaptor = ArgumentCaptor.forClass(String.class);
@@ -150,27 +150,27 @@ class UserOperationsActivityAuditorTest {
         verify(logger).info(logCaptor.capture());
 
         final String expectedPrefix = String.format(
-            "PRINCIPAL_TYPE:PRINCIPAL_NAME (%s) was active since ",
-            InetAddress.getLocalHost()
+                "PRINCIPAL_TYPE:PRINCIPAL_NAME (%s) was active since ",
+                InetAddress.getLocalHost()
         );
 
         assertTrue(logCaptor.getValue().startsWith(expectedPrefix));
         final String timestampStr =
-            logCaptor.getValue()
-                .substring(
-                    expectedPrefix.length(),
-                    logCaptor.getValue().indexOf(": ")
-                );
+                logCaptor.getValue()
+                        .substring(
+                                expectedPrefix.length(),
+                                logCaptor.getValue().indexOf(": ")
+                        );
         final Instant instant = Instant.parse(timestampStr);
         final long diffSeconds = Math.abs(ChronoUnit.SECONDS.between(instant, Instant.now()));
         assertTrue(diffSeconds < 3);
 
         final Set<String> loggedOperations = Arrays.stream(logCaptor.getValue()
-            .substring(logCaptor.getValue().indexOf(": ") + 1)
-            .split(",")).map(String::trim).collect(Collectors.toSet());
+                .substring(logCaptor.getValue().indexOf(": ") + 1)
+                .split(",")).map(String::trim).collect(Collectors.toSet());
 
 
-        final String[] expectedOperations = new String[]{
+        final String[] expectedOperations = new String[] {
             "Deny All on Cluster:RESOURCE_NAME",
             "Allow Alter on DelegationToken:ANOTHER_RESOURCE_NAME"
         };

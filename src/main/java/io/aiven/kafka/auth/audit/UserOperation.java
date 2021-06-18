@@ -47,8 +47,8 @@ public class UserOperation {
         }
         final UserOperation that = (UserOperation) o;
         return hasAccess == that.hasAccess
-            && Objects.equals(operation, that.operation)
-            && Objects.equals(resource, that.resource);
+                && Objects.equals(operation, that.operation)
+                && Objects.equals(resource, that.resource);
     }
 
     @Override

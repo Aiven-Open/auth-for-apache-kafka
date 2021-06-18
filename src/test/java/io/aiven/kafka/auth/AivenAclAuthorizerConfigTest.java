@@ -84,7 +84,7 @@ class AivenAclAuthorizerConfigTest {
             KafkaException.class,
             config::getAuditor);
         assertEquals(
-            "java.util.ArrayList is not an instance of io.aiven.kafka.auth.audit.Auditor",
+            "java.util.ArrayList is not an instance of io.aiven.kafka.auth.audit.AuditorAPI",
             t.getMessage()
         );
     }

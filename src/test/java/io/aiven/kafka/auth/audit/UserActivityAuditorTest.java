@@ -68,7 +68,7 @@ class UserActivityAuditorTest {
 
     @Test
     public void shouldDumpMessagesWhenStop() {
-        final Auditor auditor = spy(createAuditor());
+        final UserActivityAuditor auditor = spy(createAuditor());
         auditor.addActivity(session, operation, resource, false);
         auditor.stop();
         verify(auditor).dump();
@@ -87,8 +87,8 @@ class UserActivityAuditorTest {
         verify(logger).info(argument.capture());
 
         final String expectedPrefix = String.format(
-            "PRINCIPAL_TYPE:PRINCIPAL_NAME (%s) was active since ",
-            InetAddress.getLocalHost()
+                "PRINCIPAL_TYPE:PRINCIPAL_NAME (%s) was active since ",
+                InetAddress.getLocalHost()
         );
         assertTrue(argument.getValue().startsWith(expectedPrefix));
 
