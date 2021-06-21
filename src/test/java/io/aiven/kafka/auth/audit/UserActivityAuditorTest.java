@@ -20,12 +20,13 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Map;
 
 import org.apache.kafka.common.acl.AclOperation;
+import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.common.resource.PatternType;
 import org.apache.kafka.common.security.auth.KafkaPrincipal;
 
-import com.google.common.collect.ImmutableMap;
 import kafka.network.RequestChannel.Session;
 import kafka.security.auth.Operation;
 import kafka.security.auth.Resource;
@@ -39,6 +40,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.Logger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
@@ -55,7 +57,8 @@ class UserActivityAuditorTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        final KafkaPrincipal principal = new KafkaPrincipal("PRINCIPAL_TYPE", "PRINCIPAL_NAME");
+        final KafkaPrincipal principal =
+                new KafkaPrincipal("PRINCIPAL_TYPE", "PRINCIPAL_NAME");
         session = new Session(principal, InetAddress.getLocalHost());
         resource =
             new Resource(
@@ -98,9 +101,25 @@ class UserActivityAuditorTest {
         assertTrue(diffSeconds < 3);
     }
 
+    @Test
+    void shouldThrowConfigExceptionForAggregationGrouping() {
+
+        final var props = Map.of(
+                AuditorConfig.AGGREGATION_PERIOD_CONF, Long.MAX_VALUE,
+                AuditorConfig.AGGREGATION_GROUPING_CONF, AuditorConfig.AggregationGrouping.USER.getConfigValue()
+        );
+        final var e = assertThrows(
+                ConfigException.class, () -> createAuditor(props));
+        assertEquals("Grouping by user is not supported for this type of auditor", e.getMessage());
+    }
+
     private UserActivityAuditor createAuditor() {
+        return createAuditor(Map.of(AuditorConfig.AGGREGATION_PERIOD_CONF, Long.MAX_VALUE));
+    }
+
+    private UserActivityAuditor createAuditor(final Map<String, ?> props) {
         final UserActivityAuditor auditor = new UserActivityAuditor(logger);
-        auditor.configure(ImmutableMap.of(AuditorConfig.AGGREGATION_PERIOD_CONF, Long.MAX_VALUE));
+        auditor.configure(props);
         return auditor;
     }
 }

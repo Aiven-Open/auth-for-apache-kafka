@@ -35,4 +35,12 @@ public interface AuditorDumpFormatter {
     static DateTimeFormatter dateFormatter() {
         return DateTimeFormatter.ISO_INSTANT;
     }
+
+    default String formatUserOperation(final UserOperation userOperation) {
+        return (userOperation.hasAccess ? "Allow" : "Deny")
+                + " " + userOperation.operation.name() + " on "
+                + userOperation.resource.resourceType() + ":"
+                + userOperation.resource.name();
+    }
+
 }

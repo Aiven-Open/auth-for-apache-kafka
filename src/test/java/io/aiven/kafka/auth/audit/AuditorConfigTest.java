@@ -27,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class AuditorConfigTest {
+
     @Test
     void correctMinimalConfig() {
         final Map<String, String> properties = new HashMap<>();
@@ -34,6 +35,20 @@ class AuditorConfigTest {
 
         final AuditorConfig config = new AuditorConfig(properties);
         assertEquals(123, config.getAggregationPeriodInSeconds());
+        assertEquals(AuditorConfig.AggregationGrouping.USER_AND_IP,
+                config.getAggregationGrouping());
+    }
+
+    @Test
+    void correctFullConfig() {
+        final Map<String, String> properties = new HashMap<>();
+        properties.put("aiven.acl.authorizer.auditor.aggregation.period", "123");
+        properties.put("aiven.acl.authorizer.auditor.aggregation.grouping", "user");
+
+        final AuditorConfig config = new AuditorConfig(properties);
+        assertEquals(123, config.getAggregationPeriodInSeconds());
+        assertEquals(AuditorConfig.AggregationGrouping.USER,
+                config.getAggregationGrouping());
     }
 
     @Test

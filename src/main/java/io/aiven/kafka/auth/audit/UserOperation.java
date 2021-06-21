@@ -16,12 +16,15 @@
 
 package io.aiven.kafka.auth.audit;
 
+import java.net.InetAddress;
 import java.util.Objects;
 
 import kafka.security.auth.Operation;
 import kafka.security.auth.Resource;
 
 public class UserOperation {
+
+    public final InetAddress sourceIp;
 
     public final Operation operation;
 
@@ -32,6 +35,14 @@ public class UserOperation {
     public UserOperation(final Operation operation,
                          final Resource resource,
                          final boolean hasAccess) {
+        this(null, operation, resource, hasAccess);
+    }
+
+    public UserOperation(final InetAddress sourceIp,
+                         final Operation operation,
+                         final Resource resource,
+                         final boolean hasAccess) {
+        this.sourceIp = sourceIp;
         this.operation = operation;
         this.resource = resource;
         this.hasAccess = hasAccess;
@@ -55,4 +66,5 @@ public class UserOperation {
     public int hashCode() {
         return Objects.hash(operation, resource, hasAccess);
     }
+
 }

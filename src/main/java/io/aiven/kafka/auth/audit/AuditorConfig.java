@@ -21,8 +21,8 @@ import java.util.Map;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
 
-import static io.aiven.kafka.auth.audit.AuditorConfig.AggregationGrouping.PRINCIPAL;
-import static io.aiven.kafka.auth.audit.AuditorConfig.AggregationGrouping.PRINCIPAL_AND_SOURCE_IP;
+import static io.aiven.kafka.auth.audit.AuditorConfig.AggregationGrouping.USER;
+import static io.aiven.kafka.auth.audit.AuditorConfig.AggregationGrouping.USER_AND_IP;
 
 public class AuditorConfig extends AbstractConfig {
 
@@ -30,8 +30,8 @@ public class AuditorConfig extends AbstractConfig {
     static final String AGGREGATION_GROUPING_CONF = "aiven.acl.authorizer.auditor.aggregation.grouping";
 
     public enum AggregationGrouping {
-        PRINCIPAL("principal"),
-        PRINCIPAL_AND_SOURCE_IP("principal_and_source_ip");
+        USER("user"),
+        USER_AND_IP("user_and_ip");
 
         private final String configValue;
 
@@ -42,6 +42,16 @@ public class AuditorConfig extends AbstractConfig {
         public String getConfigValue() {
             return configValue;
         }
+
+        public static AggregationGrouping fromConfigValue(final String configValue) {
+            for (final var ag : values()) {
+                if (ag.configValue.equals(configValue)) {
+                    return ag;
+                }
+            }
+            throw new IllegalArgumentException("Unsupported aggregation grouping: " + configValue);
+        }
+
     }
 
     public AuditorConfig(final Map<?, ?> originals) {
@@ -60,9 +70,9 @@ public class AuditorConfig extends AbstractConfig {
             ).define(
                 AGGREGATION_GROUPING_CONF,
                 ConfigDef.Type.STRING,
-                PRINCIPAL_AND_SOURCE_IP.getConfigValue(),
-                ConfigDef.ValidString.in(PRINCIPAL.getConfigValue(),
-                        PRINCIPAL_AND_SOURCE_IP.getConfigValue()),
+                USER_AND_IP.getConfigValue(),
+                ConfigDef.ValidString.in(USER.getConfigValue(),
+                        USER_AND_IP.getConfigValue()),
                 ConfigDef.Importance.HIGH,
                 "The auditor aggregation grouping key."
             );
@@ -72,7 +82,7 @@ public class AuditorConfig extends AbstractConfig {
         return getLong(AGGREGATION_PERIOD_CONF);
     }
 
-    public String getAggregationGrouping() {
-        return getString(AGGREGATION_GROUPING_CONF);
+    public AggregationGrouping getAggregationGrouping() {
+        return AggregationGrouping.fromConfigValue(getString(AGGREGATION_GROUPING_CONF));
     }
 }

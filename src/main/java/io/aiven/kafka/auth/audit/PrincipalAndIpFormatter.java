@@ -25,37 +25,29 @@ import java.util.stream.Collectors;
  * of each principal.
  */
 public class PrincipalAndIpFormatter implements AuditorDumpFormatter {
-    PrincipalAndIpFormatter() {
-    }
 
     @Override
     public List<String> format(final Map<Auditor.AuditKey, UserActivity> dump) {
         return dump.entrySet().stream()
-                .map(e -> auditMessagePrincipalAndSourceIp(e.getKey(), e.getValue()))
+                .map(e -> buildAuditMessage(e.getKey(), e.getValue()))
                 .collect(Collectors.toList());
     }
 
-    private String auditMessagePrincipalAndSourceIp(final Auditor.AuditKey key, final UserActivity userActivity) {
+    private String buildAuditMessage(final Auditor.AuditKey key, final UserActivity userActivity) {
+        final var ua = (UserActivity.UserActivityOperations) userActivity;
         final StringBuilder auditMessage = new StringBuilder(key.principal.toString());
         auditMessage
                 .append(" (").append(key.sourceIp).append(")")
                 .append(" was active since ")
-                .append(userActivity.activeSince.format(AuditorDumpFormatter.dateFormatter()));
-        if (userActivity.hasOperations()) {
+                .append(ua.activeSince.format(AuditorDumpFormatter.dateFormatter()));
+        if (!ua.operations.isEmpty()) {
             auditMessage.append(": ")
-                    .append(userActivity
-                            .operations
-                            .stream()
-                            .map(this::userOperationMessage)
+                    .append(ua
+                            .operations.stream()
+                            .map(this::formatUserOperation)
                             .collect(Collectors.joining(", ")));
         }
         return auditMessage.toString();
     }
 
-    private String userOperationMessage(final UserOperation op) {
-        return (op.hasAccess ? "Allow" : "Deny")
-                + " " + op.operation.name() + " on "
-                + op.resource.resourceType() + ":"
-                + op.resource.name();
-    }
 }
