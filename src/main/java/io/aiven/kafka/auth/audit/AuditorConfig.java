@@ -30,8 +30,8 @@ public class AuditorConfig extends AbstractConfig {
     static final String AGGREGATION_GROUPING_CONF = "aiven.acl.authorizer.auditor.aggregation.grouping";
 
     public enum AggregationGrouping {
-        PRINCIPAL("Principal"),
-        PRINCIPAL_AND_SOURCE_IP("PrincipalAndSourceIp");
+        PRINCIPAL("principal"),
+        PRINCIPAL_AND_SOURCE_IP("principal_and_source_ip");
 
         private final String configValue;
 
