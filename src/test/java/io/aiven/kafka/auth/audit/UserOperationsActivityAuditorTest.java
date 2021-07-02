@@ -21,6 +21,7 @@ import java.net.UnknownHostException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -28,7 +29,6 @@ import org.apache.kafka.common.acl.AclOperation;
 import org.apache.kafka.common.resource.PatternType;
 import org.apache.kafka.common.security.auth.KafkaPrincipal;
 
-import com.google.common.collect.ImmutableMap;
 import kafka.network.RequestChannel.Session;
 import kafka.security.auth.Operation;
 import kafka.security.auth.Resource;
@@ -69,11 +69,11 @@ class UserOperationsActivityAuditorTest {
 
         operation = Operation.fromJava(AclOperation.ALL);
         resource =
-            new Resource(
-                ResourceType.fromJava(org.apache.kafka.common.resource.ResourceType.CLUSTER),
-                "RESOURCE_NAME",
-                PatternType.LITERAL
-            );
+                new Resource(
+                        ResourceType.fromJava(org.apache.kafka.common.resource.ResourceType.CLUSTER),
+                        "RESOURCE_NAME",
+                        PatternType.LITERAL
+                );
     }
 
     @Test
@@ -91,10 +91,10 @@ class UserOperationsActivityAuditorTest {
         auditor.addActivity(session, operation, resource, false);
         assertEquals(1, auditor.auditStorage.size());
         assertEquals(
-            1,
-            auditor.auditStorage.get(
-                new Auditor.AuditKey(principal, InetAddress.getLocalHost())
-            ).operations.size()
+                1,
+                cast(auditor.auditStorage.get(
+                        new Auditor.AuditKey(principal, InetAddress.getLocalHost())
+                ), UserActivity.UserActivityOperations.class).operations.size()
         );
         auditor.dump();
         assertEquals(0, auditor.auditStorage.size());
@@ -104,7 +104,7 @@ class UserOperationsActivityAuditorTest {
     void shouldAggregateOperationsForSameUser() throws Exception {
 
         final Session anotherSession =
-            new Session(principal, InetAddress.getByName("127.0.0.2"));
+                new Session(principal, InetAddress.getByName("127.0.0.2"));
 
         final UserOperationsActivityAuditor auditor = createAuditor();
 
@@ -113,23 +113,56 @@ class UserOperationsActivityAuditorTest {
         auditor.addActivity(anotherSession, operation, resource, true);
         assertEquals(2, auditor.auditStorage.size());
         assertEquals(
-            2,
-            auditor.auditStorage.get(
-                new Auditor.AuditKey(
-                    session.principal(),
-                    session.clientAddress())
-            ).operations.size()
+                2,
+                cast(auditor.auditStorage.get(
+                        new Auditor.AuditKey(
+                                session.principal(),
+                                session.clientAddress())
+                ), UserActivity.UserActivityOperations.class).operations.size()
         );
         assertEquals(
-            1,
-            auditor.auditStorage.get(
-                new Auditor.AuditKey(
-                    anotherSession.principal(),
-                    anotherSession.clientAddress())
-            ).operations.size()
+                1,
+                cast(auditor.auditStorage.get(
+                        new Auditor.AuditKey(
+                                anotherSession.principal(),
+                                anotherSession.clientAddress())
+                ), UserActivity.UserActivityOperations.class).operations.size()
         );
         auditor.dump();
         assertEquals(0, auditor.auditStorage.size());
+    }
+
+    @Test
+    void shouldAggregateOperationsForSameUserAndPrincipalGrouping() throws Exception {
+
+        final Session anotherSession =
+                new Session(principal, InetAddress.getByName("127.0.0.2"));
+
+        final UserOperationsActivityAuditor auditor =
+                createAuditor(Map.of(
+                        AuditorConfig.AGGREGATION_PERIOD_CONF,
+                        10L,
+                        AuditorConfig.AGGREGATION_GROUPING_CONF,
+                        AuditorConfig.AggregationGrouping.USER.getConfigValue()));
+
+        auditor.addActivity(session, operation, resource, false);
+        auditor.addActivity(session, operation, resource, true);
+        auditor.addActivity(anotherSession, operation, resource, true);
+        assertEquals(1, auditor.auditStorage.size());
+        assertEquals(
+                2,
+                cast(auditor.auditStorage.get(
+                        new Auditor.AuditKey(
+                                session.principal(),
+                                null)
+                ), UserActivity.UserActivityOperationsGropedByIP.class).operations.size()
+        );
+        auditor.dump();
+        assertEquals(0, auditor.auditStorage.size());
+    }
+
+    private <T extends UserActivity> T cast(final UserActivity userActivity, final Class<T> clazz) {
+        return clazz.cast(userActivity);
     }
 
     @Test
@@ -170,18 +203,71 @@ class UserOperationsActivityAuditorTest {
                 .split(",")).map(String::trim).collect(Collectors.toSet());
 
 
-        final String[] expectedOperations = new String[] {
-            "Deny All on Cluster:RESOURCE_NAME",
-            "Allow Alter on DelegationToken:ANOTHER_RESOURCE_NAME"
-        };
+        assertThat(
+                loggedOperations,
+                containsInAnyOrder(
+                        "Deny All on Cluster:RESOURCE_NAME",
+                        "Allow Alter on DelegationToken:ANOTHER_RESOURCE_NAME"
+                )
+        );
+    }
 
-        assertThat(loggedOperations, containsInAnyOrder(expectedOperations));
+    @Test
+    public void shouldBuildRightLogMessageForPrincipalGrouping() throws Exception {
+        final UserOperationsActivityAuditor auditor =
+                createAuditor(Map.of(
+                        AuditorConfig.AGGREGATION_PERIOD_CONF,
+                        10L,
+                        AuditorConfig.AGGREGATION_GROUPING_CONF,
+                        AuditorConfig.AggregationGrouping.USER.getConfigValue()));
+        final Operation anotherOperation = Operation.fromJava(AclOperation.ALTER);
+        final Resource anotherResource = new Resource(
+                ResourceType.fromJava(org.apache.kafka.common.resource.ResourceType.DELEGATION_TOKEN),
+                "ANOTHER_RESOURCE_NAME",
+                PatternType.LITERAL
+        );
+
+        final ArgumentCaptor<String> logCaptor = ArgumentCaptor.forClass(String.class);
+        auditor.addActivity(session, operation, resource, false);
+        auditor.addActivity(session, anotherOperation, anotherResource, true);
+        auditor.dump();
+
+        verify(logger).info(logCaptor.capture());
+
+        final String expectedPrefix =
+                "PRINCIPAL_TYPE:PRINCIPAL_NAME was active since ";
+
+        assertTrue(logCaptor.getValue().startsWith(expectedPrefix));
+        final String timestampStr =
+                logCaptor.getValue()
+                        .substring(
+                                expectedPrefix.length(),
+                                logCaptor.getValue().indexOf(". ")
+                        );
+        final Instant instant = Instant.parse(timestampStr);
+        final long diffSeconds = Math.abs(ChronoUnit.SECONDS.between(instant, Instant.now()));
+        assertTrue(diffSeconds < 3);
+
+        final Set<String> loggedOperations = Arrays.stream(logCaptor.getValue()
+                .substring(logCaptor.getValue().indexOf(": ") + 1)
+                .split(",")).map(String::trim).collect(Collectors.toSet());
+
+        assertThat(
+                loggedOperations,
+                containsInAnyOrder(
+                        "Deny All on Cluster:RESOURCE_NAME",
+                        "Allow Alter on DelegationToken:ANOTHER_RESOURCE_NAME")
+        );
     }
 
     private UserOperationsActivityAuditor createAuditor() {
+        return createAuditor(Map.of(AuditorConfig.AGGREGATION_PERIOD_CONF, 10L));
+    }
+
+    private UserOperationsActivityAuditor createAuditor(final Map<String, ?> props) {
         final UserOperationsActivityAuditor auditor =
-            new UserOperationsActivityAuditor(logger);
-        auditor.configure(ImmutableMap.of(AuditorConfig.AGGREGATION_PERIOD_CONF, 10L));
+                new UserOperationsActivityAuditor(logger);
+        auditor.configure(props);
         return auditor;
     }
 

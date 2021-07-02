@@ -34,9 +34,6 @@ import kafka.security.auth.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static io.aiven.kafka.auth.audit.AuditorConfig.AggregationGrouping.PRINCIPAL;
-import static io.aiven.kafka.auth.audit.AuditorConfig.AggregationGrouping.PRINCIPAL_AND_SOURCE_IP;
-
 public abstract class Auditor implements AuditorAPI {
 
     private final Logger logger;
@@ -45,10 +42,9 @@ public abstract class Auditor implements AuditorAPI {
 
     private final Lock auditLock = new ReentrantLock();
 
-    private final ScheduledExecutorService auditScheduler =
-        Executors.newScheduledThreadPool(1);
+    private final ScheduledExecutorService auditScheduler = Executors.newScheduledThreadPool(1);
 
-    private AuditorDumpFormatter formatter;
+    protected AuditorConfig auditorConfig;
 
     public Auditor() {
         this(LoggerFactory.getLogger("aiven.auditor.logger"));
@@ -61,53 +57,39 @@ public abstract class Auditor implements AuditorAPI {
 
     @Override
     public void configure(final Map<String, ?> configs) {
-        final AuditorConfig auditorConfig = new AuditorConfig(configs);
+        auditorConfig = new AuditorConfig(configs);
         auditScheduler.scheduleAtFixedRate(
             this::dump,
             auditorConfig.getAggregationPeriodInSeconds(),
             auditorConfig.getAggregationPeriodInSeconds(),
             TimeUnit.SECONDS
         );
-
-        formatter = createFormatter(auditorConfig);
-    }
-
-    private AuditorDumpFormatter createFormatter(final AuditorConfig auditorConfig) {
-        final String grouping = auditorConfig.getAggregationGrouping();
-        if (PRINCIPAL_AND_SOURCE_IP.getConfigValue().equals(grouping)) {
-            return new PrincipalAndIpFormatter();
-        } else if (PRINCIPAL.getConfigValue().equals(grouping)) {
-            return new PrincipalFormatter();
-        } else {
-            throw new RuntimeException("Not implemented");
-        }
     }
 
     @Override
-    public void addActivity(final Session session,
-                            final Operation operation,
-                            final Resource resource,
-                            final boolean hasAccess) {
-
-        final AuditKey auditKey = AuditKey.fromSession(session);
+    public final void addActivity(final Session session,
+                                  final Operation operation,
+                                  final Resource resource,
+                                  final boolean hasAccess) {
         auditLock.lock();
         try {
-            auditStorage.compute(auditKey, (key, userActivity) ->
-                onUserActivity(Objects.isNull(userActivity)
-                        ? new UserActivity()
-                        : userActivity, operation, resource, hasAccess)
-            );
+            addActivity0(session, operation, resource, hasAccess);
         } finally {
             auditLock.unlock();
         }
     }
 
+    protected abstract void addActivity0(final Session session,
+                                         final Operation operation,
+                                         final Resource resource,
+                                         final boolean hasAccess);
+
     @Override
     public void stop() {
+        dump();
         auditScheduler.shutdownNow();
         try {
             auditScheduler.awaitTermination(5, TimeUnit.SECONDS);
-            dump();
         } catch (final InterruptedException e) {
             // Intentionally ignored
         }
@@ -115,10 +97,9 @@ public abstract class Auditor implements AuditorAPI {
 
     protected void dump() {
         try {
-            formatter.format(makeDump())
-                    .forEach(logger::info);
+            createFormatter().format(makeDump()).forEach(logger::info);
         } catch (final Exception e) {
-            // handle or the background thread can die!
+            logger.warn("Couldn't dump messages", e);
         }
     }
 
@@ -134,10 +115,7 @@ public abstract class Auditor implements AuditorAPI {
         return auditStorageDump;
     }
 
-    protected abstract UserActivity onUserActivity(final UserActivity userActivity,
-                                                   final Operation operation,
-                                                   final Resource resource,
-                                                   final Boolean hasAccess);
+    protected abstract AuditorDumpFormatter createFormatter();
 
     protected static class AuditKey {
 
@@ -168,8 +146,5 @@ public abstract class Auditor implements AuditorAPI {
             return Objects.hash(principal, sourceIp);
         }
 
-        public static AuditKey fromSession(final Session session) {
-            return new AuditKey(session.principal(), session.clientAddress());
-        }
     }
 }

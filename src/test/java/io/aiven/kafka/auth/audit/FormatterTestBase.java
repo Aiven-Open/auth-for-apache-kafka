@@ -35,14 +35,28 @@ import kafka.security.auth.ResourceType;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class FormatterTestBase {
+
     protected RequestChannel.Session session;
+
     protected Operation operation;
+
     protected Resource resource;
+
     protected AuditorDumpFormatter formatter;
-    private Operation anotherOperation;
-    private Resource anotherResource;
-    private RequestChannel.Session anotherSession;
+
+    protected Operation anotherOperation;
+
+    protected Resource anotherResource;
+
+    protected RequestChannel.Session anotherSession;
+
     protected InetAddress anotherInetAddress;
+
+    private final AuditorConfig.AggregationGrouping aggregationGrouping;
+
+    protected FormatterTestBase(final AuditorConfig.AggregationGrouping aggregationGrouping) {
+        this.aggregationGrouping = aggregationGrouping;
+    }
 
     void setUp() throws Exception {
         final KafkaPrincipal principal = new KafkaPrincipal("PRINCIPAL_TYPE", "PRINCIPAL_NAME");
@@ -67,37 +81,46 @@ public class FormatterTestBase {
 
     protected void zeroOperations(final ZonedDateTime now, final String expected) {
         final Map<Auditor.AuditKey, UserActivity> dump = new HashMap<>();
-        final UserActivity userActivity = new UserActivity(now);
-        dump.put(Auditor.AuditKey.fromSession(session), userActivity);
-
+        dump.put(createAuditKey(session), createUserActivity(now));
         formatAndAssert(dump, expected);
     }
 
     protected void twoOperations(final ZonedDateTime now, final String expected) {
         final Map<Auditor.AuditKey, UserActivity> dump = new HashMap<>();
-        final UserActivity userActivity = new UserActivity(now);
-        userActivity.operations.add(new UserOperation(operation, resource, false));
-        userActivity.operations.add(new UserOperation(anotherOperation, anotherResource, true));
-        dump.put(Auditor.AuditKey.fromSession(session), userActivity);
+        final UserActivity userActivity = createUserActivity(now);
+        userActivity.addOperation(new UserOperation(session.clientAddress(), operation, resource, false));
+        userActivity.addOperation(
+                new UserOperation(session.clientAddress(), anotherOperation, anotherResource, true));
+        dump.put(createAuditKey(session), userActivity);
 
         formatAndAssert(dump, expected);
     }
 
-    protected void twoOperationsTwoIpAddresses(final ZonedDateTime now, final String... expected) {
-        final Map<Auditor.AuditKey, UserActivity> dump = new HashMap<>();
-        final UserActivity userActivity = new UserActivity(now);
-        userActivity.operations.add(new UserOperation(operation, resource, false));
-        dump.put(Auditor.AuditKey.fromSession(session), userActivity);
-
-        final UserActivity anotherUserActivity = new UserActivity(now);
-        anotherUserActivity.operations.add(new UserOperation(anotherOperation, anotherResource, true));
-        dump.put(Auditor.AuditKey.fromSession(anotherSession), anotherUserActivity);
-
-        formatAndAssert(dump, expected);
+    protected Auditor.AuditKey createAuditKey(final RequestChannel.Session session) {
+        switch (aggregationGrouping) {
+            case USER:
+                return new Auditor.AuditKey(session.principal(), null);
+            case USER_AND_IP:
+                return new Auditor.AuditKey(session.principal(), session.clientAddress());
+            default:
+                throw new IllegalArgumentException("Unknown aggregation grouping: " + aggregationGrouping);
+        }
     }
 
-    private void formatAndAssert(final Map<Auditor.AuditKey, UserActivity> dump, final String... expected) {
+    protected UserActivity createUserActivity(final ZonedDateTime time) {
+        switch (aggregationGrouping) {
+            case USER:
+                return new UserActivity.UserActivityOperationsGropedByIP(time);
+            case USER_AND_IP:
+                return new UserActivity.UserActivityOperations(time);
+            default:
+                throw new IllegalArgumentException("Unknown aggregation grouping: " + aggregationGrouping);
+        }
+    }
+
+    protected void formatAndAssert(final Map<Auditor.AuditKey, UserActivity> dump, final String... expected) {
         final List<String> entries = formatter.format(dump);
+
         assertEquals(expected.length, entries.size());
         assertEquals(Arrays.asList(expected), entries);
     }

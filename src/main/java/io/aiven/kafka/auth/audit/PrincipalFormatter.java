@@ -16,14 +16,9 @@
 
 package io.aiven.kafka.auth.audit;
 
-import java.net.InetAddress;
-import java.time.ZonedDateTime;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
-import org.apache.kafka.common.security.auth.KafkaPrincipal;
 
 /**
  * An {@link AuditorDumpFormatter} that creates one entry per principal,
@@ -32,60 +27,34 @@ import org.apache.kafka.common.security.auth.KafkaPrincipal;
 public class PrincipalFormatter implements AuditorDumpFormatter {
     @Override
     public List<String> format(final Map<Auditor.AuditKey, UserActivity> dump) {
-        return dump.keySet().stream()
-                .map(k -> k.principal)
-                .sorted(Comparator.comparing(KafkaPrincipal::toString))
-                .distinct()
-                .map(principal -> {
-                    final Map<Auditor.AuditKey, UserActivity> principalActivities = dump.entrySet().stream()
-                            .filter(e -> e.getKey().principal.equals(principal))
-                            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
-
-                    return auditMessagePrincipal(principal, principalActivities);
-                })
+        return dump.entrySet().stream()
+                .map(e -> buildAuditMessage(e.getKey(), (UserActivity.UserActivityOperationsGropedByIP) e.getValue()))
                 .collect(Collectors.toList());
     }
 
-    private String auditMessagePrincipal(final KafkaPrincipal principal,
-                                         final Map<Auditor.AuditKey, UserActivity> principalActivities) {
-        final ZonedDateTime earliest = principalActivities.values().stream()
-                .map(ua -> ua.activeSince)
-                .sorted()
-                .findFirst()
-                .get();
-
-        final StringBuilder auditMessage = new StringBuilder(principal.toString());
-        auditMessage
+    private String buildAuditMessage(final Auditor.AuditKey auditKey,
+                                     final UserActivity.UserActivityOperationsGropedByIP userActivity) {
+        final var auditMessage = new StringBuilder(auditKey.principal.toString())
                 .append(" was active since ")
-                .append(earliest.format(AuditorDumpFormatter.dateFormatter()))
+                .append(userActivity.activeSince.format(AuditorDumpFormatter.dateFormatter()))
                 .append(".");
-
-        final String allActivities = principalActivities.entrySet().stream()
-                .map(e -> {
-                    final InetAddress sourceIp = e.getKey().sourceIp;
-                    final UserActivity userActivity = e.getValue();
-                    final List<String> operations = userActivity.operations.stream().map(op ->
-                            (op.hasAccess ? "Allow" : "Deny")
-                                    + " " + op.operation.name() + " on "
-                                    + op.resource.resourceType() + ":"
-                                    + op.resource.name()
-                    ).collect(Collectors.toList());
-
-                    final StringBuilder sb = new StringBuilder();
-                    sb.append(sourceIp.toString());
-                    if (!operations.isEmpty()) {
-                        sb.append(": ");
-                        sb.append(String.join(", ", operations));
-                    }
-                    return sb.toString();
-                })
-                .collect(Collectors.joining(", "));
-        if (!allActivities.isBlank()) {
+        if (!userActivity.operations.isEmpty()) {
             auditMessage.append(" ");
-            auditMessage.append(allActivities);
+            auditMessage.append(
+                    userActivity
+                            .operations.entrySet().stream()
+                            .map(e -> {
+                                final var operations = new StringBuilder();
+                                operations.append(e.getKey()).append(": ");
+                                operations.append(
+                                        e.getValue().stream()
+                                                .map(this::formatUserOperation)
+                                                .collect(Collectors.joining(", "))
+                                );
+                                return operations.toString();
+                            }).collect(Collectors.joining(", "))
+            );
         }
-
         return auditMessage.toString();
     }
 

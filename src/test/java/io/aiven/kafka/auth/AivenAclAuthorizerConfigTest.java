@@ -25,6 +25,7 @@ import org.apache.kafka.common.config.ConfigException;
 
 import io.aiven.kafka.auth.audit.NoAuditor;
 import io.aiven.kafka.auth.audit.UserActivityAuditor;
+import io.aiven.kafka.auth.audit.UserOperationsActivityAuditor;
 
 import org.junit.jupiter.api.Test;
 
@@ -48,15 +49,27 @@ class AivenAclAuthorizerConfigTest {
 
     @Test
     void correctFullConfig() {
-        final Map<String, String> properties = new HashMap<>();
-        properties.put("aiven.acl.authorizer.configuration", "/test");
-        properties.put("aiven.acl.authorizer.auditor.class.name", UserActivityAuditor.class.getName());
-        properties.put("aiven.acl.authorizer.auditor.aggregation.period", "123");
-        properties.put("aiven.acl.authorizer.log.denials", "false");
+        final Map<String, String> userActivityProps = new HashMap<>();
+        userActivityProps.put("aiven.acl.authorizer.configuration", "/test");
+        userActivityProps.put("aiven.acl.authorizer.auditor.class.name", UserActivityAuditor.class.getName());
+        userActivityProps.put("aiven.acl.authorizer.auditor.aggregation.period", "123");
+        userActivityProps.put("aiven.acl.authorizer.log.denials", "false");
 
-        final AivenAclAuthorizerConfig config = new AivenAclAuthorizerConfig(properties);
+        var config = new AivenAclAuthorizerConfig(userActivityProps);
         assertEquals("/test", config.getConfigFile().getAbsolutePath());
         assertEquals(UserActivityAuditor.class, config.getAuditor().getClass());
+        assertFalse(config.logDenials());
+
+        final Map<String, String> userActivityOpsProps = new HashMap<>();
+        userActivityOpsProps.put("aiven.acl.authorizer.configuration", "/test");
+        userActivityOpsProps.put("aiven.acl.authorizer.auditor.class.name",
+                UserOperationsActivityAuditor.class.getName());
+        userActivityOpsProps.put("aiven.acl.authorizer.auditor.aggregation.period", "123");
+        userActivityOpsProps.put("aiven.acl.authorizer.log.denials", "false");
+
+        config = new AivenAclAuthorizerConfig(userActivityOpsProps);
+        assertEquals("/test", config.getConfigFile().getAbsolutePath());
+        assertEquals(UserOperationsActivityAuditor.class, config.getAuditor().getClass());
         assertFalse(config.logDenials());
     }
 
