@@ -18,7 +18,6 @@ package io.aiven.kafka.auth.audit;
 
 import java.net.InetAddress;
 import java.time.ZonedDateTime;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +31,8 @@ import kafka.security.auth.Operation;
 import kafka.security.auth.Resource;
 import kafka.security.auth.ResourceType;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class FormatterTestBase {
@@ -123,6 +124,6 @@ public class FormatterTestBase {
         final List<String> entries = formatter.format(dump);
 
         assertEquals(expected.length, entries.size());
-        assertEquals(Arrays.asList(expected), entries);
+        assertThat(entries, containsInAnyOrder(expected));
     }
 }
