@@ -42,7 +42,7 @@ public class PrincipalFormatterTest extends FormatterTestBase {
         final String expected = String.format(
                 "PRINCIPAL_TYPE:PRINCIPAL_NAME was active since %s.",
                 now.format(AuditorDumpFormatter.dateFormatter()));
-        zeroOperations(now, expected);
+        zeroOperations(session, now, expected);
     }
 
     @Test
@@ -76,7 +76,7 @@ public class PrincipalFormatterTest extends FormatterTestBase {
     protected void twoOperationsTwoIpAddresses(final ZonedDateTime now, final String... expected) {
         final Map<Auditor.AuditKey, UserActivity> dump = new HashMap<>();
 
-        final UserActivity userActivity = createUserActivity(now);
+        final UserActivity userActivity = createUserActivity(session, now);
         userActivity.addOperation(
                 new UserOperation(session.clientAddress(), operation, resource, false));
         userActivity.addOperation(

@@ -47,7 +47,7 @@ public class PrincipalAndIpFormatterTest extends FormatterTestBase {
                 InetAddress.getLocalHost(),
                 now.format(AuditorDumpFormatter.dateFormatter())
         );
-        zeroOperations(now, expected);
+        zeroOperations(session, now, expected);
     }
 
     @Test
@@ -85,11 +85,11 @@ public class PrincipalAndIpFormatterTest extends FormatterTestBase {
     protected void twoOperationsTwoIpAddresses(final ZonedDateTime now, final String... expected) {
         final Map<Auditor.AuditKey, UserActivity> dump = new HashMap<>();
 
-        final UserActivity userActivity = createUserActivity(now);
+        final UserActivity userActivity = createUserActivity(session, now);
         userActivity.addOperation(new UserOperation(session.clientAddress(), operation, resource, false));
         dump.put(createAuditKey(session), userActivity);
 
-        final UserActivity anotherUserActivity = createUserActivity(now);
+        final UserActivity anotherUserActivity = createUserActivity(anotherSession, now);
         anotherUserActivity.addOperation(
                 new UserOperation(anotherSession.clientAddress(), anotherOperation, anotherResource, true));
         dump.put(createAuditKey(anotherSession), anotherUserActivity);

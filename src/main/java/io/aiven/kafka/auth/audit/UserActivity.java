@@ -17,6 +17,7 @@
 package io.aiven.kafka.auth.audit;
 
 import java.net.InetAddress;
+import java.security.Principal;
 import java.time.ZonedDateTime;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -27,13 +28,16 @@ import java.util.function.BiFunction;
 
 abstract class UserActivity {
 
+    public final Principal principal;
+
     public final ZonedDateTime activeSince;
 
-    protected UserActivity() {
-        this(ZonedDateTime.now());
+    protected UserActivity(final Principal principal) {
+        this(principal, ZonedDateTime.now());
     }
 
-    protected UserActivity(final ZonedDateTime activeSince) {
+    protected UserActivity(final Principal principal, final ZonedDateTime activeSince) {
+        this.principal = principal;
         this.activeSince = activeSince;
     }
 
@@ -48,22 +52,22 @@ abstract class UserActivity {
             return false;
         }
         final UserActivity that = (UserActivity) o;
-        return Objects.equals(activeSince, that.activeSince);
+        return Objects.equals(principal, that.principal);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(activeSince);
+        return Objects.hash(principal);
     }
 
     static final class UserActivityOperations extends UserActivity {
 
-        public UserActivityOperations() {
-            super();
+        public UserActivityOperations(final Principal principal) {
+            super(principal);
         }
 
-        public UserActivityOperations(final ZonedDateTime activeSince) {
-            super(activeSince);
+        public UserActivityOperations(final Principal principal, final ZonedDateTime activeSince) {
+            super(principal, activeSince);
         }
 
         /**
@@ -80,12 +84,12 @@ abstract class UserActivity {
 
     static final class UserActivityOperationsGropedByIP extends UserActivity {
 
-        public UserActivityOperationsGropedByIP() {
-            super();
+        public UserActivityOperationsGropedByIP(final Principal principal) {
+            super(principal);
         }
 
-        public UserActivityOperationsGropedByIP(final ZonedDateTime activeSince) {
-            super(activeSince);
+        public UserActivityOperationsGropedByIP(final Principal principal, final ZonedDateTime activeSince) {
+            super(principal, activeSince);
         }
 
         public final Map<InetAddress, Set<UserOperation>> operations = new LinkedHashMap<>();

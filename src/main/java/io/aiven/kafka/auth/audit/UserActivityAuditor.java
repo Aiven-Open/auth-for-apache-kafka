@@ -53,7 +53,7 @@ public class UserActivityAuditor extends Auditor {
         final AuditKey auditKey = new AuditKey(session.principal(), session.clientAddress());
 
         auditStorage.compute(auditKey, (key, userActivity) -> Objects.isNull(userActivity)
-                ? new UserActivity.UserActivityOperations()
+                ? new UserActivity.UserActivityOperations(session.principal())
                 : userActivity
         );
     }

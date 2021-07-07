@@ -16,6 +16,7 @@
 
 package io.aiven.kafka.auth.audit;
 
+import java.security.Principal;
 import java.util.Objects;
 
 import kafka.network.RequestChannel;
@@ -41,7 +42,7 @@ public class UserOperationsActivityAuditor extends Auditor {
         auditStorage.compute(createAuditKey(session), (key, userActivity) -> {
             final UserActivity ua;
             if (Objects.isNull(userActivity)) {
-                ua = createUserActivity();
+                ua = createUserActivity(session.principal());
             } else {
                 ua = userActivity;
             }
@@ -62,13 +63,13 @@ public class UserOperationsActivityAuditor extends Auditor {
         }
     }
 
-    private UserActivity createUserActivity() {
+    private UserActivity createUserActivity(final Principal principal) {
         final var grouping = auditorConfig.getAggregationGrouping();
         switch (grouping) {
             case USER:
-                return new UserActivity.UserActivityOperationsGropedByIP();
+                return new UserActivity.UserActivityOperationsGropedByIP(principal);
             case USER_AND_IP:
-                return new UserActivity.UserActivityOperations();
+                return new UserActivity.UserActivityOperations(principal);
             default:
                 throw new IllegalArgumentException("Unknown aggregation grouping type: " + grouping);
         }

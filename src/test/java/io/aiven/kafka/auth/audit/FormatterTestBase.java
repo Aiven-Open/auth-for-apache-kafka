@@ -79,15 +79,16 @@ public class FormatterTestBase {
         );
     }
 
-    protected void zeroOperations(final ZonedDateTime now, final String expected) {
+    protected void zeroOperations(final RequestChannel.Session session,
+                                  final ZonedDateTime now, final String expected) {
         final Map<Auditor.AuditKey, UserActivity> dump = new HashMap<>();
-        dump.put(createAuditKey(session), createUserActivity(now));
+        dump.put(createAuditKey(session), createUserActivity(session, now));
         formatAndAssert(dump, expected);
     }
 
     protected void twoOperations(final ZonedDateTime now, final String expected) {
         final Map<Auditor.AuditKey, UserActivity> dump = new HashMap<>();
-        final UserActivity userActivity = createUserActivity(now);
+        final UserActivity userActivity = createUserActivity(session, now);
         userActivity.addOperation(new UserOperation(session.clientAddress(), operation, resource, false));
         userActivity.addOperation(
                 new UserOperation(session.clientAddress(), anotherOperation, anotherResource, true));
@@ -107,12 +108,12 @@ public class FormatterTestBase {
         }
     }
 
-    protected UserActivity createUserActivity(final ZonedDateTime time) {
+    protected UserActivity createUserActivity(final RequestChannel.Session session, final ZonedDateTime time) {
         switch (aggregationGrouping) {
             case USER:
-                return new UserActivity.UserActivityOperationsGropedByIP(time);
+                return new UserActivity.UserActivityOperationsGropedByIP(session.principal(), time);
             case USER_AND_IP:
-                return new UserActivity.UserActivityOperations(time);
+                return new UserActivity.UserActivityOperations(session.principal(), time);
             default:
                 throw new IllegalArgumentException("Unknown aggregation grouping: " + aggregationGrouping);
         }
