@@ -20,6 +20,7 @@ import java.net.InetAddress;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -122,6 +123,6 @@ public class FormatterTestBase {
         final List<String> entries = formatter.format(dump);
 
         assertEquals(expected.length, entries.size());
-        assertEquals(Arrays.asList(expected), entries);
+        assertEquals(new HashSet<>(Arrays.asList(expected)), new HashSet<>(entries));
     }
 }
