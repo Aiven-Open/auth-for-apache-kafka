@@ -159,7 +159,7 @@ public class TimedLockAclAuthorizer implements Authorizer  {
         // we loop here until we can evaluate the access with fresh configuration
         while (true) {
             try {
-                final boolean gotLock = lock.readLock().tryLock(5, TimeUnit.SECONDS);
+                final boolean gotLock = lock.readLock().tryLock(1, TimeUnit.SECONDS);
                 if (!gotLock) {
                     LOGGER.error("[AuthLock] Thread {} failed to acquire read lock in 5 seconds, retrying",
                         Thread.currentThread().getId());
@@ -201,7 +201,7 @@ public class TimedLockAclAuthorizer implements Authorizer  {
             }
 
             try {
-                final boolean gotLock = lock.writeLock().tryLock(5, TimeUnit.SECONDS);
+                final boolean gotLock = lock.writeLock().tryLock(1, TimeUnit.SECONDS);
                 if (!gotLock) {
                     LOGGER.error("[AuthLock] Thread {} failed to acquire write lock in 5 seconds, retrying",
                         Thread.currentThread().getId());
