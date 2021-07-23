@@ -11,7 +11,11 @@
 
     <!-- FIXME will remove after cleaning the code -->
     <suppress checks="CyclomaticComplexity" files="AivenAclAuthorizer.java" />
+    <suppress checks="CyclomaticComplexity" files="TimedLockAclAuthorizer.java" />
     <suppress checks="ClassFanOutComplexity" files="AivenAclAuthorizer.java" />
+    <suppress checks="ClassFanOutComplexity" files="TimedLockAclAuthorizer.java" />
     <suppress checks="NPathComplexity" files="AivenAclAuthorizer.java" />
+    <suppress checks="NPathComplexity" files="TimedLockAclAuthorizer.java" />
     <suppress checks="MethodLength" files="AivenAclAuthorizerTest.java"/>
+    <suppress checks="MethodLength" files="TimedLockAclAuthorizerTest.java"/>
 </suppressions>
