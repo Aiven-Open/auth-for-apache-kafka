@@ -16,16 +16,6 @@
 
 package io.aiven.kafka.auth;
 
-import kafka.network.RequestChannel.Session;
-import kafka.security.auth.Operation;
-import kafka.security.auth.Resource;
-import kafka.security.auth.ResourceType;
-import org.apache.kafka.common.acl.AclOperation;
-import org.apache.kafka.common.resource.PatternType;
-import org.apache.kafka.common.security.auth.KafkaPrincipal;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -34,10 +24,21 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.kafka.common.acl.AclOperation;
+import org.apache.kafka.common.resource.PatternType;
+import org.apache.kafka.common.security.auth.KafkaPrincipal;
+
+import kafka.network.RequestChannel.Session;
+import kafka.security.auth.Operation;
+import kafka.security.auth.Resource;
+import kafka.security.auth.ResourceType;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class SimpleAivenAclAuthorizerTest {
+public class TimedLockAclAuthorizerTest {
     static final String ACL_JSON =
         "[{\"principal_type\":\"User\",\"principal\":\"^pass$\","
             + "\"operation\":\"^Read$\",\"resource\":\"^Topic:(.*)$\"}]";
@@ -83,7 +84,7 @@ public class SimpleAivenAclAuthorizerTest {
 
         Files.write(configFilePath, ACL_JSON.getBytes());
 
-        final SimpleAivenAclAuthorizer auth = new SimpleAivenAclAuthorizer();
+        final TimedLockAclAuthorizer auth = new TimedLockAclAuthorizer();
         final Map<String, String> configs = new HashMap();
         configs.put("aiven.acl.authorizer.configuration", configFilePath.toString());
         auth.configure(configs);

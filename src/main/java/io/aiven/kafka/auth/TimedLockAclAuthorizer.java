@@ -42,7 +42,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
-public class SimpleAivenAclAuthorizer implements Authorizer  {
+public class TimedLockAclAuthorizer implements Authorizer  {
     private static final Logger LOGGER = LoggerFactory.getLogger(AivenAclAuthorizer.class);
     private File configFile;
     private ReentrantReadWriteLock lock = new ReentrantReadWriteLock(true);
@@ -54,7 +54,7 @@ public class SimpleAivenAclAuthorizer implements Authorizer  {
     private AuditorAPI auditor;
     private boolean logDenials;
 
-    public SimpleAivenAclAuthorizer() {
+    public TimedLockAclAuthorizer() {
     }
 
     /**
@@ -159,70 +159,77 @@ public class SimpleAivenAclAuthorizer implements Authorizer  {
         // we loop here until we can evaluate the access with fresh configuration
         while (true) {
             try {
-                // First, check if we have a fresh config, and if so, evaluate access request
-                if (lock.readLock().tryLock() || lock.readLock().tryLock(5, TimeUnit.SECONDS)) {
-                    if (lastUpdateCheckTimestamp + 10000 > now) {
-                        if (cacheKey != null && verdictCache != null) {
-                            final Boolean cachedVerdict = verdictCache.get(cacheKey);
-                            if (cachedVerdict != null) {
-                                verdict = cachedVerdict;
-                                logAuthVerdict(verdict, operation, resource, principalType, principalName, true);
-                                return verdict;
-                            }
-                        }
-                        verdict = updatedVerdict(principalType, principalName, operation, resource, verdict, cacheKey);
-                        return verdict;
-                    }
-                } else {
-                    LOGGER.info("Cannot hold a read lock");
+                final boolean gotLock = lock.readLock().tryLock(5, TimeUnit.SECONDS);
+                if (!gotLock) {
+                    LOGGER.error("[AuthLock] Thread {} failed to acquire read lock in 5 seconds, retrying",
+                        Thread.currentThread().getId());
+                    continue;
                 }
-            } catch (InterruptedException e) {
-                LOGGER.error("Read lock was interrupted", e);
-            } finally{
+            } catch (final InterruptedException e) {
+                LOGGER.error("[AuthLock] Thread {} - Read lock acquisition was interrupted",
+                    Thread.currentThread().getId(), e);
+                continue;
+            }
+
+            // First, check if we have a fresh config, and if so, evaluate access request
+            try {
+                if (lastUpdateCheckTimestamp + 10000 > now) {
+                    if (cacheKey != null && verdictCache != null) {
+                        final Boolean cachedVerdict = verdictCache.get(cacheKey);
+                        if (cachedVerdict != null) {
+                            verdict = cachedVerdict.booleanValue();
+                            logAuthVerdict(verdict, operation, resource, principalType, principalName, true);
+                            return verdict;
+                        }
+                    }
+
+                    final Iterator<AivenAcl> iter = aclEntries.iterator();
+                    while (!verdict && iter.hasNext()) {
+                        final AivenAcl aclEntry = iter.next();
+                        if (aclEntry.check(principalType, principalName, operation, resource)) {
+                            verdict = true;
+                        }
+                    }
+                    logAuthVerdict(verdict, operation, resource, principalType, principalName, false);
+                    if (cacheKey != null && verdictCache != null) {
+                        verdictCache.put(cacheKey, verdict);
+                    }
+                    return verdict;
+                }
+            } finally {
                 lock.readLock().unlock();
             }
 
             try {
-                // We may need to update the config
-                if (lock.writeLock().tryLock() || lock.writeLock().tryLock(5, TimeUnit.SECONDS)) {
-                    LOGGER.info("Write lock was hold");
-                    // Recheck the timer, as an another thread may have updated config
-                    // while we waited for the lock.
-                    if (lastUpdateCheckTimestamp + 10000 <= now) {
-                        lastUpdateCheckTimestamp = now;
-                        checkAndUpdateConfig();
-                    }
+                final boolean gotLock = lock.writeLock().tryLock(5, TimeUnit.SECONDS);
+                if (!gotLock) {
+                    LOGGER.error("[AuthLock] Thread {} failed to acquire write lock in 5 seconds, retrying",
+                        Thread.currentThread().getId());
+                    continue;
                 } else {
-                    LOGGER.info("Cannot hold a write lock");
+                    LOGGER.error("[AuthLock] Thread {} acquired write lock",
+                        Thread.currentThread().getId());
                 }
-            } catch (InterruptedException e) {
-                LOGGER.error("Write lock was interrupted", e);
+            } catch (final InterruptedException e) {
+                LOGGER.error("[AuthLock] Thread {} - Write lock acquisition was interrupted",
+                    Thread.currentThread().getId(), e);
+                continue;
+            }
+
+            // We may need to update the config
+            try {
+                // Recheck the timer, as an another thread may have updated config
+                // while we waited for the lock.
+                if (lastUpdateCheckTimestamp + 10000 <= now) {
+                    lastUpdateCheckTimestamp = now;
+                    checkAndUpdateConfig();
+                }
             } finally {
                 lock.writeLock().unlock();
-                LOGGER.info("Write lock was released");
+                LOGGER.error("[AuthLock] Thread {} released write lock",
+                    Thread.currentThread().getId());
             }
         }
-    }
-
-    private boolean updatedVerdict(final String principalType,
-                                   final String principalName,
-                                   final String operation,
-                                   final String resource,
-                                   final boolean verdict,
-                                   final String cacheKey) {
-        boolean _verdict = verdict;
-        final Iterator<AivenAcl> iter = aclEntries.iterator();
-        while (!_verdict && iter.hasNext()) {
-            final AivenAcl aclEntry = iter.next();
-            if (aclEntry.check(principalType, principalName, operation, resource)) {
-                _verdict = true;
-            }
-        }
-        logAuthVerdict(_verdict, operation, resource, principalType, principalName, false);
-        if (cacheKey != null && verdictCache != null) {
-            verdictCache.put(cacheKey, _verdict);
-        }
-        return _verdict;
     }
 
     private void logAuthVerdict(final boolean verdict,
@@ -234,14 +241,14 @@ public class SimpleAivenAclAuthorizer implements Authorizer  {
         final String cachedStr = cached ? " (cached)" : "";
         if (verdict) {
             LOGGER.debug("[ALLOW] Auth request {} on {} by {} {}{}",
-                operation, resource, principalType, principalName, cachedStr);
+                    operation, resource, principalType, principalName, cachedStr);
         } else {
             if (logDenials) {
                 LOGGER.info("[DENY] Auth request {} on {} by {} {}{}",
-                    operation, resource, principalType, principalName, cachedStr);
+                        operation, resource, principalType, principalName, cachedStr);
             } else {
                 LOGGER.debug("[DENY] Auth request {} on {} by {} {}{}",
-                    operation, resource, principalType, principalName, cachedStr);
+                        operation, resource, principalType, principalName, cachedStr);
             }
         }
     }
