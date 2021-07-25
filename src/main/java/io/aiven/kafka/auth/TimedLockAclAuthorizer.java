@@ -21,6 +21,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -53,6 +54,7 @@ public class TimedLockAclAuthorizer implements Authorizer  {
     private JsonReader<AivenAcl> jsonReader;
     private AuditorAPI auditor;
     private boolean logDenials;
+    private final Random random = new Random();
 
     public TimedLockAclAuthorizer() {
     }
@@ -156,6 +158,9 @@ public class TimedLockAclAuthorizer implements Authorizer  {
             cacheKey = resource + "|" + operation + "|" + principalName + "|" + principalType;
         }
 
+        // Allow the time moment to vary +/- 1 second (out of 10).
+        final int checkJitter = random.nextInt(2000) - 1000;
+
         // we loop here until we can evaluate the access with fresh configuration
         while (true) {
             try {
@@ -173,7 +178,7 @@ public class TimedLockAclAuthorizer implements Authorizer  {
 
             // First, check if we have a fresh config, and if so, evaluate access request
             try {
-                if (lastUpdateCheckTimestamp + 10000 > now) {
+                if (lastUpdateCheckTimestamp + 10000 + checkJitter > now) {
                     if (cacheKey != null && verdictCache != null) {
                         final Boolean cachedVerdict = verdictCache.get(cacheKey);
                         if (cachedVerdict != null) {
@@ -220,7 +225,7 @@ public class TimedLockAclAuthorizer implements Authorizer  {
             try {
                 // Recheck the timer, as an another thread may have updated config
                 // while we waited for the lock.
-                if (lastUpdateCheckTimestamp + 10000 <= now) {
+                if (lastUpdateCheckTimestamp + 10000 + checkJitter <= now) {
                     lastUpdateCheckTimestamp = now;
                     checkAndUpdateConfig();
                 }
