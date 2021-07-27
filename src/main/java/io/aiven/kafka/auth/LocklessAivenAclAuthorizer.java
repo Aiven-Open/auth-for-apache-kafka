@@ -17,13 +17,11 @@
 package io.aiven.kafka.auth;
 
 import java.io.File;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.kafka.common.security.auth.KafkaPrincipal;
 
@@ -45,7 +43,7 @@ public class LocklessAivenAclAuthorizer implements Authorizer {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AivenAclAuthorizer.class);
     private File configFile;
-    private AtomicReference<List<AivenAcl>> aclEntries = new AtomicReference<>();;
+    private AtomicReference<List<AivenAcl>> aclEntries = new AtomicReference<>();
     private Map<String, Boolean> verdictCache;
     private JsonReader<AivenAcl> jsonReader;
     private AuditorAPI auditor;
@@ -89,7 +87,7 @@ public class LocklessAivenAclAuthorizer implements Authorizer {
         return System.nanoTime() / 1000000;  // nanoTime is monotonic, convert to milliseconds
     }
 
-    private boolean isTimeToCheckConfig (final long now) {
+    private boolean isTimeToCheckConfig(final long now) {
         return lastCheckTimestamp + 10000 <= now;
     }
 
@@ -186,7 +184,7 @@ public class LocklessAivenAclAuthorizer implements Authorizer {
         // rules and for each rule check if the Regexes match the current user.
         // Depending on the number of rules this can be a slow process, so the
         // result is cached.
-        String cacheKey = resource + "|" + operation + "|" + principalName + "|" + principalType;
+        final String cacheKey = resource + "|" + operation + "|" + principalName + "|" + principalType;
 
         // Assumptions about concurrency:
         // - Because there is no mechanism to atomically update the
@@ -205,7 +203,7 @@ public class LocklessAivenAclAuthorizer implements Authorizer {
         }
 
         boolean verdict = false;
-        for (var aclEntry : aclEntries.get()) {
+        for (final var aclEntry : aclEntries.get()) {
             if (aclEntry.check(principalType, principalName, operation, resource)) {
                 verdict = true;
                 break;
