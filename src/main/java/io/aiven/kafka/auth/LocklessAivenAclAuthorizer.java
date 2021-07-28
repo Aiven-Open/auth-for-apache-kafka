@@ -48,6 +48,7 @@ public class LocklessAivenAclAuthorizer implements Authorizer {
     private JsonReader<AivenAcl> jsonReader;
     private AuditorAPI auditor;
     private boolean logDenials;
+    private final Object lock = new Object();
 
     // A `stat` system call is needed to check if the configuration was
     // updated. Because that is expensive changes to the file are checked only
@@ -94,7 +95,7 @@ public class LocklessAivenAclAuthorizer implements Authorizer {
     /**
      * If the modified timestamp of the file changed, reload it and populate ACL entries.
      */
-    private synchronized boolean reloadConfigIfNecessary() {
+    private boolean reloadConfigIfNecessary() {
         // Note about synchronization with the files system: It is possible for
         // the configuration file to be updated *while* we are doing an update.
         // These are a the assumptions on how the system interacts to prevent
@@ -110,28 +111,30 @@ public class LocklessAivenAclAuthorizer implements Authorizer {
         // read two different versions of the configuration, and it is possible
         // to end up with the new modified timestamp, but the old configuration
         // loaded.
-        final long configFileLastModified = configFile.lastModified();
-        final boolean changed = configFileLastModified != lastModifiedTimestamp;
+        synchronized (lock) {
+            final long configFileLastModified = configFile.lastModified();
+            final boolean changed = configFileLastModified != lastModifiedTimestamp;
 
-        if (changed) {
-            // Note: It is okay for the statements below to be reordered:
-            // - clearing the cache
-            // - setting the new ACL rules
-            // the assumption that stale results are acceptable for a short
-            // period of time.
-            lastModifiedTimestamp = configFileLastModified;
+            if (changed) {
+                // Note: It is okay for the statements below to be reordered:
+                // - clearing the cache
+                // - setting the new ACL rules
+                // the assumption that stale results are acceptable for a short
+                // period of time.
+                lastModifiedTimestamp = configFileLastModified;
 
-            LOGGER.info("Reloading ACL configuration {}", configFile);
-            try {
-                final List<AivenAcl> newAclEntries = jsonReader.read();
-                verdictCache.clear();
-                aclEntries.set(newAclEntries);
-            } catch (final JsonReaderException ex) {
-                LOGGER.error("Failed to load config file", ex);
+                LOGGER.info("Reloading ACL configuration {}", configFile);
+                try {
+                    final List<AivenAcl> newAclEntries = jsonReader.read();
+                    verdictCache.clear();
+                    aclEntries.set(newAclEntries);
+                } catch (final JsonReaderException ex) {
+                    LOGGER.error("Failed to load config file", ex);
+                }
             }
-        }
 
-        return changed;
+            return changed;
+        }
     }
 
     @Override
