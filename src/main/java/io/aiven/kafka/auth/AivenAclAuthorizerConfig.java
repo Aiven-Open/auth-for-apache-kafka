@@ -29,6 +29,7 @@ public final class AivenAclAuthorizerConfig extends AbstractConfig {
     private static final String CONFIGURATION_CONF = "aiven.acl.authorizer.configuration";
     private static final String AUDITOR_CLASS_NAME_CONF = "aiven.acl.authorizer.auditor.class.name";
     private static final String LOG_DENIALS_CONF = "aiven.acl.authorizer.log.denials";
+    private static final String CONFIG_REFRESH_CONF = "aiven.acl.authorizer.config.refresh.interval";
 
     public AivenAclAuthorizerConfig(final Map<?, ?> originals) {
         super(configDef(), originals);
@@ -54,18 +55,28 @@ public final class AivenAclAuthorizerConfig extends AbstractConfig {
                 true,
                 ConfigDef.Importance.LOW,
                 "Whether to log denials on INFO level"
+            ).define(
+                CONFIG_REFRESH_CONF,
+                ConfigDef.Type.INT,
+                10_000,
+                ConfigDef.Importance.LOW,
+                "The interval between ACL reloads"
             );
     }
 
-    public final File getConfigFile() {
+    public File getConfigFile() {
         return new File(getString(CONFIGURATION_CONF));
     }
 
-    public final AuditorAPI getAuditor() {
+    public AuditorAPI getAuditor() {
         return getConfiguredInstance(AUDITOR_CLASS_NAME_CONF, AuditorAPI.class);
     }
 
-    public final boolean logDenials() {
+    public boolean logDenials() {
         return getBoolean(LOG_DENIALS_CONF);
+    }
+
+    public int configRefreshInterval() {
+        return getInt(CONFIG_REFRESH_CONF);
     }
 }
