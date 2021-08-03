@@ -126,8 +126,8 @@ public class LocklessAivenAclAuthorizer implements Authorizer {
                 LOGGER.info("Reloading ACL configuration {}", configFile);
                 try {
                     final List<AivenAcl> newAclEntries = jsonReader.read();
-                    verdictCache.clear();
                     aclEntries.set(newAclEntries);
+                    verdictCache.clear();
                 } catch (final JsonReaderException ex) {
                     LOGGER.error("Failed to load config file", ex);
                 }
