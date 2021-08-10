@@ -16,7 +16,7 @@ jobs:
         with:
           java-version: 11
       - name: Build with Gradle
-        run: ./gradlew build
+        run: ./gradlew build -i
       - name: Publish Test Report
         uses: mikepenz/action-junit-report@v2
         with:

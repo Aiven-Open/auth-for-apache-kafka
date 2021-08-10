@@ -68,7 +68,7 @@ jobs:
         java-version: 11
 
     - name: Build with Gradle
-      run: ./gradlew build
+      run: ./gradlew build -i
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v1
