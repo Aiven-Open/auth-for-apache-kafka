@@ -47,6 +47,7 @@ import kafka.security.auth.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@SuppressWarnings("deprecation")
 public class AivenAclAuthorizerV2 implements Authorizer {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AivenAclAuthorizerV2.class);
