@@ -18,39 +18,50 @@ package io.aiven.kafka.auth;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
+import org.apache.kafka.common.Endpoint;
 import org.apache.kafka.common.acl.AclOperation;
+import org.apache.kafka.common.network.ListenerName;
+import org.apache.kafka.common.protocol.ApiKeys;
+import org.apache.kafka.common.requests.RequestContext;
+import org.apache.kafka.common.requests.RequestHeader;
 import org.apache.kafka.common.resource.PatternType;
+import org.apache.kafka.common.resource.ResourcePattern;
 import org.apache.kafka.common.security.auth.KafkaPrincipal;
+import org.apache.kafka.common.security.auth.SecurityProtocol;
+import org.apache.kafka.server.authorizer.Action;
+import org.apache.kafka.server.authorizer.AuthorizableRequestContext;
+import org.apache.kafka.server.authorizer.AuthorizationResult;
+import org.apache.kafka.server.authorizer.AuthorizerServerInfo;
 
-import kafka.network.RequestChannel.Session;
-import kafka.security.auth.Operation;
-import kafka.security.auth.Resource;
-import kafka.security.auth.ResourceType;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNoException;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class AivenAclAuthorizerV2Test {
-    static final Resource TOPIC_RESOURCE = new Resource(
-            ResourceType.fromJava(org.apache.kafka.common.resource.ResourceType.TOPIC),
+    static final ResourcePattern TOPIC_RESOURCE = new ResourcePattern(
+            org.apache.kafka.common.resource.ResourceType.TOPIC,
             "Target",
             PatternType.LITERAL
     );
-    static final Resource GROUP_RESOURCE = new Resource(
-            ResourceType.fromJava(org.apache.kafka.common.resource.ResourceType.GROUP),
+    static final ResourcePattern GROUP_RESOURCE = new ResourcePattern(
+            org.apache.kafka.common.resource.ResourceType.GROUP,
             "Target",
             PatternType.LITERAL
     );
-    static final Operation READ_OPERATION = Operation.fromJava(AclOperation.READ);
-    static final Operation CREATE_OPERATION = Operation.fromJava(AclOperation.CREATE);
+    static final AclOperation READ_OPERATION = AclOperation.READ;
+    static final AclOperation CREATE_OPERATION = AclOperation.CREATE;
     static final String ACL_JSON =
         "[{\"principal_type\":\"User\",\"principal\":\"^pass$\","
             + "\"operation\":\"^Read$\",\"resource\":\"^Topic:(.*)$\"}]";
@@ -110,78 +121,132 @@ public class AivenAclAuthorizerV2Test {
     @Test
     public void testAivenAclAuthorizer() throws IOException, InterruptedException {
         Files.write(configFilePath, ACL_JSON.getBytes());
-        Thread.sleep(100);
+        startAuthorizer();
 
         // basic ACL checks
-        assertThat(auth.authorize(startSessionFor("User", "pass"), READ_OPERATION, TOPIC_RESOURCE)).isTrue();
-        assertThat(auth.authorize(startSessionFor("User", "fail"), READ_OPERATION, TOPIC_RESOURCE)).isFalse();
-        assertThat(auth.authorize(startSessionFor("User", "pass"), READ_OPERATION, GROUP_RESOURCE)).isFalse();
-        assertThat(auth.authorize(startSessionFor("User", "pass"), CREATE_OPERATION, TOPIC_RESOURCE)).isFalse();
-        assertThat(auth.authorize(startSessionFor("NonUser", "pass"), READ_OPERATION, TOPIC_RESOURCE)).isFalse();
+        checkSingleAction(requestCtx("User", "pass"), action(READ_OPERATION, TOPIC_RESOURCE), true);
+        checkSingleAction(requestCtx("User", "fail"), action(READ_OPERATION, TOPIC_RESOURCE), false);
+        checkSingleAction(requestCtx("User", "pass"), action(READ_OPERATION, GROUP_RESOURCE), false);
+        checkSingleAction(requestCtx("User", "pass"), action(CREATE_OPERATION, TOPIC_RESOURCE), false);
+        checkSingleAction(requestCtx("NonUser", "pass"), action(READ_OPERATION, TOPIC_RESOURCE), false);
+        // Some checks in list
+        final var listAuthorizeResult = auth.authorize(
+            requestCtx("User", "pass"),
+            List.of(
+                action(READ_OPERATION, TOPIC_RESOURCE),
+                action(READ_OPERATION, GROUP_RESOURCE),
+                action(CREATE_OPERATION, TOPIC_RESOURCE)
+            ));
+        assertThat(listAuthorizeResult).isEqualTo(List.of(
+            AuthorizationResult.ALLOWED,
+            AuthorizationResult.DENIED,
+            AuthorizationResult.DENIED
+        ));
 
         // Check support for undefined principal type
         Files.write(configFilePath, ACL_JSON_NOTYPE.getBytes());
         Thread.sleep(100);
 
-        assertThat(auth.authorize(startSessionFor("User", "pass"), READ_OPERATION, TOPIC_RESOURCE)).isTrue();
-        assertThat(auth.authorize(startSessionFor("NonUser", "pass"), READ_OPERATION, TOPIC_RESOURCE)).isTrue();
+        checkSingleAction(requestCtx("User", "pass"), action(READ_OPERATION, TOPIC_RESOURCE), true);
+        checkSingleAction(requestCtx("NonUser", "pass"), action(READ_OPERATION, TOPIC_RESOURCE), true);
 
         Files.write(configFilePath, ACL_JSON_LONG.getBytes());
         Thread.sleep(100);
 
         // first iteration without cache
-        assertThat(auth.authorize(startSessionFor("User", "pass-1"), READ_OPERATION, TOPIC_RESOURCE)).isTrue();
-        assertThat(auth.authorize(startSessionFor("User", "fail-1"), READ_OPERATION, TOPIC_RESOURCE)).isFalse();
+        checkSingleAction(requestCtx("User", "pass-1"), action(READ_OPERATION, TOPIC_RESOURCE), true);
+        checkSingleAction(requestCtx("User", "fail-1"), action(READ_OPERATION, TOPIC_RESOURCE), false);
 
         // second iteration from cache
-        assertThat(auth.authorize(startSessionFor("User", "pass-1"), READ_OPERATION, TOPIC_RESOURCE)).isTrue();
-        assertThat(auth.authorize(startSessionFor("User", "fail-1"), READ_OPERATION, TOPIC_RESOURCE)).isFalse();
+        checkSingleAction(requestCtx("User", "pass-1"), action(READ_OPERATION, TOPIC_RESOURCE), true);
+        checkSingleAction(requestCtx("User", "fail-1"), action(READ_OPERATION, TOPIC_RESOURCE), false);
 
         // Checking that wrong configuration leads to failed auth
         Files.write(configFilePath, "]".getBytes());
         Thread.sleep(100);
-        assertThat(auth.authorize(startSessionFor("User", "pass-1"), READ_OPERATION, TOPIC_RESOURCE)).isFalse();
-        assertThat(auth.authorize(startSessionFor("User", "fail-1"), READ_OPERATION, TOPIC_RESOURCE)).isFalse();
+        checkSingleAction(requestCtx("User", "pass-1"), action(READ_OPERATION, TOPIC_RESOURCE), false);
+        checkSingleAction(requestCtx("User", "fail-1"), action(READ_OPERATION, TOPIC_RESOURCE), false);
 
         // Checking that empty configuration leads to failed auth
         Files.write(configFilePath, "".getBytes());
         Thread.sleep(100);
-        assertThat(auth.authorize(startSessionFor("User", "pass-1"), READ_OPERATION, TOPIC_RESOURCE)).isFalse();
-        assertThat(auth.authorize(startSessionFor("User", "fail-1"), READ_OPERATION, TOPIC_RESOURCE)).isFalse();
+        checkSingleAction(requestCtx("User", "pass-1"), action(READ_OPERATION, TOPIC_RESOURCE), false);
+        checkSingleAction(requestCtx("User", "fail-1"), action(READ_OPERATION, TOPIC_RESOURCE), false);
     }
 
     @Test
     public void testConfigReloading() throws IOException, InterruptedException {
-        auth.configure(configs);
-        assertThat(auth.authorize(startSessionFor("User", "pass"), READ_OPERATION, TOPIC_RESOURCE)).isFalse();
+        startAuthorizer();
+
+        checkSingleAction(requestCtx("User", "pass"), action(READ_OPERATION, TOPIC_RESOURCE), false);
 
         // check that config is reloaded after file modification
         Files.write(configFilePath, ACL_JSON_LONG.getBytes());
         Thread.sleep(100);
 
-        assertThat(auth.authorize(startSessionFor("User", "pass-1"), READ_OPERATION, TOPIC_RESOURCE)).isTrue();
+        checkSingleAction(requestCtx("User", "pass-1"), action(READ_OPERATION, TOPIC_RESOURCE), true);
 
         // check that config is reloaded after file deletion
         assertThat(configFilePath.toFile().delete()).isTrue();
         Thread.sleep(100);
 
-        assertThat(auth.authorize(startSessionFor("User", "pass-1"), READ_OPERATION, TOPIC_RESOURCE)).isFalse();
+        checkSingleAction(requestCtx("User", "pass-1"), action(READ_OPERATION, TOPIC_RESOURCE), false);
 
         // check that config is reloaded after directory deletion
         assertThat(Files.deleteIfExists(configFilePath.getParent().toAbsolutePath())).isTrue();
         Thread.sleep(100);
 
-        assertThat(auth.authorize(startSessionFor("User", "pass-1"), READ_OPERATION, TOPIC_RESOURCE)).isFalse();
+        checkSingleAction(requestCtx("User", "pass-1"), action(READ_OPERATION, TOPIC_RESOURCE), false);
 
         // check that config reloaded after file and directory re-creation
         assertThat(tmpDir.toFile().mkdir()).isTrue();
         Thread.sleep(100);
         Files.write(configFilePath, ACL_JSON.getBytes());
         Thread.sleep(100);
-        assertThat(auth.authorize(startSessionFor("User", "pass"), READ_OPERATION, TOPIC_RESOURCE)).isTrue();
+        checkSingleAction(requestCtx("User", "pass"), action(READ_OPERATION, TOPIC_RESOURCE), true);
     }
 
-    private Session startSessionFor(final String principalType, final String name) throws UnknownHostException {
-        return new Session(new KafkaPrincipal(principalType, name), InetAddress.getLocalHost());
+    @Test
+    public void testStart() {
+        final AuthorizerServerInfo serverInfo = mock(AuthorizerServerInfo.class);
+        when(serverInfo.endpoints()).thenReturn(
+            List.of(
+                new Endpoint("PLAINTEXT", SecurityProtocol.PLAINTEXT, "localhost", 9092),
+                new Endpoint("SSL", SecurityProtocol.SSL, "localhost", 9093)
+            )
+        );
+        assertThat(auth.start(serverInfo)).allSatisfy(
+            (endpoint, completionStage) ->
+                assertThatNoException().isThrownBy(
+                    () -> completionStage.toCompletableFuture().get(0, TimeUnit.MICROSECONDS))
+        );
+    }
+
+    private void startAuthorizer() {
+        final AuthorizerServerInfo serverInfo = mock(AuthorizerServerInfo.class);
+        when(serverInfo.endpoints()).thenReturn(List.of());
+        auth.start(serverInfo);
+    }
+
+    private AuthorizableRequestContext requestCtx(final String principalType, final String name) {
+        return new RequestContext(
+            new RequestHeader(ApiKeys.METADATA, (short) 0, "some-client-id", 123),
+            "connection-id",
+            InetAddress.getLoopbackAddress(),
+            new KafkaPrincipal(principalType, name),
+            new ListenerName("SSL"),
+            SecurityProtocol.SSL
+        );
+    }
+
+    private Action action(final AclOperation operation, final ResourcePattern resource) {
+        return new Action(operation, resource, 0, true, true);
+    }
+
+    private void checkSingleAction(final AuthorizableRequestContext requestCtx,
+                                   final Action action,
+                                   final boolean allowed) {
+        final List<AuthorizationResult> result = auth.authorize(requestCtx, List.of(action));
+        assertThat(result).isEqualTo(List.of(allowed ? AuthorizationResult.ALLOWED : AuthorizationResult.DENIED));
     }
 }
