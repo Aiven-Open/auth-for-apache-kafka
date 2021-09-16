@@ -24,15 +24,30 @@ import java.nio.file.StandardWatchEventKinds;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
+import org.apache.kafka.common.Endpoint;
+import org.apache.kafka.common.acl.AclBinding;
+import org.apache.kafka.common.acl.AclBindingFilter;
 import org.apache.kafka.common.security.auth.KafkaPrincipal;
+import org.apache.kafka.server.authorizer.AclCreateResult;
+import org.apache.kafka.server.authorizer.AclDeleteResult;
+import org.apache.kafka.server.authorizer.Action;
+import org.apache.kafka.server.authorizer.AuthorizableRequestContext;
+import org.apache.kafka.server.authorizer.AuthorizationResult;
+import org.apache.kafka.server.authorizer.Authorizer;
+import org.apache.kafka.server.authorizer.AuthorizerServerInfo;
 
 import io.aiven.kafka.auth.audit.AuditorAPI;
 import io.aiven.kafka.auth.json.AivenAcl;
@@ -40,10 +55,9 @@ import io.aiven.kafka.auth.json.reader.AclJsonReader;
 import io.aiven.kafka.auth.json.reader.JsonReaderException;
 
 import kafka.network.RequestChannel.Session;
-import kafka.security.auth.Acl;
-import kafka.security.auth.Authorizer;
 import kafka.security.auth.Operation;
 import kafka.security.auth.Resource;
+import kafka.security.auth.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,6 +71,8 @@ public class AivenAclAuthorizerV2 implements Authorizer {
     private final WatchService watchService;
     private final AtomicReference<VerdictCache> cacheReference = new AtomicReference<>();
 
+    private AivenAclAuthorizerConfig config;
+
     public AivenAclAuthorizerV2() {
         try {
             watchService = FileSystems.getDefault().newWatchService();
@@ -68,8 +84,12 @@ public class AivenAclAuthorizerV2 implements Authorizer {
 
     @Override
     public void configure(final java.util.Map<String, ?> configs) {
-        final AivenAclAuthorizerConfig config = new AivenAclAuthorizerConfig(configs);
+        config = new AivenAclAuthorizerConfig(configs);
+    }
 
+    @Override
+    public final Map<Endpoint, ? extends CompletionStage<Void>> start(
+        final AuthorizerServerInfo serverInfo) {
         auditor = config.getAuditor();
         logDenials = config.logDenials();
 
@@ -98,6 +118,13 @@ public class AivenAclAuthorizerV2 implements Authorizer {
                 watchKeyReference.set(subscribeToAclChanges(configFile));
             }
         }, 0, config.configRefreshInterval(), TimeUnit.MILLISECONDS);
+
+        // These futures are just placeholders.
+        return serverInfo.endpoints().stream()
+            .collect(Collectors.toMap(
+                endpoint -> endpoint,
+                endpoint -> CompletableFuture.completedFuture(null)
+            ));
     }
 
     private WatchKey subscribeToAclChanges(final File configFile) {
@@ -123,24 +150,40 @@ public class AivenAclAuthorizerV2 implements Authorizer {
     }
 
     @Override
-    public boolean authorize(final Session session,
-                             final Operation operation,
-                             final Resource resource) {
+    public final List<AuthorizationResult> authorize(final AuthorizableRequestContext requestContext,
+                                                     final List<Action> actions) {
         final KafkaPrincipal principal =
-                Objects.requireNonNullElse(session.principal(), KafkaPrincipal.ANONYMOUS);
-        final String resourceToCheck =
-            resource.resourceType() + ":" + resource.name();
-        final boolean verdict =
-            checkAcl(
-                principal.getPrincipalType(),
-                principal.getName(),
-                operation.name(),
-                resourceToCheck
-            );
-        auditor.addActivity(session, operation, resource, verdict);
-        return verdict;
-    }
+            Objects.requireNonNullElse(requestContext.principal(), KafkaPrincipal.ANONYMOUS);
+        final List<AuthorizationResult> result = new ArrayList<>(actions.size());
+        for (final Action action : actions) {
+            // Some string conversions are done inside.
+            final var operation = Operation.fromJava(action.operation());
+            final var resourceType = ResourceType.fromJava(action.resourcePattern().resourceType());
+            final String resourceToCheck =
+                resourceType + ":" + action.resourcePattern().name();
+            final boolean verdict =
+                checkAcl(
+                    principal.getPrincipalType(),
+                    principal.getName(),
+                    operation.name(),
+                    resourceToCheck,
+                    action.logIfAllowed(),
+                    action.logIfDenied()
+                );
 
+            // When we finally drop the old API, we can change the auditor API,
+            // so it doesn't require these conversions.
+            final var session = new Session(principal, requestContext.clientAddress());
+            final var resource = new Resource(
+                resourceType,
+                action.resourcePattern().name(),
+                action.resourcePattern().patternType());
+            auditor.addActivity(session, operation, resource, verdict);
+
+            result.add(verdict ? AuthorizationResult.ALLOWED : AuthorizationResult.DENIED);
+        }
+        return result;
+    }
 
     /**
      * Read ACL entries from config file.
@@ -161,10 +204,12 @@ public class AivenAclAuthorizerV2 implements Authorizer {
     private boolean checkAcl(final String principalType,
                              final String principalName,
                              final String operation,
-                             final String resource) {
-
+                             final String resource,
+                             final boolean actionLogIfAllowed,
+                             final boolean actionLogIfDenied) {
         final boolean verdict = cacheReference.get().get(principalType, principalName, operation, resource);
-        logAuthVerdict(verdict, operation, resource, principalType, principalName);
+        logAuthVerdict(verdict, operation, resource, principalType, principalName,
+            actionLogIfAllowed, actionLogIfDenied);
         return verdict;
     }
 
@@ -172,11 +217,13 @@ public class AivenAclAuthorizerV2 implements Authorizer {
                                 final String operation,
                                 final String resource,
                                 final String principalType,
-                                final String principalName) {
-        if (verdict) {
+                                final String principalName,
+                                final boolean actionLogIfAllowed,
+                                final boolean actionLogIfDenied) {
+        if (verdict && actionLogIfAllowed) {
             LOGGER.debug("[ALLOW] Auth request {} on {} by {} {}",
                     operation, resource, principalType, principalName);
-        } else {
+        } else if (actionLogIfDenied) {
             if (logDenials) {
                 LOGGER.info("[DENY] Auth request {} on {} by {} {}",
                         operation, resource, principalType, principalName);
@@ -188,40 +235,24 @@ public class AivenAclAuthorizerV2 implements Authorizer {
     }
 
     @Override
-    public scala.collection.immutable.Set<Acl> getAcls(final Resource resource) {
-        LOGGER.error("getAcls(Resource) is not implemented");
-        return new scala.collection.immutable.HashSet<>();
+    public final List<? extends CompletionStage<AclCreateResult>> createAcls(
+        final AuthorizableRequestContext requestContext,
+        final List<AclBinding> aclBindings) {
+        LOGGER.error("`createAcls` is not implemented");
+        return List.of();
     }
 
     @Override
-    public scala.collection.immutable.Map<Resource, scala.collection.immutable.Set<Acl>> getAcls(
-            final KafkaPrincipal principal) {
-        LOGGER.error("getAcls(KafkaPrincipal) is not implemented");
-        return new scala.collection.immutable.HashMap<>();
+    public final List<? extends CompletionStage<AclDeleteResult>> deleteAcls(
+        final AuthorizableRequestContext requestContext,
+        final List<AclBindingFilter> aclBindingFilters) {
+        LOGGER.error("`deleteAcls` is not implemented");
+        return List.of();
     }
 
     @Override
-    public scala.collection.immutable.Map<Resource, scala.collection.immutable.Set<Acl>> getAcls() {
-        LOGGER.error("getAcls() is not implemented");
-        return new scala.collection.immutable.HashMap<>();
-    }
-
-    @Override
-    public boolean removeAcls(final scala.collection.immutable.Set<Acl> acls,
-                              final Resource resource) {
-        LOGGER.error("removeAcls(Set<Acl>, Resource) is not implemented");
-        return false;
-    }
-
-    @Override
-    public boolean removeAcls(final Resource resource) {
-        LOGGER.error("removeAcls(Resource) is not implemented");
-        return false;
-    }
-
-    @Override
-    public void addAcls(final scala.collection.immutable.Set<Acl> acls,
-                        final Resource resource) {
-        LOGGER.error("addAcls(Set<Acl>, Resource) is not implemented");
+    public final Iterable<AclBinding> acls(final AclBindingFilter filter) {
+        LOGGER.error("`acls` is not implemented");
+        return List.of();
     }
 }
