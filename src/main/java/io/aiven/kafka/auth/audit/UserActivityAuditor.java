@@ -19,11 +19,11 @@ package io.aiven.kafka.auth.audit;
 import java.util.Map;
 import java.util.Objects;
 
+import org.apache.kafka.common.acl.AclOperation;
 import org.apache.kafka.common.config.ConfigException;
+import org.apache.kafka.common.resource.ResourcePattern;
 
 import kafka.network.RequestChannel;
-import kafka.security.auth.Operation;
-import kafka.security.auth.Resource;
 import org.slf4j.Logger;
 
 public class UserActivityAuditor extends Auditor {
@@ -47,8 +47,8 @@ public class UserActivityAuditor extends Auditor {
 
     @Override
     protected void addActivity0(final RequestChannel.Session session,
-                                final Operation operation,
-                                final Resource resource,
+                                final AclOperation operation,
+                                final ResourcePattern resource,
                                 final boolean hasAccess) {
         final AuditKey auditKey = new AuditKey(session.principal(), session.clientAddress());
 

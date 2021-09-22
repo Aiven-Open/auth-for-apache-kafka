@@ -27,12 +27,11 @@ import java.util.stream.Collectors;
 
 import org.apache.kafka.common.acl.AclOperation;
 import org.apache.kafka.common.resource.PatternType;
+import org.apache.kafka.common.resource.ResourcePattern;
+import org.apache.kafka.common.resource.ResourceType;
 import org.apache.kafka.common.security.auth.KafkaPrincipal;
 
 import kafka.network.RequestChannel.Session;
-import kafka.security.auth.Operation;
-import kafka.security.auth.Resource;
-import kafka.security.auth.ResourceType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -58,19 +57,19 @@ class UserOperationsActivityAuditorTest {
 
     private KafkaPrincipal principal;
 
-    private Operation operation;
+    private AclOperation operation;
 
-    private Resource resource;
+    private ResourcePattern resource;
 
     @BeforeEach
     void setUp() throws Exception {
         principal = new KafkaPrincipal("PRINCIPAL_TYPE", "PRINCIPAL_NAME");
         session = new Session(principal, InetAddress.getLocalHost());
 
-        operation = Operation.fromJava(AclOperation.ALL);
+        operation = AclOperation.ALL;
         resource =
-                new Resource(
-                        ResourceType.fromJava(org.apache.kafka.common.resource.ResourceType.CLUSTER),
+                new ResourcePattern(
+                        ResourceType.CLUSTER,
                         "RESOURCE_NAME",
                         PatternType.LITERAL
                 );
@@ -168,9 +167,9 @@ class UserOperationsActivityAuditorTest {
     @Test
     public void shouldBuildRightLogMessage() throws Exception {
         final UserOperationsActivityAuditor auditor = createAuditor();
-        final Operation anotherOperation = Operation.fromJava(AclOperation.ALTER);
-        final Resource anotherResource = new Resource(
-                ResourceType.fromJava(org.apache.kafka.common.resource.ResourceType.DELEGATION_TOKEN),
+        final AclOperation anotherOperation = AclOperation.ALTER;
+        final ResourcePattern anotherResource = new ResourcePattern(
+                ResourceType.DELEGATION_TOKEN,
                 "ANOTHER_RESOURCE_NAME",
                 PatternType.LITERAL
         );
@@ -206,8 +205,8 @@ class UserOperationsActivityAuditorTest {
         assertThat(
                 loggedOperations,
                 containsInAnyOrder(
-                        "Deny All on Cluster:RESOURCE_NAME",
-                        "Allow Alter on DelegationToken:ANOTHER_RESOURCE_NAME"
+                        "Deny ALL on CLUSTER:RESOURCE_NAME",
+                        "Allow ALTER on DELEGATION_TOKEN:ANOTHER_RESOURCE_NAME"
                 )
         );
     }
@@ -220,9 +219,9 @@ class UserOperationsActivityAuditorTest {
                         10L,
                         AuditorConfig.AGGREGATION_GROUPING_CONF,
                         AuditorConfig.AggregationGrouping.USER.getConfigValue()));
-        final Operation anotherOperation = Operation.fromJava(AclOperation.ALTER);
-        final Resource anotherResource = new Resource(
-                ResourceType.fromJava(org.apache.kafka.common.resource.ResourceType.DELEGATION_TOKEN),
+        final AclOperation anotherOperation = AclOperation.ALTER;
+        final ResourcePattern anotherResource = new ResourcePattern(
+                ResourceType.DELEGATION_TOKEN,
                 "ANOTHER_RESOURCE_NAME",
                 PatternType.LITERAL
         );
@@ -255,8 +254,8 @@ class UserOperationsActivityAuditorTest {
         assertThat(
                 loggedOperations,
                 containsInAnyOrder(
-                        "Deny All on Cluster:RESOURCE_NAME",
-                        "Allow Alter on DelegationToken:ANOTHER_RESOURCE_NAME")
+                        "Deny ALL on CLUSTER:RESOURCE_NAME",
+                        "Allow ALTER on DELEGATION_TOKEN:ANOTHER_RESOURCE_NAME")
         );
     }
 

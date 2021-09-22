@@ -18,9 +18,10 @@ package io.aiven.kafka.auth.audit;
 
 import java.util.Map;
 
+import org.apache.kafka.common.acl.AclOperation;
+import org.apache.kafka.common.resource.ResourcePattern;
+
 import kafka.network.RequestChannel;
-import kafka.security.auth.Operation;
-import kafka.security.auth.Resource;
 
 /**
  * A no-op {@link AuditorAPI}.
@@ -33,8 +34,8 @@ public class NoAuditor implements AuditorAPI {
 
     @Override
     public void addActivity(final RequestChannel.Session session,
-                            final Operation operation,
-                            final Resource resource,
+                            final AclOperation operation,
+                            final ResourcePattern resource,
                             final boolean hasAccess) {
     }
 

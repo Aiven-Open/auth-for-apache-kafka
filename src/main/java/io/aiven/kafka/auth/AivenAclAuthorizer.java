@@ -135,7 +135,7 @@ public class AivenAclAuthorizer implements Authorizer {
                 operation.name(),
                 resourceToCheck
             );
-        auditor.addActivity(session, operation, resource, verdict);
+        auditor.addActivity(session, operation.toJava(), resource.toPattern(), verdict);
         return verdict;
     }
 

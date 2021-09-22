@@ -19,28 +19,28 @@ package io.aiven.kafka.auth.audit;
 import java.net.InetAddress;
 import java.util.Objects;
 
-import kafka.security.auth.Operation;
-import kafka.security.auth.Resource;
+import org.apache.kafka.common.acl.AclOperation;
+import org.apache.kafka.common.resource.ResourcePattern;
 
 public class UserOperation {
 
     public final InetAddress sourceIp;
 
-    public final Operation operation;
+    public final AclOperation operation;
 
-    public final Resource resource;
+    public final ResourcePattern resource;
 
     public final boolean hasAccess;
 
-    public UserOperation(final Operation operation,
-                         final Resource resource,
+    public UserOperation(final AclOperation operation,
+                         final ResourcePattern resource,
                          final boolean hasAccess) {
         this(null, operation, resource, hasAccess);
     }
 
     public UserOperation(final InetAddress sourceIp,
-                         final Operation operation,
-                         final Resource resource,
+                         final AclOperation operation,
+                         final ResourcePattern resource,
                          final boolean hasAccess) {
         this.sourceIp = sourceIp;
         this.operation = operation;

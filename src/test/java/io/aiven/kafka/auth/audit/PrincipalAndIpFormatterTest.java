@@ -55,8 +55,8 @@ public class PrincipalAndIpFormatterTest extends FormatterTestBase {
         final ZonedDateTime now = ZonedDateTime.now();
         final String expected = String.format(
                 "PRINCIPAL_TYPE:PRINCIPAL_NAME (%s) was active since %s: "
-                        + "Deny Alter on Cluster:resource, "
-                        + "Allow Alter on DelegationToken:ANOTHER_RESOURCE_NAME",
+                        + "Deny ALTER on CLUSTER:resource, "
+                        + "Allow ALTER on DELEGATION_TOKEN:ANOTHER_RESOURCE_NAME",
                 InetAddress.getLocalHost(),
                 now.format(AuditorDumpFormatter.dateFormatter())
         );
@@ -68,13 +68,13 @@ public class PrincipalAndIpFormatterTest extends FormatterTestBase {
     public void shouldBuildRightLogMessageTwoOperationsTwoIps() throws Exception {
         final ZonedDateTime now = ZonedDateTime.now();
         final String expected1 = String.format(
-                "PRINCIPAL_TYPE:PRINCIPAL_NAME (%s) was active since %s: Deny Alter on Cluster:resource",
+                "PRINCIPAL_TYPE:PRINCIPAL_NAME (%s) was active since %s: Deny ALTER on CLUSTER:resource",
                 InetAddress.getLocalHost(),
                 now.format(AuditorDumpFormatter.dateFormatter())
         );
         final String expected2 = String.format(
                 "PRINCIPAL_TYPE:PRINCIPAL_NAME (%s) was active since %s: "
-                        + "Allow Alter on DelegationToken:ANOTHER_RESOURCE_NAME",
+                        + "Allow ALTER on DELEGATION_TOKEN:ANOTHER_RESOURCE_NAME",
                 anotherInetAddress,
                 now.format(AuditorDumpFormatter.dateFormatter())
         );

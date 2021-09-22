@@ -26,12 +26,11 @@ import java.util.Map;
 
 import org.apache.kafka.common.acl.AclOperation;
 import org.apache.kafka.common.resource.PatternType;
+import org.apache.kafka.common.resource.ResourcePattern;
+import org.apache.kafka.common.resource.ResourceType;
 import org.apache.kafka.common.security.auth.KafkaPrincipal;
 
 import kafka.network.RequestChannel;
-import kafka.security.auth.Operation;
-import kafka.security.auth.Resource;
-import kafka.security.auth.ResourceType;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -39,15 +38,15 @@ public class FormatterTestBase {
 
     protected RequestChannel.Session session;
 
-    protected Operation operation;
+    protected AclOperation operation;
 
-    protected Resource resource;
+    protected ResourcePattern resource;
 
     protected AuditorDumpFormatter formatter;
 
-    protected Operation anotherOperation;
+    protected AclOperation anotherOperation;
 
-    protected Resource anotherResource;
+    protected ResourcePattern anotherResource;
 
     protected RequestChannel.Session anotherSession;
 
@@ -65,16 +64,16 @@ public class FormatterTestBase {
         anotherInetAddress = InetAddress.getByName("192.168.0.1");
         anotherSession = new RequestChannel.Session(principal, anotherInetAddress);
         resource =
-                new Resource(
-                        ResourceType.fromJava(org.apache.kafka.common.resource.ResourceType.CLUSTER),
+                new ResourcePattern(
+                        ResourceType.CLUSTER,
                         "resource",
                         PatternType.LITERAL
                 );
-        operation = Operation.fromJava(AclOperation.ALTER);
+        operation = AclOperation.ALTER;
 
-        anotherOperation = Operation.fromJava(AclOperation.ALTER);
-        anotherResource = new Resource(
-                ResourceType.fromJava(org.apache.kafka.common.resource.ResourceType.DELEGATION_TOKEN),
+        anotherOperation = AclOperation.ALTER;
+        anotherResource = new ResourcePattern(
+                ResourceType.DELEGATION_TOKEN,
                 "ANOTHER_RESOURCE_NAME",
                 PatternType.LITERAL
         );

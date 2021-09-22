@@ -26,11 +26,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.apache.kafka.common.acl.AclOperation;
+import org.apache.kafka.common.resource.ResourcePattern;
 import org.apache.kafka.common.security.auth.KafkaPrincipal;
 
 import kafka.network.RequestChannel.Session;
-import kafka.security.auth.Operation;
-import kafka.security.auth.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,8 +68,8 @@ public abstract class Auditor implements AuditorAPI {
 
     @Override
     public final void addActivity(final Session session,
-                                  final Operation operation,
-                                  final Resource resource,
+                                  final AclOperation operation,
+                                  final ResourcePattern resource,
                                   final boolean hasAccess) {
         auditLock.lock();
         try {
@@ -80,8 +80,8 @@ public abstract class Auditor implements AuditorAPI {
     }
 
     protected abstract void addActivity0(final Session session,
-                                         final Operation operation,
-                                         final Resource resource,
+                                         final AclOperation operation,
+                                         final ResourcePattern resource,
                                          final boolean hasAccess);
 
     @Override
