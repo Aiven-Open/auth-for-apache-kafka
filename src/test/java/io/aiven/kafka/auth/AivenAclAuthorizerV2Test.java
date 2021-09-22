@@ -26,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.kafka.common.Endpoint;
 import org.apache.kafka.common.acl.AclOperation;
+import org.apache.kafka.common.network.ClientInformation;
 import org.apache.kafka.common.network.ListenerName;
 import org.apache.kafka.common.protocol.ApiKeys;
 import org.apache.kafka.common.requests.RequestContext;
@@ -235,7 +236,9 @@ public class AivenAclAuthorizerV2Test {
             InetAddress.getLoopbackAddress(),
             new KafkaPrincipal(principalType, name),
             new ListenerName("SSL"),
-            SecurityProtocol.SSL
+            SecurityProtocol.SSL,
+            ClientInformation.EMPTY,
+            false
         );
     }
 

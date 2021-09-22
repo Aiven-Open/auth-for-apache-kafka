@@ -58,7 +58,7 @@ jmh {
 }
 
 ext {
-    kafkaVersion = "2.4.0"
+    kafkaVersion = "2.8.0"
 }
 
 dependencies {
