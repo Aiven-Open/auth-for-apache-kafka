@@ -19,6 +19,9 @@ package io.aiven.kafka.auth;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Predicate;
+
+import org.apache.kafka.common.security.auth.KafkaPrincipal;
 
 import io.aiven.kafka.auth.json.AivenAcl;
 
@@ -30,14 +33,18 @@ public class VerdictCache {
         this.aclEntries = aclEntries;
     }
 
-    public boolean get(final String principalType,
-                       final String principalName,
+    public boolean get(final KafkaPrincipal principal,
                        final String operation,
                        final String resource) {
         if (aclEntries != null) {
-            final String cacheKey = resource + "|" + operation + "|" + principalName + "|" + principalType;
-            return cache.computeIfAbsent(cacheKey, key -> aclEntries.stream()
-                    .anyMatch(aclEntry -> aclEntry.check(principalType, principalName, operation, resource)));
+            final String cacheKey = resource
+                + "|" + operation
+                + "|" + principal.getName()
+                + "|" + principal.getPrincipalType();
+
+            final Predicate<AivenAcl> matcher = aclEntry ->
+                aclEntry.check(principal.getPrincipalType(), principal.getName(), operation, resource);
+            return cache.computeIfAbsent(cacheKey, key -> aclEntries.stream().anyMatch(matcher));
         } else {
             return false;
         }

@@ -14,19 +14,17 @@
  * limitations under the License.
  */
 
-package io.aiven.kafka.auth.audit;
+package io.aiven.kafka.auth.nameformatters;
 
-import org.apache.kafka.common.Configurable;
-import org.apache.kafka.common.acl.AclOperation;
-import org.apache.kafka.common.resource.ResourcePattern;
-
-import kafka.network.RequestChannel;
-
-public interface AuditorAPI extends Configurable {
-    void addActivity(final RequestChannel.Session session,
-                     final AclOperation operation,
-                     final ResourcePattern resource,
-                     final boolean hasAccess);
-
-    void stop();
+public final class LegacyNameFormatter {
+    /**
+     * Converts names like {@code DELEGATION_TOKEN} into {@code DelegationToken}.
+     */
+    static String format(final String name) {
+        final String[] parts = name.split("_");
+        for (int i = 0; i < parts.length; i++) {
+            parts[i] = parts[i].charAt(0) + parts[i].substring(1).toLowerCase();
+        }
+        return String.join("", parts);
+    }
 }

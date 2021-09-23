@@ -50,7 +50,7 @@ public class PrincipalFormatterTest extends FormatterTestBase {
         final ZonedDateTime now = ZonedDateTime.now();
         final String expected = String.format(
                 "PRINCIPAL_TYPE:PRINCIPAL_NAME was active since %s. %s: "
-                        + "Deny Alter on Cluster:resource, Allow Alter on DelegationToken:ANOTHER_RESOURCE_NAME",
+                        + "Deny ALTER on CLUSTER:resource, Allow ALTER on DELEGATION_TOKEN:ANOTHER_RESOURCE_NAME",
                 now.format(AuditorDumpFormatter.dateFormatter()),
                 InetAddress.getLocalHost()
         );
@@ -63,8 +63,8 @@ public class PrincipalFormatterTest extends FormatterTestBase {
         final ZonedDateTime now = ZonedDateTime.now();
         final String expected = String.format(
                 "PRINCIPAL_TYPE:PRINCIPAL_NAME was active since %s. "
-                        + "%s: Deny Alter on Cluster:resource, "
-                        + "%s: Allow Alter on DelegationToken:ANOTHER_RESOURCE_NAME",
+                        + "%s: Deny ALTER on CLUSTER:resource, "
+                        + "%s: Allow ALTER on DELEGATION_TOKEN:ANOTHER_RESOURCE_NAME",
                 now.format(AuditorDumpFormatter.dateFormatter()),
                 InetAddress.getLocalHost(),
                 anotherInetAddress

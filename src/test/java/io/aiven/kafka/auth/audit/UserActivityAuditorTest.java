@@ -25,12 +25,11 @@ import java.util.Map;
 import org.apache.kafka.common.acl.AclOperation;
 import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.common.resource.PatternType;
+import org.apache.kafka.common.resource.ResourcePattern;
+import org.apache.kafka.common.resource.ResourceType;
 import org.apache.kafka.common.security.auth.KafkaPrincipal;
 
 import kafka.network.RequestChannel.Session;
-import kafka.security.auth.Operation;
-import kafka.security.auth.Resource;
-import kafka.security.auth.ResourceType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -52,8 +51,8 @@ class UserActivityAuditorTest {
     private Logger logger;
 
     private Session session;
-    private Operation operation;
-    private Resource resource;
+    private AclOperation operation;
+    private ResourcePattern resource;
 
     @BeforeEach
     void setUp() throws Exception {
@@ -61,12 +60,12 @@ class UserActivityAuditorTest {
                 new KafkaPrincipal("PRINCIPAL_TYPE", "PRINCIPAL_NAME");
         session = new Session(principal, InetAddress.getLocalHost());
         resource =
-            new Resource(
-                ResourceType.fromJava(org.apache.kafka.common.resource.ResourceType.CLUSTER),
+            new ResourcePattern(
+                ResourceType.CLUSTER,
                 "resource",
                 PatternType.LITERAL
             );
-        operation = Operation.fromJava(AclOperation.ALTER);
+        operation = AclOperation.ALTER;
     }
 
     @Test

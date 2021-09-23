@@ -40,6 +40,8 @@ import java.util.stream.Collectors;
 import org.apache.kafka.common.Endpoint;
 import org.apache.kafka.common.acl.AclBinding;
 import org.apache.kafka.common.acl.AclBindingFilter;
+import org.apache.kafka.common.acl.AclOperation;
+import org.apache.kafka.common.resource.ResourcePattern;
 import org.apache.kafka.common.security.auth.KafkaPrincipal;
 import org.apache.kafka.server.authorizer.AclCreateResult;
 import org.apache.kafka.server.authorizer.AclDeleteResult;
@@ -53,11 +55,10 @@ import io.aiven.kafka.auth.audit.AuditorAPI;
 import io.aiven.kafka.auth.json.AivenAcl;
 import io.aiven.kafka.auth.json.reader.AclJsonReader;
 import io.aiven.kafka.auth.json.reader.JsonReaderException;
+import io.aiven.kafka.auth.nameformatters.LegacyOperationNameFormatter;
+import io.aiven.kafka.auth.nameformatters.LegacyResourceTypeNameFormatter;
 
 import kafka.network.RequestChannel.Session;
-import kafka.security.auth.Operation;
-import kafka.security.auth.Resource;
-import kafka.security.auth.ResourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -156,29 +157,17 @@ public class AivenAclAuthorizerV2 implements Authorizer {
             Objects.requireNonNullElse(requestContext.principal(), KafkaPrincipal.ANONYMOUS);
         final List<AuthorizationResult> result = new ArrayList<>(actions.size());
         for (final Action action : actions) {
-            // Some string conversions are done inside.
-            final var operation = Operation.fromJava(action.operation());
-            final var resourceType = ResourceType.fromJava(action.resourcePattern().resourceType());
-            final String resourceToCheck =
-                resourceType + ":" + action.resourcePattern().name();
             final boolean verdict =
                 checkAcl(
-                    principal.getPrincipalType(),
-                    principal.getName(),
-                    operation.name(),
-                    resourceToCheck,
+                    principal,
+                    action.operation(),
+                    action.resourcePattern(),
                     action.logIfAllowed(),
                     action.logIfDenied()
                 );
 
-            // When we finally drop the old API, we can change the auditor API,
-            // so it doesn't require these conversions.
             final var session = new Session(principal, requestContext.clientAddress());
-            final var resource = new Resource(
-                resourceType,
-                action.resourcePattern().name(),
-                action.resourcePattern().patternType());
-            auditor.addActivity(session, operation, resource, verdict);
+            auditor.addActivity(session, action.operation(), action.resourcePattern(), verdict);
 
             result.add(verdict ? AuthorizationResult.ALLOWED : AuthorizationResult.DENIED);
         }
@@ -201,35 +190,41 @@ public class AivenAclAuthorizerV2 implements Authorizer {
     /**
      * Authorize a single request.
      */
-    private boolean checkAcl(final String principalType,
-                             final String principalName,
-                             final String operation,
-                             final String resource,
+    private boolean checkAcl(final KafkaPrincipal principal,
+                             final AclOperation operation,
+                             final ResourcePattern resourcePattern,
                              final boolean actionLogIfAllowed,
                              final boolean actionLogIfDenied) {
-        final boolean verdict = cacheReference.get().get(principalType, principalName, operation, resource);
-        logAuthVerdict(verdict, operation, resource, principalType, principalName,
+        final String resourceToCheck =
+            LegacyResourceTypeNameFormatter.format(resourcePattern.resourceType())
+                + ":" + resourcePattern.name();
+        final boolean verdict = cacheReference.get().get(principal,
+            LegacyOperationNameFormatter.format(operation),
+            resourceToCheck);
+        logAuthVerdict(verdict, operation, resourcePattern, principal,
             actionLogIfAllowed, actionLogIfDenied);
         return verdict;
     }
 
     private void logAuthVerdict(final boolean verdict,
-                                final String operation,
-                                final String resource,
-                                final String principalType,
-                                final String principalName,
+                                final AclOperation operation,
+                                final ResourcePattern resourcePattern,
+                                final KafkaPrincipal principal,
                                 final boolean actionLogIfAllowed,
                                 final boolean actionLogIfDenied) {
         if (verdict && actionLogIfAllowed) {
-            LOGGER.debug("[ALLOW] Auth request {} on {} by {} {}",
-                    operation, resource, principalType, principalName);
+            LOGGER.debug("[ALLOW] Auth request {} on {}:{} by {} {}",
+                operation.name(), resourcePattern.resourceType(), resourcePattern.name(),
+                principal.getPrincipalType(), principal.getName());
         } else if (actionLogIfDenied) {
             if (logDenials) {
-                LOGGER.info("[DENY] Auth request {} on {} by {} {}",
-                        operation, resource, principalType, principalName);
+                LOGGER.info("[DENY] Auth request {} on {}:{} by {} {}",
+                    operation.name(), resourcePattern.resourceType(), resourcePattern.name(),
+                    principal.getPrincipalType(), principal.getName());
             } else {
-                LOGGER.debug("[DENY] Auth request {} on {} by {} {}",
-                        operation, resource, principalType, principalName);
+                LOGGER.debug("[DENY] Auth request {} on {}:{} by {} {}",
+                    operation.name(), resourcePattern.resourceType(), resourcePattern.name(),
+                    principal.getPrincipalType(), principal.getName());
             }
         }
     }

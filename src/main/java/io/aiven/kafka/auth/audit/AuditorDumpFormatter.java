@@ -38,9 +38,8 @@ public interface AuditorDumpFormatter {
 
     default String formatUserOperation(final UserOperation userOperation) {
         return (userOperation.hasAccess ? "Allow" : "Deny")
-                + " " + userOperation.operation.name() + " on "
+                + " " + userOperation.operation + " on "
                 + userOperation.resource.resourceType() + ":"
                 + userOperation.resource.name();
     }
-
 }
