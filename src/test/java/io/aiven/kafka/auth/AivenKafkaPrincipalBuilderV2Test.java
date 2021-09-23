@@ -18,9 +18,9 @@ package io.aiven.kafka.auth;
 
 import io.aiven.kafka.auth.utils.TimeWithTimer;
 
-public class AivenKafkaPrincipalBuilderTest extends AivenKafkaPrincipalBuilderTestBase {
+public class AivenKafkaPrincipalBuilderV2Test extends AivenKafkaPrincipalBuilderTestBase {
     @Override
     protected AivenKafkaPrincipalBuilder createBuilder(final TimeWithTimer time) {
-        return new AivenKafkaPrincipalBuilder(time);
+        return new AivenKafkaPrincipalBuilderV2(time);
     }
 }
