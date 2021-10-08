@@ -1,4 +1,4 @@
-# Aiven Kafka Authorization plugins
+# Aiven Authentication and Authorization Plugins for Apache Kafka
 
 ## AivenAclAuthorizer
 

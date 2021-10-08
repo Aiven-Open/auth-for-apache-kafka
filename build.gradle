@@ -91,7 +91,7 @@ dependencies {
 group = "io.aiven"
 
 processResources {
-    filesMatching("aiven-kafka-auth-version.properties") {
+    filesMatching("auth-for-apache-kafka-version.properties") {
         expand(version: version)
     }
 }
@@ -121,11 +121,11 @@ publishing {
     publications {
         maven(MavenPublication) {
             groupId = getGroup()
-            artifactId = "aiven-kafka-auth"
+            artifactId = "auth-for-apache-kafka"
             version = getVersion()
             pom {
-                name = "Aiven Kafka authorization"
-                description = "Aiven authorization extensions for Kafka"
+                name = "Aiven Authentication and Authorization Plugins for Apache Kafka"
+                description = "Aiven Authentication and Authorization Plugins for Apache Kafka"
                 url = "https://aiven.io"
                 organization {
                     name = "Aiven Oy"
@@ -139,9 +139,9 @@ publishing {
                     }
                 }
                 scm {
-                    connection = "scm:git:git://github.com/aiven/aiven-kafka-auth.git"
-                    developerConnection = "scm:git:git@github.com:aiven/aiven-kafka-auth.git"
-                    url = "https://github.com/aiven/aiven-kafka-connect-gcs.git"
+                    connection = "scm:git:git://github.com/aiven/auth-for-apache-kafka.git"
+                    developerConnection = "scm:git:git@github.com:aiven/auth-for-apache-kafka.git"
+                    url = "https://github.com/aiven/auth-for-apache-kafka.git"
                     tag = "HEAD"
                 }
             }
