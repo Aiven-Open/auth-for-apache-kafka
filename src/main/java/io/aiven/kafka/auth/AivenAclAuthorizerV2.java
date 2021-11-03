@@ -68,19 +68,13 @@ public class AivenAclAuthorizerV2 implements Authorizer {
     private File configFile;
     private AuditorAPI auditor;
     private boolean logDenials;
-    private final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
-    private final WatchService watchService;
+    private ScheduledExecutorService scheduledExecutorService;
+    private volatile WatchService watchService;
     private final AtomicReference<VerdictCache> cacheReference = new AtomicReference<>();
 
     private AivenAclAuthorizerConfig config;
 
     public AivenAclAuthorizerV2() {
-        try {
-            watchService = FileSystems.getDefault().newWatchService();
-        } catch (final IOException e) {
-            LOGGER.error("Failed to initialize WatchService", e);
-            throw new RuntimeException(e);
-        }
     }
 
     @Override
@@ -93,6 +87,8 @@ public class AivenAclAuthorizerV2 implements Authorizer {
         final AuthorizerServerInfo serverInfo) {
         auditor = config.getAuditor();
         logDenials = config.logDenials();
+        watchService = initializeWatchService();
+        scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
 
         configFile = config.getConfigFile();
         final AclJsonReader jsonReader = new AclJsonReader(configFile.toPath());
@@ -126,6 +122,15 @@ public class AivenAclAuthorizerV2 implements Authorizer {
                 endpoint -> endpoint,
                 endpoint -> CompletableFuture.completedFuture(null)
             ));
+    }
+
+    private WatchService initializeWatchService() {
+        try {
+            return FileSystems.getDefault().newWatchService();
+        } catch (final IOException e) {
+            LOGGER.error("Failed to initialize WatchService", e);
+            throw new RuntimeException(e);
+        }
     }
 
     private WatchKey subscribeToAclChanges(final File configFile) {
