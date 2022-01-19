@@ -1,4 +1,4 @@
-# Aiven Authentication and Authorization Plugins for Apache Kafka
+# Aiven Authentication and Authorization Plugins for Apache Kafka®
 
 ## AivenAclAuthorizer
 
@@ -69,3 +69,7 @@ users and system users into separate namespace.
             "principal_type": "Service",
         }
     ]
+
+## Trademarks
+
+Apache Kafka is either a registered trademark or a trademark of the Apache Software Foundation in the United States and/or other countries.
