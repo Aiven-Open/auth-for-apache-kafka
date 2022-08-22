@@ -45,6 +45,7 @@ class AivenAclAuthorizerConfigTest {
         assertEquals("/test", config.getConfigFile().getAbsolutePath());
         assertEquals(NoAuditor.class, config.getAuditor().getClass());
         assertTrue(config.logDenials());
+        assertTrue(config.listAclsEnabled());
     }
 
     @Test
@@ -55,12 +56,14 @@ class AivenAclAuthorizerConfigTest {
         userActivityProps.put("aiven.acl.authorizer.auditor.aggregation.period", "123");
         userActivityProps.put("aiven.acl.authorizer.log.denials", "false");
         userActivityProps.put("aiven.acl.authorizer.config.refresh.interval", "10");
+        userActivityProps.put("aiven.acl.authorizer.list.acls.enabled", "false");
 
         var config = new AivenAclAuthorizerConfig(userActivityProps);
         assertEquals("/test", config.getConfigFile().getAbsolutePath());
         assertEquals(UserActivityAuditor.class, config.getAuditor().getClass());
         assertFalse(config.logDenials());
         assertEquals(10, config.configRefreshInterval());
+        assertFalse(config.listAclsEnabled());
 
         final Map<String, String> userActivityOpsProps = new HashMap<>();
         userActivityOpsProps.put("aiven.acl.authorizer.configuration", "/test");

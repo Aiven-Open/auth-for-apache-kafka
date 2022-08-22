@@ -57,6 +57,7 @@ import io.aiven.kafka.auth.json.reader.AclJsonReader;
 import io.aiven.kafka.auth.json.reader.JsonReaderException;
 import io.aiven.kafka.auth.nameformatters.LegacyOperationNameFormatter;
 import io.aiven.kafka.auth.nameformatters.LegacyResourceTypeNameFormatter;
+import io.aiven.kafka.auth.nativeacls.AclAivenToNativeConverter;
 
 import kafka.network.RequestChannel.Session;
 import org.slf4j.Logger;
@@ -242,7 +243,12 @@ public class AivenAclAuthorizerV2 implements Authorizer {
 
     @Override
     public final Iterable<AclBinding> acls(final AclBindingFilter filter) {
-        LOGGER.error("`acls` is not implemented");
-        return List.of();
+        if (this.config.listAclsEnabled()) {
+            // Filtering is not supported yet.
+            return AclAivenToNativeConverter.convert(this.cacheReference.get().aclEntries());
+        } else {
+            LOGGER.warn("Listing ACLs is disabled");
+            return List.of();
+        }
     }
 }
