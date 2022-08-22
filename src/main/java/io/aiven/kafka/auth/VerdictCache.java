@@ -19,6 +19,7 @@ package io.aiven.kafka.auth;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Predicate;
 
 import org.apache.kafka.common.security.auth.KafkaPrincipal;
@@ -30,7 +31,7 @@ public class VerdictCache {
     private final Map<String, Boolean> cache = new ConcurrentHashMap<>();
 
     private VerdictCache(final List<AivenAcl> aclEntries) {
-        this.aclEntries = aclEntries;
+        this.aclEntries = new CopyOnWriteArrayList<>(aclEntries);
     }
 
     public boolean get(final KafkaPrincipal principal,
@@ -48,6 +49,10 @@ public class VerdictCache {
         } else {
             return false;
         }
+    }
+
+    public List<AivenAcl> aclEntries() {
+        return aclEntries;
     }
 
     public static VerdictCache create(final List<AivenAcl> aclEntries) {
