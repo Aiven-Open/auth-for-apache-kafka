@@ -162,14 +162,16 @@ public class AivenAclAuthorizerV2 implements Authorizer {
             Objects.requireNonNullElse(requestContext.principal(), KafkaPrincipal.ANONYMOUS);
         final List<AuthorizationResult> result = new ArrayList<>(actions.size());
         for (final Action action : actions) {
-            final boolean verdict =
-                checkAcl(
-                    principal,
-                    action.operation(),
-                    action.resourcePattern(),
-                    action.logIfAllowed(),
-                    action.logIfDenied()
-                );
+            final AclOperation operation = action.operation();
+            final ResourcePattern resourcePattern = action.resourcePattern();
+            final String resourceToCheck =
+                LegacyResourceTypeNameFormatter.format(resourcePattern.resourceType())
+                + ":" + resourcePattern.name();
+            final boolean verdict = cacheReference.get().get(principal,
+                                                             LegacyOperationNameFormatter.format(operation),
+                                                             resourceToCheck);
+            logAuthVerdict(verdict, operation, resourcePattern, principal, requestContext,
+                           action.logIfAllowed(), action.logIfDenied());
 
             final var session = new Session(principal, requestContext.clientAddress());
             auditor.addActivity(session, action.operation(), action.resourcePattern(), verdict);
@@ -192,44 +194,32 @@ public class AivenAclAuthorizerV2 implements Authorizer {
         }
     }
 
-    /**
-     * Authorize a single request.
-     */
-    private boolean checkAcl(final KafkaPrincipal principal,
-                             final AclOperation operation,
-                             final ResourcePattern resourcePattern,
-                             final boolean actionLogIfAllowed,
-                             final boolean actionLogIfDenied) {
-        final String resourceToCheck =
-            LegacyResourceTypeNameFormatter.format(resourcePattern.resourceType())
-                + ":" + resourcePattern.name();
-        final boolean verdict = cacheReference.get().get(principal,
-            LegacyOperationNameFormatter.format(operation),
-            resourceToCheck);
-        logAuthVerdict(verdict, operation, resourcePattern, principal,
-            actionLogIfAllowed, actionLogIfDenied);
-        return verdict;
-    }
-
     private void logAuthVerdict(final boolean verdict,
                                 final AclOperation operation,
                                 final ResourcePattern resourcePattern,
                                 final KafkaPrincipal principal,
+                                final AuthorizableRequestContext requestContext,
                                 final boolean actionLogIfAllowed,
                                 final boolean actionLogIfDenied) {
         if (verdict && actionLogIfAllowed) {
-            LOGGER.debug("[ALLOW] Auth request {} on {}:{} by {} {}",
+            LOGGER.debug("[ALLOW] Auth request {} on {}:{} by {} {} from {} ({})",
                 operation.name(), resourcePattern.resourceType(), resourcePattern.name(),
-                principal.getPrincipalType(), principal.getName());
+                         principal.getPrincipalType(), principal.getName(),
+                         requestContext.clientAddress().getHostAddress(),
+                         requestContext.clientId());
         } else if (actionLogIfDenied) {
             if (logDenials) {
-                LOGGER.info("[DENY] Auth request {} on {}:{} by {} {}",
+                LOGGER.info("[DENY] Auth request {} on {}:{} by {} {} from {} ({})",
                     operation.name(), resourcePattern.resourceType(), resourcePattern.name(),
-                    principal.getPrincipalType(), principal.getName());
+                    principal.getPrincipalType(), principal.getName(),
+                         requestContext.clientAddress().getHostAddress(),
+                         requestContext.clientId());
             } else {
-                LOGGER.debug("[DENY] Auth request {} on {}:{} by {} {}",
+                LOGGER.debug("[DENY] Auth request {} on {}:{} by {} {} from {} ({})",
                     operation.name(), resourcePattern.resourceType(), resourcePattern.name(),
-                    principal.getPrincipalType(), principal.getName());
+                    principal.getPrincipalType(), principal.getName(),
+                         requestContext.clientAddress().getHostAddress(),
+                         requestContext.clientId());
             }
         }
     }
