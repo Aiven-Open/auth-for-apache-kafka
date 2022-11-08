@@ -38,7 +38,7 @@ import org.openjdk.jmh.infra.Blackhole;
 @State(Scope.Benchmark)
 @BenchmarkMode(Mode.Throughput)
 public class BenchmarkRunner {
-    AivenKafkaPrincipalBuilder builder;
+    AivenKafkaPrincipalBuilderV2 builder;
     Path configFilePath;
 
     @Setup
@@ -47,7 +47,7 @@ public class BenchmarkRunner {
             .resolve("benchmark_config.json");
         Files.copy(this.getClass().getResourceAsStream("/benchmark_config.json"), configFilePath);
 
-        builder = new AivenKafkaPrincipalBuilder();
+        builder = new AivenKafkaPrincipalBuilderV2();
         final Map<String, String> config = new HashMap<>();
         config.put("aiven.kafka.principal.builder.configuration", configFilePath.toString());
         builder.configure(config);

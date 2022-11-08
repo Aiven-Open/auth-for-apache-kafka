@@ -34,10 +34,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 class PrincipalMappers {
-    private static final Logger LOGGER = LoggerFactory.getLogger(AivenKafkaPrincipalBuilder.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(PrincipalMappers.class);
 
     private final File configFile;
-    private final long refrestTimeoutMs;
+    private final long refreshTimeoutMs;
     private final Timer refreshTimer;
     private final long cacheCapacity;
 
@@ -51,7 +51,7 @@ class PrincipalMappers {
                      final TimeWithTimer time,
                      final long cacheCapacity) {
         this.configFile = new File(configFileLocation);
-        this.refrestTimeoutMs = refreshTimeoutMs;
+        this.refreshTimeoutMs = refreshTimeoutMs;
         this.refreshTimer = time.timer(0); // first update without a delay
         this.cacheCapacity = cacheCapacity;
         this.jsonReader = new KafkaPrincipalJsonReader(this.configFile.toPath());
@@ -105,7 +105,7 @@ class PrincipalMappers {
                         cacheCapacity);
                 }
                 // The timer must be reset despite if reload happened.
-                refreshTimer.updateAndReset(refrestTimeoutMs);
+                refreshTimer.updateAndReset(refreshTimeoutMs);
                 return state;
             } catch (final IOException | JsonReaderException ex) {
                 LOGGER.error("Failed to read configuration file", ex);
