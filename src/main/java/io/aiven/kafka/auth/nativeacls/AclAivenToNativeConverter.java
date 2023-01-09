@@ -27,25 +27,25 @@ import org.apache.kafka.common.acl.AclPermissionType;
 import io.aiven.kafka.auth.json.AivenAcl;
 
 public class AclAivenToNativeConverter {
-    public static Iterable<AclBinding> convert(final List<AivenAcl> aivenAcls) {
+    public static List<AclBinding> convert(final AivenAcl aivenAcl) {
         final List<AclBinding> result = new ArrayList<>();
+        if (aivenAcl.resourceRe == null) {
+            return result;
+        }
 
-        for (final var aclEntry : aivenAcls) {
-            if (!Objects.equals(aclEntry.principalType, "User")) {
-                continue;
-            }
+        if (!Objects.equals(aivenAcl.principalType, "User")) {
+            return result;
+        }
 
-            for (final var operation : AclOperationsParser.parse(aclEntry.operationRe.pattern())) {
-                List<String> principals = RegexParser.parse(aclEntry.principalRe.pattern());
-                if (principals == null) {
-                    principals = List.of(aclEntry.principalRe.pattern());
-                }
-                for (final var principal : principals) {
-                    final var accessControlEntry = new AccessControlEntry(
-                        principal, "*", operation, AclPermissionType.ALLOW);
-                    for (final var resourcePattern : ResourcePatternParser.parse(aclEntry.resourceRe.pattern())) {
-                        result.add(new AclBinding(resourcePattern, accessControlEntry));
-                    }
+        for (final var operation : AclOperationsParser.parse(aivenAcl.operationRe.pattern())) {
+            final List<String> principals = AclPrincipalParser.parse(
+                aivenAcl.principalType, aivenAcl.principalRe.pattern()
+            );
+            for (final var principal : principals) {
+                final var accessControlEntry = new AccessControlEntry(
+                    principal, "*", operation, AclPermissionType.ALLOW);
+                for (final var resourcePattern : ResourcePatternParser.parse(aivenAcl.resourceRe.pattern())) {
+                    result.add(new AclBinding(resourcePattern, accessControlEntry));
                 }
             }
         }

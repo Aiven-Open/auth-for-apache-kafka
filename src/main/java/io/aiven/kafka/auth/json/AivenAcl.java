@@ -22,7 +22,7 @@ import java.util.regex.Pattern;
 
 import com.google.gson.annotations.SerializedName;
 
-public class  AivenAcl {
+public class AivenAcl {
     @SerializedName("principal_type")
     public final String principalType;
 

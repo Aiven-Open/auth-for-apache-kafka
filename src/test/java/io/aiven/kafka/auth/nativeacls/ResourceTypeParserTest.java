@@ -27,28 +27,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class ResourceTypeParserTest {
     @Test
     public final void parseResourceTypeSingle() {
-        assertThat(ResourceTypeParser.parse("^Topic$"))
+        assertThat(ResourceTypeParser.parse("Topic"))
             .containsExactly(ResourceType.TOPIC);
-    }
-
-    @Test
-    public final void parseResourceTypeSingleWithParens() {
-        assertThat(ResourceTypeParser.parse("^(Topic)$"))
-            .containsExactly(ResourceType.TOPIC);
-    }
-
-    @Test
-    public final void parseResourceTypeMultiple() {
-        // List all possible here, apart from Unknown.
-        assertThat(ResourceTypeParser.parse("^(Any|Topic|Group|Cluster|TransactionalId|DelegationToken)$"))
-            .containsExactly(
-                ResourceType.ANY,
-                ResourceType.TOPIC,
-                ResourceType.GROUP,
-                ResourceType.CLUSTER,
-                ResourceType.TRANSACTIONAL_ID,
-                ResourceType.DELEGATION_TOKEN
-            );
     }
 
     @ParameterizedTest
@@ -66,8 +46,8 @@ public class ResourceTypeParserTest {
 
     @Test
     public final void parseResourceTypeUnknown() {
-        assertThat(ResourceTypeParser.parse("^(Some)$"))
-            .isEmpty();
+        assertThat(ResourceTypeParser.parse("Some"))
+            .containsExactly(ResourceType.UNKNOWN);
     }
 
     @Test
@@ -76,21 +56,4 @@ public class ResourceTypeParserTest {
             .isEmpty();
     }
 
-    @Test
-    public final void parseResourceTypeMultipleWithUnknown() {
-        assertThat(ResourceTypeParser.parse("^(Topic|Cluster|Some)$"))
-            .containsExactly(ResourceType.TOPIC, ResourceType.CLUSTER);
-    }
-
-    @ParameterizedTest
-    @ValueSource(strings = {
-        "^(Topic|Cluster)",
-        "(Topic|Cluster)$",
-        "^(Topic|Cluster",
-        "Topic|Cluster)$"
-    })
-    public final void parseResourceTypeInvalid(final String pattern) {
-        assertThat(ResourceTypeParser.parse(pattern))
-            .isEmpty();
-    }
 }

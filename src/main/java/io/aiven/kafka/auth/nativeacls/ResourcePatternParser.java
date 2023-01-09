@@ -17,93 +17,78 @@
 package io.aiven.kafka.auth.nativeacls;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.function.Predicate;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import org.apache.kafka.common.resource.PatternType;
 import org.apache.kafka.common.resource.ResourcePattern;
 import org.apache.kafka.common.resource.ResourceType;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 class ResourcePatternParser {
+    private static final Pattern PARSER_PATTERN = Pattern.compile("\\^\\(?(.*?)\\)?:\\(?(.*?)\\)?\\$");
+    private static final Logger LOGGER = LoggerFactory.getLogger(ResourcePatternParser.class);
+
     // Visible for test
+
     static Iterable<ResourcePattern> parse(final String resourcePattern) {
         if (resourcePattern == null) {
             return List.of();
         }
 
         if (resourcePattern.equals("^.*$") || resourcePattern.equals("^(.*)$")) {
-            final var resourcePatternNormalized = resourcePattern.equals("^(.*)$") ? "^.*$" : resourcePattern;
             return List.of(
-                new ResourcePattern(ResourceType.TOPIC, resourcePatternNormalized, PatternType.LITERAL),
-                new ResourcePattern(ResourceType.GROUP, resourcePatternNormalized, PatternType.LITERAL),
-                new ResourcePattern(ResourceType.CLUSTER, resourcePatternNormalized, PatternType.LITERAL),
-                new ResourcePattern(ResourceType.TRANSACTIONAL_ID, resourcePatternNormalized, PatternType.LITERAL),
-                new ResourcePattern(ResourceType.DELEGATION_TOKEN, resourcePatternNormalized, PatternType.LITERAL)
+                new ResourcePattern(ResourceType.TOPIC, "*", PatternType.LITERAL),
+                new ResourcePattern(ResourceType.GROUP, "*", PatternType.LITERAL),
+                new ResourcePattern(ResourceType.CLUSTER, "*", PatternType.LITERAL),
+                new ResourcePattern(ResourceType.TRANSACTIONAL_ID, "*", PatternType.LITERAL),
+                new ResourcePattern(ResourceType.DELEGATION_TOKEN, "*", PatternType.LITERAL)
             );
         }
 
-        final String[] parts = resourcePattern.split(":");
-        if (parts.length != 2) {
+        final Matcher matcher = PARSER_PATTERN.matcher(resourcePattern);
+        if (!matcher.find() || matcher.groupCount() != 2) {
+            LOGGER.debug("Nothing parsed from resource pattern {}", resourcePattern);
             return List.of();
         }
+        final String resourceTypesGroup = matcher.group(1);
+        final String resourcesGroup = matcher.group(2);
+        if (resourceTypesGroup.isBlank() || resourcesGroup.isBlank()) {
+            LOGGER.debug("Parsed empty resource type or resource for {}", resourcePattern);
+            return List.of();
+        }
+        final List<ResourceType> resourceTypes = Arrays.stream(resourceTypesGroup.split("\\|"))
+            .flatMap(type -> ResourceTypeParser.parse(type).stream())
+            .collect(Collectors.toList());
 
-        // Normalize and parse the left part.
-        final List<ResourceType> resourceTypes = parseResourceTypes(parts[0]);
-        if (resourceTypes == null) {
-            return List.of();
-        }
-
-        final List<String> resources = parseResources(parts[1]);
-        if (resources == null) {
-            return List.of();
-        }
+        final List<String> resources = Arrays.stream(resourcesGroup.split("\\|"))
+            .filter(Predicate.not(String::isBlank))
+            .collect(Collectors.toList());
 
         final List<ResourcePattern> result = new ArrayList<>(resourceTypes.size() * resources.size());
         for (final ResourceType resourceType : resourceTypes) {
             for (final String resource : resources) {
-                result.add(
-                    new ResourcePattern(resourceType, resource, PatternType.LITERAL)
-                );
+                result.add(createResourcePattern(resourceType, resource));
             }
         }
         return result;
     }
 
-    private static List<ResourceType> parseResourceTypes(String leftPart) {
-        if (!leftPart.startsWith("^")) {
-            return null;
-        }
-        if (leftPart.startsWith("^(")) {
-            leftPart = leftPart.substring(2);
+    private static ResourcePattern createResourcePattern(final ResourceType resourceType, final String resource) {
+        if (resource.equals(".*") || resource.equals("(.*)")) {
+            return new ResourcePattern(resourceType, "*", PatternType.LITERAL);
+        } else if (resource.endsWith("(.*)")) {
+            return new ResourcePattern(
+                resourceType, resource.substring(0, resource.length() - 4), PatternType.PREFIXED
+            );
         } else {
-            leftPart = leftPart.substring(1);
+            return new ResourcePattern(resourceType, resource, PatternType.LITERAL);
         }
-        if (leftPart.endsWith(")")) {
-            leftPart = leftPart.substring(0, leftPart.length() - 1);
-        }
-        leftPart = leftPart.trim();
-        if (leftPart.isEmpty()) {
-            return null;
-        }
-        return ResourceTypeParser.parse("^(" + leftPart + ")$");
-    }
-
-    private static List<String> parseResources(String rightPart) {
-        if (!rightPart.endsWith("$")) {
-            return null;
-        }
-        if (rightPart.endsWith(")$")) {
-            rightPart = rightPart.substring(0, rightPart.length() - 2);
-        } else {
-            rightPart = rightPart.substring(0, rightPart.length() - 1);
-        }
-        if (rightPart.startsWith("(")) {
-            rightPart = rightPart.substring(1);
-        }
-        rightPart = rightPart.trim();
-        if (rightPart.isEmpty()) {
-            return null;
-        }
-
-        return RegexParser.parse("^(" + rightPart + ")$");
     }
 }

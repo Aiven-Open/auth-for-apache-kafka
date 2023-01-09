@@ -23,7 +23,13 @@ import org.apache.kafka.common.acl.AclOperation;
 
 import io.aiven.kafka.auth.nameformatters.OperationNameFormatter;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 class AclOperationsParser {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(AclOperationsParser.class);
+
     // Visible for test
     static Iterable<AclOperation> parse(final String operationPattern) {
         if (operationPattern == null) {
@@ -47,6 +53,7 @@ class AclOperationsParser {
 
         final List<String> parsedOperationList = RegexParser.parse(operationPattern);
         if (parsedOperationList == null) {
+            LOGGER.debug("Nothing parsed from operation {}", operationPattern);
             return List.of();
         }
         return parsedOperationList.stream()

@@ -229,7 +229,7 @@ public class AivenAclAuthorizerV2 implements Authorizer {
     public final List<? extends CompletionStage<AclCreateResult>> createAcls(
         final AuthorizableRequestContext requestContext,
         final List<AclBinding> aclBindings) {
-        LOGGER.error("`createAcls` is not implemented");
+        LOGGER.warn("`createAcls` is not implemented");
         return List.of();
     }
 
@@ -237,15 +237,17 @@ public class AivenAclAuthorizerV2 implements Authorizer {
     public final List<? extends CompletionStage<AclDeleteResult>> deleteAcls(
         final AuthorizableRequestContext requestContext,
         final List<AclBindingFilter> aclBindingFilters) {
-        LOGGER.error("`deleteAcls` is not implemented");
+        LOGGER.warn("`deleteAcls` is not implemented");
         return List.of();
     }
 
     @Override
     public final Iterable<AclBinding> acls(final AclBindingFilter filter) {
         if (this.config.listAclsEnabled()) {
-            // Filtering is not supported yet.
-            return AclAivenToNativeConverter.convert(this.cacheReference.get().aclEntries());
+            return this.cacheReference.get().aclEntries().stream()
+                    .flatMap(acl -> AclAivenToNativeConverter.convert(acl).stream())
+                    .filter(filter::matches)
+                    .collect(Collectors.toList());
         } else {
             LOGGER.warn("Listing ACLs is disabled");
             return List.of();

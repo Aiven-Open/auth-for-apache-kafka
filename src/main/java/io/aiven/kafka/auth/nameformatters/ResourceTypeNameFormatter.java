@@ -21,9 +21,6 @@ import org.apache.kafka.common.resource.ResourceType;
 public class ResourceTypeNameFormatter {
     public static ResourceType format(final String resourceType) {
         switch (resourceType) {
-            case "Unknown":
-                return ResourceType.UNKNOWN;
-
             case "Any":
                 return ResourceType.ANY;
 

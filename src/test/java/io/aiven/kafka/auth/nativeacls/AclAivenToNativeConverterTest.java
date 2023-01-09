@@ -37,44 +37,102 @@ public class AclAivenToNativeConverterTest {
     @Test
     public final void testConvertSimple() {
         final var result = AclAivenToNativeConverter.convert(
-            List.of(new AivenAcl(
+            new AivenAcl(
                 "User",
                 "^(test\\-user)$",
                 "^(Alter|AlterConfigs|Delete|Read|Write)$",
                 "^Topic:(xxx)$",
                 null
-            ))
+            )
         );
         final ResourcePattern resourcePattern = new ResourcePattern(ResourceType.TOPIC, "xxx", PatternType.LITERAL);
         assertThat(result).containsExactly(
             new AclBinding(
                 resourcePattern,
-                new AccessControlEntry("test\\-user", "*", AclOperation.ALTER, AclPermissionType.ALLOW)),
+                new AccessControlEntry("User:test\\-user", "*", AclOperation.ALTER, AclPermissionType.ALLOW)),
             new AclBinding(
                 resourcePattern,
-                new AccessControlEntry("test\\-user", "*", AclOperation.ALTER_CONFIGS, AclPermissionType.ALLOW)),
+                new AccessControlEntry("User:test\\-user", "*", AclOperation.ALTER_CONFIGS, AclPermissionType.ALLOW)),
             new AclBinding(
                 resourcePattern,
-                new AccessControlEntry("test\\-user", "*", AclOperation.DELETE, AclPermissionType.ALLOW)),
+                new AccessControlEntry("User:test\\-user", "*", AclOperation.DELETE, AclPermissionType.ALLOW)),
             new AclBinding(
                 resourcePattern,
-                new AccessControlEntry("test\\-user", "*", AclOperation.READ, AclPermissionType.ALLOW)),
+                new AccessControlEntry("User:test\\-user", "*", AclOperation.READ, AclPermissionType.ALLOW)),
             new AclBinding(
                 resourcePattern,
-                new AccessControlEntry("test\\-user", "*", AclOperation.WRITE, AclPermissionType.ALLOW))
+                new AccessControlEntry("User:test\\-user", "*", AclOperation.WRITE, AclPermissionType.ALLOW))
+        );
+    }
+
+    @Test
+    public final void testConvertPrefix() {
+        final var result = AclAivenToNativeConverter.convert(
+            new AivenAcl(
+                "User",
+                "^(test\\-user)$",
+                "^Read$",
+                "^Topic:(topic\\.(.*))$",
+                null
+            )
+        );
+        assertThat(result).containsExactly(
+            new AclBinding(
+                new ResourcePattern(ResourceType.TOPIC, "topic\\.", PatternType.PREFIXED),
+                new AccessControlEntry("User:test\\-user", "*", AclOperation.READ, AclPermissionType.ALLOW)
+            )
+        );
+    }
+
+    @Test
+    public final void testConvertMultiplePrefixes() {
+        final var result = AclAivenToNativeConverter.convert(
+            new AivenAcl(
+                "User",
+                "^(test\\-user)$",
+                "^(Delete|Read|Write)$",
+                "^Topic:(topic\\.(.*)|prefix\\-(.*))$",
+                null
+            )
+        );
+        assertThat(result).containsExactly(
+            new AclBinding(
+                new ResourcePattern(ResourceType.TOPIC, "topic\\.", PatternType.PREFIXED),
+                new AccessControlEntry("User:test\\-user", "*", AclOperation.DELETE, AclPermissionType.ALLOW)
+            ),
+            new AclBinding(
+                new ResourcePattern(ResourceType.TOPIC, "prefix\\-", PatternType.PREFIXED),
+                new AccessControlEntry("User:test\\-user", "*", AclOperation.DELETE, AclPermissionType.ALLOW)
+            ),
+            new AclBinding(
+                new ResourcePattern(ResourceType.TOPIC, "topic\\.", PatternType.PREFIXED),
+                new AccessControlEntry("User:test\\-user", "*", AclOperation.READ, AclPermissionType.ALLOW)
+            ),
+            new AclBinding(
+                new ResourcePattern(ResourceType.TOPIC, "prefix\\-", PatternType.PREFIXED),
+                new AccessControlEntry("User:test\\-user", "*", AclOperation.READ, AclPermissionType.ALLOW)
+            ),
+            new AclBinding(
+                new ResourcePattern(ResourceType.TOPIC, "topic\\.", PatternType.PREFIXED),
+                new AccessControlEntry("User:test\\-user", "*", AclOperation.WRITE, AclPermissionType.ALLOW)
+            ),
+            new AclBinding(
+                new ResourcePattern(ResourceType.TOPIC, "prefix\\-", PatternType.PREFIXED),
+                new AccessControlEntry("User:test\\-user", "*", AclOperation.WRITE, AclPermissionType.ALLOW)
+            )
         );
     }
 
     @Test
     public final void testSuperadmin() {
         final var result = AclAivenToNativeConverter.convert(
-            List.of(new AivenAcl(
+            new AivenAcl(
                 "User",
                 "^(admin)$",
                 "^(.*)$",
                 "^(.*)$",
                 null
-            ))
+            )
         );
 
         final List<AclBinding> expected = new ArrayList<>();
@@ -89,11 +147,46 @@ public class AclAivenToNativeConverterTest {
         for (final var resourceType : expectedResourceTypes) {
             for (final var aclOperation : expectedAclOperations) {
                 expected.add(new AclBinding(
-                    new ResourcePattern(resourceType, "^.*$", PatternType.LITERAL),
-                    new AccessControlEntry("admin", "*", aclOperation, AclPermissionType.ALLOW))
+                    new ResourcePattern(resourceType, "*", PatternType.LITERAL),
+                    new AccessControlEntry("User:admin", "*", aclOperation, AclPermissionType.ALLOW))
                 );
             }
         }
         assertThat(result).containsAll(expected);
+    }
+
+    @Test
+    public final void testAllUsers() {
+        final var result = AclAivenToNativeConverter.convert(
+            new AivenAcl(
+                "User",
+                "^(.*)$",
+                "^Read$",
+                "^Topic:(xxx)$",
+                null
+            )
+        );
+
+        assertThat(result).containsExactly(
+            new AclBinding(
+                new ResourcePattern(ResourceType.TOPIC, "xxx", PatternType.LITERAL),
+                new AccessControlEntry("User:*", "*", AclOperation.READ, AclPermissionType.ALLOW)
+            )
+        );
+    }
+
+    @Test
+    public final void testNoUserPrincipalType() {
+        final var result = AclAivenToNativeConverter.convert(
+            new AivenAcl(
+                "Group",
+                "^example$",
+                "^Read$",
+                "^Topic:(xxx)$",
+                null
+            )
+        );
+
+        assertThat(result).isEmpty();
     }
 }

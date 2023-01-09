@@ -17,7 +17,6 @@
 package io.aiven.kafka.auth.nativeacls;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.apache.kafka.common.resource.ResourceType;
 
@@ -40,14 +39,6 @@ class ResourceTypeParser {
             );
         }
 
-        final List<String> parsedResourceTypeList = RegexParser.parse(resourceTypePattern);
-        if (parsedResourceTypeList == null) {
-            return List.of();
-        }
-
-        return parsedResourceTypeList.stream()
-            .map(ResourceTypeNameFormatter::format)
-            .filter(rt -> rt != ResourceType.UNKNOWN)
-            .collect(Collectors.toList());
+        return List.of(ResourceTypeNameFormatter.format(resourceTypePattern));
     }
 }

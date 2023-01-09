@@ -18,9 +18,14 @@ package io.aiven.kafka.auth.nativeacls;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Predicate;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 class RegexParser {
+
+    private static final Pattern PARSER_PATTERN = Pattern.compile("\\^\\(?(.*?)\\)?\\$");
 
     // Visible for test
     /**
@@ -29,32 +34,19 @@ class RegexParser {
      * For example, <code>^(AAA|BBB|CCC)$</code> results in <code>List("AAA", "BBB", "CCC")</code>,
      * <code>^AAA$</code> results in <code>List("AAA")</code>. Unparsable strings results in {@code null}.
      */
-    static List<String> parse(String pattern) {
+    static List<String> parse(final String pattern) {
         if (pattern == null) {
             return null;
         }
 
-        // Remove regex pattern prefix and postfix.
-        if (!pattern.startsWith("^")) {
-            return null;
-        }
-        pattern = pattern.substring(1);
-        if (pattern.startsWith("(")) {
-            pattern = pattern.substring(1);
-        }
-
-        if (!pattern.endsWith("$")) {
-            return null;
-        }
-        pattern = pattern.substring(0, pattern.length() - 1);
-        if (pattern.endsWith(")")) {
-            pattern = pattern.substring(0, pattern.length() - 1);
-        }
-
-        if (pattern.equals("^(.*)$")) {
+        final Matcher matcher = PARSER_PATTERN.matcher(pattern);
+        if (!matcher.find() || matcher.groupCount() != 1) {
             return null;
         }
 
-        return Arrays.stream(pattern.split("\\|")).collect(Collectors.toList());
+        final String group = matcher.group(1);
+        return Arrays.stream(group.split("\\|"))
+            .filter(Predicate.not(String::isBlank))
+            .collect(Collectors.toList());
     }
 }
