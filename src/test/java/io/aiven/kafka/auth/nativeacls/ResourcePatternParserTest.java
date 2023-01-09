@@ -32,11 +32,11 @@ public class ResourcePatternParserTest {
     public final void parseResourcePatternGlobalWildcard(final String value) {
         assertThat(ResourcePatternParser.parse(value))
             .containsExactly(
-                new ResourcePattern(ResourceType.TOPIC, "^.*$", PatternType.LITERAL),
-                new ResourcePattern(ResourceType.GROUP, "^.*$", PatternType.LITERAL),
-                new ResourcePattern(ResourceType.CLUSTER, "^.*$", PatternType.LITERAL),
-                new ResourcePattern(ResourceType.TRANSACTIONAL_ID, "^.*$", PatternType.LITERAL),
-                new ResourcePattern(ResourceType.DELEGATION_TOKEN, "^.*$", PatternType.LITERAL)
+                new ResourcePattern(ResourceType.TOPIC, "*", PatternType.LITERAL),
+                new ResourcePattern(ResourceType.GROUP, "*", PatternType.LITERAL),
+                new ResourcePattern(ResourceType.CLUSTER, "*", PatternType.LITERAL),
+                new ResourcePattern(ResourceType.TRANSACTIONAL_ID, "*", PatternType.LITERAL),
+                new ResourcePattern(ResourceType.DELEGATION_TOKEN, "*", PatternType.LITERAL)
             );
     }
 
@@ -44,7 +44,7 @@ public class ResourcePatternParserTest {
     @ValueSource(strings = {"^Cluster:(.*)$", "^Cluster:.*$"})
     public final void parseResourcePatternSingleResourceTypeWildcard(final String value) {
         assertThat(ResourcePatternParser.parse(value))
-            .containsExactly(new ResourcePattern(ResourceType.CLUSTER, ".*", PatternType.LITERAL));
+            .containsExactly(new ResourcePattern(ResourceType.CLUSTER, "*", PatternType.LITERAL));
     }
 
     @ParameterizedTest
@@ -68,8 +68,8 @@ public class ResourcePatternParserTest {
     public final void parseResourcePatternMultipleResourceTypeWildcard() {
         assertThat(ResourcePatternParser.parse("^(Cluster|Topic):(.*)$"))
             .containsExactly(
-                new ResourcePattern(ResourceType.CLUSTER, ".*", PatternType.LITERAL),
-                new ResourcePattern(ResourceType.TOPIC, ".*", PatternType.LITERAL)
+                new ResourcePattern(ResourceType.CLUSTER, "*", PatternType.LITERAL),
+                new ResourcePattern(ResourceType.TOPIC, "*", PatternType.LITERAL)
             );
     }
 
@@ -96,6 +96,22 @@ public class ResourcePatternParserTest {
             );
     }
 
+    @Test
+    public final void parsePrefixResource() {
+        assertThat(ResourcePatternParser.parse("^Topic:(topic.(.*))$"))
+            .containsExactly(
+                new ResourcePattern(ResourceType.TOPIC, "topic.", PatternType.PREFIXED)
+            );
+    }
+
+    @Test
+    public final void parseMultiplePrefixResource() {
+        assertThat(ResourcePatternParser.parse("^Topic:(topic1.(.*)|topic2.(.*))$"))
+            .containsExactly(
+                new ResourcePattern(ResourceType.TOPIC, "topic1.", PatternType.PREFIXED),
+                new ResourcePattern(ResourceType.TOPIC, "topic2.", PatternType.PREFIXED)
+            );
+    }
 
     @ParameterizedTest
     @ValueSource(strings = {

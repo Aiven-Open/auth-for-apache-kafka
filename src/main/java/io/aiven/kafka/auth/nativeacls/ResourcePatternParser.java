@@ -25,19 +25,19 @@ import org.apache.kafka.common.resource.ResourceType;
 
 class ResourcePatternParser {
     // Visible for test
+
     static Iterable<ResourcePattern> parse(final String resourcePattern) {
         if (resourcePattern == null) {
             return List.of();
         }
 
         if (resourcePattern.equals("^.*$") || resourcePattern.equals("^(.*)$")) {
-            final var resourcePatternNormalized = resourcePattern.equals("^(.*)$") ? "^.*$" : resourcePattern;
             return List.of(
-                new ResourcePattern(ResourceType.TOPIC, resourcePatternNormalized, PatternType.LITERAL),
-                new ResourcePattern(ResourceType.GROUP, resourcePatternNormalized, PatternType.LITERAL),
-                new ResourcePattern(ResourceType.CLUSTER, resourcePatternNormalized, PatternType.LITERAL),
-                new ResourcePattern(ResourceType.TRANSACTIONAL_ID, resourcePatternNormalized, PatternType.LITERAL),
-                new ResourcePattern(ResourceType.DELEGATION_TOKEN, resourcePatternNormalized, PatternType.LITERAL)
+                new ResourcePattern(ResourceType.TOPIC, "*", PatternType.LITERAL),
+                new ResourcePattern(ResourceType.GROUP, "*", PatternType.LITERAL),
+                new ResourcePattern(ResourceType.CLUSTER, "*", PatternType.LITERAL),
+                new ResourcePattern(ResourceType.TRANSACTIONAL_ID, "*", PatternType.LITERAL),
+                new ResourcePattern(ResourceType.DELEGATION_TOKEN, "*", PatternType.LITERAL)
             );
         }
 
@@ -60,9 +60,7 @@ class ResourcePatternParser {
         final List<ResourcePattern> result = new ArrayList<>(resourceTypes.size() * resources.size());
         for (final ResourceType resourceType : resourceTypes) {
             for (final String resource : resources) {
-                result.add(
-                    new ResourcePattern(resourceType, resource, PatternType.LITERAL)
-                );
+                result.add(createResourcePattern(resourceType, resource));
             }
         }
         return result;
@@ -105,5 +103,17 @@ class ResourcePatternParser {
         }
 
         return RegexParser.parse("^(" + rightPart + ")$");
+    }
+
+    private static ResourcePattern createResourcePattern(final ResourceType resourceType, final String resource) {
+        if (resource.equals(".*") || resource.equals("(.*)")) {
+            return new ResourcePattern(resourceType, "*", PatternType.LITERAL);
+        } else if (resource.endsWith("(.*)")) {
+            return new ResourcePattern(
+                resourceType, resource.substring(0, resource.length() - 4), PatternType.PREFIXED
+            );
+        } else {
+            return new ResourcePattern(resourceType, resource, PatternType.LITERAL);
+        }
     }
 }

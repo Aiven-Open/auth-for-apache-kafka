@@ -12,6 +12,24 @@
     "resource": "^Topic:(.*)$"
   },
   {
+    "operation": "^Read$",
+    "principal": "^(test\\-user)$",
+    "principal_type": "User",
+    "resource": "^Topic:(prefix\\.(.*))$"
+  },
+  {
+    "operation": "^Create$",
+    "principal": "^(test\\-admin)$",
+    "principal_type": "User",
+    "resource": "^Topic:(.*)$"
+  },
+  {
+    "operation": "^Delete$",
+    "principal": "^(test\\-admin)$",
+    "principal_type": "User",
+    "resource": "^Topic:(.*)$"
+  },
+  {
     "operation": "^(.*)$",
     "principal": "^(.*)$",
     "principal_type": "Service",
