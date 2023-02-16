@@ -19,18 +19,18 @@ package io.aiven.kafka.auth.nativeacls;
 import java.util.List;
 import java.util.stream.Collectors;
 
-class AclPrincipalParser {
+class AclPrincipalFormatter {
     // Visible for test
     static List<String> parse(final String principalType, final String principalPattern) {
         if (principalType == null || principalPattern == null) {
             return List.of();
         }
-        if (principalPattern.contains(".*")) {
-            return List.of(principalType + ":*");
-        }
         List<String> principals = RegexParser.parse(principalPattern);
         if (principals == null) {
             principals = List.of(principalPattern);
+        }
+        if (principals.contains("(.*)") || principals.contains(".*")) {
+            return List.of(principalType + ":*");
         }
         return principals.stream()
             .map(p -> principalType + ":" + p)

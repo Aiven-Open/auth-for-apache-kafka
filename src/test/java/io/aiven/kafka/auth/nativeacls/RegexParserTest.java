@@ -36,6 +36,18 @@ public class RegexParserTest {
     }
 
     @Test
+    public final void parseParenthesis() {
+        assertThat(RegexParser.parse("^qwe)$"))
+            .containsExactly("qwe)");
+    }
+
+    @Test
+    public final void parseNestedRegex() {
+        assertThat(RegexParser.parse("^(AAA|^(BB)$)$"))
+            .containsExactly("AAA", "^(BB)$");
+    }
+
+    @Test
     public final void parseRegexListMultiple() {
         assertThat(RegexParser.parse("^(AAA|BBB|CCC|DDD)$"))
             .containsExactly("AAA", "BBB", "CCC", "DDD");

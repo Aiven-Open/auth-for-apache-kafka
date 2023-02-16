@@ -22,36 +22,42 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class AclPrincipalParserTest {
+public class AclPrincipalFormatterTest {
 
     @Test
     public final void parseSinglePrincipal() {
-        assertThat(AclPrincipalParser.parse("User", "^username$"))
+        assertThat(AclPrincipalFormatter.parse("User", "^username$"))
             .containsExactly("User:username");
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"(.*)", "^(username|(.*))$"})
+    @ValueSource(strings = {"(.*)", ".*", "^(username|(.*))$", "^(username|.*)$"})
     public final void parseWildcardPrincipal(final String value) {
-        assertThat(AclPrincipalParser.parse("User", value))
+        assertThat(AclPrincipalFormatter.parse("User", value))
             .containsExactly("User:*");
     }
 
     @Test
+    public final void parseNotWildcard() {
+        assertThat(AclPrincipalFormatter.parse("User", "username.*"))
+            .containsExactly("User:username.*");
+    }
+
+    @Test
     public final void parseMultipleUsers() {
-        assertThat(AclPrincipalParser.parse("User", "^(user1|user2)$"))
+        assertThat(AclPrincipalFormatter.parse("User", "^(user1|user2)$"))
             .containsExactly("User:user1", "User:user2");
     }
 
     @Test
     public final void parseNullPrincipal() {
-        assertThat(AclPrincipalParser.parse("User", null))
+        assertThat(AclPrincipalFormatter.parse("User", null))
             .isEmpty();
     }
 
     @Test
     public final void parseNullPrincipalType() {
-        assertThat(AclPrincipalParser.parse(null, "^username$"))
+        assertThat(AclPrincipalFormatter.parse(null, "^username$"))
             .isEmpty();
     }
 

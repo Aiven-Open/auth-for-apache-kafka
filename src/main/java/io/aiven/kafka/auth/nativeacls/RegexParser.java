@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 
 class RegexParser {
 
-    private static final Pattern PARSER_PATTERN = Pattern.compile("\\^\\(?(.*?)\\)?\\$");
+    private static final Pattern PARSER_PATTERN = Pattern.compile("(?<=^\\^)(.*?)(?=\\$$)");
 
     // Visible for test
     /**
@@ -44,7 +44,11 @@ class RegexParser {
             return null;
         }
 
-        final String group = matcher.group(1);
+        String group = matcher.group(0);
+        final int lastChar = group.length() - 1;
+        if (group.charAt(0) == '(' && group.charAt(lastChar) == ')') {
+            group = group.substring(1, lastChar);
+        }
         return Arrays.stream(group.split("\\|"))
             .filter(Predicate.not(String::isBlank))
             .collect(Collectors.toList());

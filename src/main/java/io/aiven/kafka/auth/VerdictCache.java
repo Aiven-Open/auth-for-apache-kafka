@@ -19,7 +19,6 @@ package io.aiven.kafka.auth;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Predicate;
 
 import org.apache.kafka.common.security.auth.KafkaPrincipal;
@@ -31,20 +30,23 @@ public class VerdictCache {
     private final Map<String, Boolean> cache = new ConcurrentHashMap<>();
 
     private VerdictCache(final List<AivenAcl> aclEntries) {
-        this.aclEntries = new CopyOnWriteArrayList<>(aclEntries);
+        this.aclEntries = aclEntries;
     }
 
     public boolean get(final KafkaPrincipal principal,
                        final String operation,
                        final String resource) {
-        final String cacheKey = resource
-            + "|" + operation
-            + "|" + principal.getName()
-            + "|" + principal.getPrincipalType();
-
-        final Predicate<AivenAcl> matcher = aclEntry ->
-            aclEntry.check(principal.getPrincipalType(), principal.getName(), operation, resource);
-        return cache.computeIfAbsent(cacheKey, key -> aclEntries.stream().anyMatch(matcher));
+        if (aclEntries != null) {
+            final String cacheKey = resource
+                + "|" + operation
+                + "|" + principal.getName()
+                + "|" + principal.getPrincipalType();
+            final Predicate<AivenAcl> matcher = aclEntry ->
+                aclEntry.check(principal.getPrincipalType(), principal.getName(), operation, resource);
+            return cache.computeIfAbsent(cacheKey, key -> aclEntries.stream().anyMatch(matcher));
+        } else {
+            return false;
+        }
     }
 
     public List<AivenAcl> aclEntries() {

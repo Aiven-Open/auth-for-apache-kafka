@@ -38,7 +38,7 @@ public class AclAivenToNativeConverter {
         }
 
         for (final var operation : AclOperationsParser.parse(aivenAcl.operationRe.pattern())) {
-            final List<String> principals = AclPrincipalParser.parse(
+            final List<String> principals = AclPrincipalFormatter.parse(
                 aivenAcl.principalType, aivenAcl.principalRe.pattern()
             );
             for (final var principal : principals) {
