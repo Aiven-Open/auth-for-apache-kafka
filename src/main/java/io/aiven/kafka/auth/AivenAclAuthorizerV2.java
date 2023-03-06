@@ -57,6 +57,7 @@ import io.aiven.kafka.auth.json.reader.AclJsonReader;
 import io.aiven.kafka.auth.json.reader.JsonReaderException;
 import io.aiven.kafka.auth.nameformatters.LegacyOperationNameFormatter;
 import io.aiven.kafka.auth.nameformatters.LegacyResourceTypeNameFormatter;
+import io.aiven.kafka.auth.nativeacls.AclAivenToNativeConverter;
 
 import kafka.network.RequestChannel.Session;
 import org.slf4j.Logger;
@@ -228,7 +229,7 @@ public class AivenAclAuthorizerV2 implements Authorizer {
     public final List<? extends CompletionStage<AclCreateResult>> createAcls(
         final AuthorizableRequestContext requestContext,
         final List<AclBinding> aclBindings) {
-        LOGGER.error("`createAcls` is not implemented");
+        LOGGER.warn("`createAcls` is not implemented");
         return List.of();
     }
 
@@ -236,13 +237,20 @@ public class AivenAclAuthorizerV2 implements Authorizer {
     public final List<? extends CompletionStage<AclDeleteResult>> deleteAcls(
         final AuthorizableRequestContext requestContext,
         final List<AclBindingFilter> aclBindingFilters) {
-        LOGGER.error("`deleteAcls` is not implemented");
+        LOGGER.warn("`deleteAcls` is not implemented");
         return List.of();
     }
 
     @Override
     public final Iterable<AclBinding> acls(final AclBindingFilter filter) {
-        LOGGER.error("`acls` is not implemented");
-        return List.of();
+        if (this.config.listAclsEnabled()) {
+            return this.cacheReference.get().aclEntries().stream()
+                    .flatMap(acl -> AclAivenToNativeConverter.convert(acl).stream())
+                    .filter(filter::matches)
+                    .collect(Collectors.toList());
+        } else {
+            LOGGER.warn("Listing ACLs is disabled");
+            return List.of();
+        }
     }
 }

@@ -41,13 +41,16 @@ public class VerdictCache {
                 + "|" + operation
                 + "|" + principal.getName()
                 + "|" + principal.getPrincipalType();
-
             final Predicate<AivenAcl> matcher = aclEntry ->
                 aclEntry.check(principal.getPrincipalType(), principal.getName(), operation, resource);
             return cache.computeIfAbsent(cacheKey, key -> aclEntries.stream().anyMatch(matcher));
         } else {
             return false;
         }
+    }
+
+    public List<AivenAcl> aclEntries() {
+        return List.copyOf(aclEntries);
     }
 
     public static VerdictCache create(final List<AivenAcl> aclEntries) {

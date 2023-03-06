@@ -20,12 +20,18 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.kafka.common.Endpoint;
+import org.apache.kafka.common.acl.AccessControlEntry;
+import org.apache.kafka.common.acl.AccessControlEntryFilter;
+import org.apache.kafka.common.acl.AclBinding;
+import org.apache.kafka.common.acl.AclBindingFilter;
 import org.apache.kafka.common.acl.AclOperation;
+import org.apache.kafka.common.acl.AclPermissionType;
 import org.apache.kafka.common.network.ClientInformation;
 import org.apache.kafka.common.network.ListenerName;
 import org.apache.kafka.common.protocol.ApiKeys;
@@ -33,6 +39,8 @@ import org.apache.kafka.common.requests.RequestContext;
 import org.apache.kafka.common.requests.RequestHeader;
 import org.apache.kafka.common.resource.PatternType;
 import org.apache.kafka.common.resource.ResourcePattern;
+import org.apache.kafka.common.resource.ResourcePatternFilter;
+import org.apache.kafka.common.resource.ResourceType;
 import org.apache.kafka.common.security.auth.KafkaPrincipal;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.kafka.server.authorizer.Action;
@@ -52,14 +60,14 @@ import static org.mockito.Mockito.when;
 
 public class AivenAclAuthorizerV2Test {
     static final ResourcePattern TOPIC_RESOURCE = new ResourcePattern(
-            org.apache.kafka.common.resource.ResourceType.TOPIC,
-            "Target",
-            PatternType.LITERAL
+        org.apache.kafka.common.resource.ResourceType.TOPIC,
+        "Target",
+        PatternType.LITERAL
     );
     static final ResourcePattern GROUP_RESOURCE = new ResourcePattern(
-            org.apache.kafka.common.resource.ResourceType.GROUP,
-            "Target",
-            PatternType.LITERAL
+        org.apache.kafka.common.resource.ResourceType.GROUP,
+        "Target",
+        PatternType.LITERAL
     );
     static final AclOperation READ_OPERATION = AclOperation.READ;
     static final AclOperation CREATE_OPERATION = AclOperation.CREATE;
@@ -68,6 +76,9 @@ public class AivenAclAuthorizerV2Test {
             + "\"operation\":\"^Read$\",\"resource\":\"^Topic:(.*)$\"}]";
     static final String ACL_JSON_NOTYPE =
         "[{\"principal\":\"^pass$\",\"operation\":\"^Read$\",\"resource\":\"^Topic:(.*)$\"}]";
+    static final String ACL_TOPIC_PREFIX_JSON =
+        "[{\"principal_type\":\"User\",\"principal\":\"^pass$\","
+            + "\"operation\":\"^Read$\",\"resource\":\"^Topic:(prefix-(.*))$\"}]";
     static final String ACL_JSON_LONG = "["
         + "{\"principal_type\":\"User\",\"principal\":\"^pass-0$\","
         + "\"operation\":\"^Read$\",\"resource\":\"^Topic:(.*)$\"},"
@@ -109,14 +120,130 @@ public class AivenAclAuthorizerV2Test {
     void setUp() {
         configFilePath = tmpDir.resolve("acl.json");
         configs = Map.of(
-                "aiven.acl.authorizer.configuration", configFilePath.toString(),
-                "aiven.acl.authorizer.config.refresh.interval", "10");
+            "aiven.acl.authorizer.configuration", configFilePath.toString(),
+            "aiven.acl.authorizer.config.refresh.interval", "10");
         auth.configure(configs);
     }
 
     @AfterEach
     void tearDown() {
         auth.close();
+    }
+
+    @Test
+    public void testAclsMethodWhenListingEnabled() throws IOException {
+        Files.copy(this.getClass().getResourceAsStream("/test_acls_for_acls_method.json"), configFilePath);
+        startAuthorizer();
+
+        assertThat(auth.acls(AclBindingFilter.ANY))
+            .containsExactly(
+                new AclBinding(
+                    new ResourcePattern(ResourceType.TOPIC, "xxx", PatternType.LITERAL),
+                    new AccessControlEntry("User:test\\-user", "*", AclOperation.ALTER, AclPermissionType.ALLOW)),
+                new AclBinding(
+                    new ResourcePattern(ResourceType.TOPIC, "xxx", PatternType.LITERAL),
+                    new AccessControlEntry("User:test\\-user", "*", AclOperation.ALTER_CONFIGS, AclPermissionType.ALLOW)
+                ),
+                new AclBinding(
+                    new ResourcePattern(ResourceType.TOPIC, "xxx", PatternType.LITERAL),
+                    new AccessControlEntry("User:test\\-user", "*", AclOperation.DELETE, AclPermissionType.ALLOW)),
+                new AclBinding(
+                    new ResourcePattern(ResourceType.TOPIC, "xxx", PatternType.LITERAL),
+                    new AccessControlEntry("User:test\\-user", "*", AclOperation.READ, AclPermissionType.ALLOW)),
+                new AclBinding(
+                    new ResourcePattern(ResourceType.TOPIC, "xxx", PatternType.LITERAL),
+                    new AccessControlEntry("User:test\\-user", "*", AclOperation.WRITE, AclPermissionType.ALLOW)),
+                new AclBinding(
+                    new ResourcePattern(ResourceType.TOPIC, "*", PatternType.LITERAL),
+                    new AccessControlEntry("User:test\\-user", "*", AclOperation.DESCRIBE, AclPermissionType.ALLOW)),
+                new AclBinding(
+                    new ResourcePattern(ResourceType.TOPIC, "*", PatternType.LITERAL),
+                    new AccessControlEntry(
+                        "User:test\\-user", "*", AclOperation.DESCRIBE_CONFIGS, AclPermissionType.ALLOW
+                    )),
+                new AclBinding(
+                    new ResourcePattern(ResourceType.TOPIC, "prefix\\.", PatternType.PREFIXED),
+                    new AccessControlEntry("User:test\\-user", "*", AclOperation.READ, AclPermissionType.ALLOW)),
+                new AclBinding(
+                    new ResourcePattern(ResourceType.TOPIC, "*", PatternType.LITERAL),
+                    new AccessControlEntry("User:test\\-admin", "*", AclOperation.CREATE, AclPermissionType.ALLOW)),
+                new AclBinding(
+                    new ResourcePattern(ResourceType.TOPIC, "*", PatternType.LITERAL),
+                    new AccessControlEntry("User:test\\-admin", "*", AclOperation.DELETE, AclPermissionType.ALLOW))
+            );
+
+
+        assertThat(auth.acls(new AclBindingFilter(
+            new ResourcePatternFilter(ResourceType.TOPIC, "xxx", PatternType.MATCH),
+            new AccessControlEntryFilter("User:test\\-user", "*", AclOperation.ALTER_CONFIGS, AclPermissionType.ALLOW)
+        ))).containsExactly(
+            new AclBinding(
+                new ResourcePattern(ResourceType.TOPIC, "xxx", PatternType.LITERAL),
+                new AccessControlEntry("User:test\\-user", "*", AclOperation.ALTER_CONFIGS, AclPermissionType.ALLOW))
+        );
+
+        assertThat(auth.acls(new AclBindingFilter(
+            new ResourcePatternFilter(ResourceType.TOPIC, "prefix\\.example", PatternType.MATCH),
+            AccessControlEntryFilter.ANY
+        ))).containsExactly(
+            new AclBinding(
+                new ResourcePattern(ResourceType.TOPIC, "*", PatternType.LITERAL),
+                new AccessControlEntry("User:test\\-user", "*", AclOperation.DESCRIBE, AclPermissionType.ALLOW)),
+            new AclBinding(
+                new ResourcePattern(ResourceType.TOPIC, "*", PatternType.LITERAL),
+                new AccessControlEntry(
+                    "User:test\\-user", "*", AclOperation.DESCRIBE_CONFIGS, AclPermissionType.ALLOW
+                )),
+            new AclBinding(
+                new ResourcePattern(ResourceType.TOPIC, "prefix\\.", PatternType.PREFIXED),
+                new AccessControlEntry("User:test\\-user", "*", AclOperation.READ, AclPermissionType.ALLOW)),
+            new AclBinding(
+                new ResourcePattern(ResourceType.TOPIC, "*", PatternType.LITERAL),
+                new AccessControlEntry("User:test\\-admin", "*", AclOperation.CREATE, AclPermissionType.ALLOW)),
+            new AclBinding(
+                new ResourcePattern(ResourceType.TOPIC, "*", PatternType.LITERAL),
+                new AccessControlEntry("User:test\\-admin", "*", AclOperation.DELETE, AclPermissionType.ALLOW))
+        );
+
+        assertThat(auth.acls(new AclBindingFilter(
+            new ResourcePatternFilter(ResourceType.TOPIC, "xxx", PatternType.MATCH),
+            new AccessControlEntryFilter("User:test\\-user", "*", AclOperation.ANY, AclPermissionType.ALLOW)
+        ))).containsExactly(
+            new AclBinding(
+                new ResourcePattern(ResourceType.TOPIC, "xxx", PatternType.LITERAL),
+                new AccessControlEntry("User:test\\-user", "*", AclOperation.ALTER, AclPermissionType.ALLOW)),
+            new AclBinding(
+                new ResourcePattern(ResourceType.TOPIC, "xxx", PatternType.LITERAL),
+                new AccessControlEntry("User:test\\-user", "*", AclOperation.ALTER_CONFIGS, AclPermissionType.ALLOW)),
+            new AclBinding(
+                new ResourcePattern(ResourceType.TOPIC, "xxx", PatternType.LITERAL),
+                new AccessControlEntry("User:test\\-user", "*", AclOperation.DELETE, AclPermissionType.ALLOW)),
+            new AclBinding(
+                new ResourcePattern(ResourceType.TOPIC, "xxx", PatternType.LITERAL),
+                new AccessControlEntry("User:test\\-user", "*", AclOperation.READ, AclPermissionType.ALLOW)),
+            new AclBinding(
+                new ResourcePattern(ResourceType.TOPIC, "xxx", PatternType.LITERAL),
+                new AccessControlEntry("User:test\\-user", "*", AclOperation.WRITE, AclPermissionType.ALLOW)),
+            new AclBinding(
+                new ResourcePattern(ResourceType.TOPIC, "*", PatternType.LITERAL),
+                new AccessControlEntry("User:test\\-user", "*", AclOperation.DESCRIBE, AclPermissionType.ALLOW)),
+            new AclBinding(
+                new ResourcePattern(ResourceType.TOPIC, "*", PatternType.LITERAL),
+                new AccessControlEntry("User:test\\-user", "*", AclOperation.DESCRIBE_CONFIGS, AclPermissionType.ALLOW))
+        );
+    }
+
+    @Test
+    public void testAclsMethodWhenListingDisabled() throws IOException {
+        final var configsUpdated = new HashMap<>(configs);
+        configsUpdated.put("aiven.acl.authorizer.list.acls.enabled", "false");
+        auth.configure(configsUpdated);
+
+        Files.copy(this.getClass().getResourceAsStream("/test_acls_for_acls_method.json"), configFilePath);
+        startAuthorizer();
+
+        assertThat(auth.acls(null))
+            .isEmpty();
     }
 
     @Test
@@ -150,6 +277,15 @@ public class AivenAclAuthorizerV2Test {
 
         checkSingleAction(requestCtx("User", "pass"), action(READ_OPERATION, TOPIC_RESOURCE), true);
         checkSingleAction(requestCtx("NonUser", "pass"), action(READ_OPERATION, TOPIC_RESOURCE), true);
+
+        Files.write(configFilePath, ACL_TOPIC_PREFIX_JSON.getBytes());
+        Thread.sleep(100);
+
+        checkSingleAction(requestCtx("User", "pass"), action(READ_OPERATION, new ResourcePattern(
+            org.apache.kafka.common.resource.ResourceType.TOPIC,
+            "prefix-topic",
+            PatternType.LITERAL
+        )), true);
 
         Files.write(configFilePath, ACL_JSON_LONG.getBytes());
         Thread.sleep(100);

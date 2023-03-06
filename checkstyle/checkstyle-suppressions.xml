@@ -17,4 +17,7 @@
     <suppress checks="MethodLength" files="AivenAclAuthorizerTest.java"/>
     <suppress checks="ClassFanOutComplexity" files="AivenAclAuthorizerV2Test.java"/>
     <suppress checks="CyclomaticComplexity" files="LegacyOperationNameFormatter.java" />
+
+    <!-- This is legit, it's just big switch, justified in this case -->
+    <suppress checks="CyclomaticComplexity" files="OperationNameFormatter.java" />
 </suppressions>

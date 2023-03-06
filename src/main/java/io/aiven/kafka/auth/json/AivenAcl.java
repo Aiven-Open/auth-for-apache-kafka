@@ -22,21 +22,21 @@ import java.util.regex.Pattern;
 
 import com.google.gson.annotations.SerializedName;
 
-public class  AivenAcl {
+public class AivenAcl {
     @SerializedName("principal_type")
-    private final String principalType;
+    public final String principalType;
 
     @SerializedName("principal")
-    private final Pattern principalRe;
+    public final Pattern principalRe;
 
     @SerializedName("operation")
-    private final Pattern operationRe;
+    public final Pattern operationRe;
 
     @SerializedName("resource")
-    private final Pattern resourceRe;
+    public final Pattern resourceRe;
 
     @SerializedName("resource_pattern")
-    private final String resourceRePattern;
+    public final String resourceRePattern;
 
     public AivenAcl(final String principalType,
                     final String principal,

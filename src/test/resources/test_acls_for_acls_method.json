@@ -1,0 +1,38 @@
+[
+  {
+    "operation": "^(Alter|AlterConfigs|Delete|Read|Write)$",
+    "principal": "^(test\\-user)$",
+    "principal_type": "User",
+    "resource": "^Topic:(xxx)$"
+  },
+  {
+    "operation": "^(Describe|DescribeConfigs)$",
+    "principal": "^(test\\-user)$",
+    "principal_type": "User",
+    "resource": "^Topic:(.*)$"
+  },
+  {
+    "operation": "^Read$",
+    "principal": "^(test\\-user)$",
+    "principal_type": "User",
+    "resource": "^Topic:(prefix\\.(.*))$"
+  },
+  {
+    "operation": "^Create$",
+    "principal": "^(test\\-admin)$",
+    "principal_type": "User",
+    "resource": "^Topic:(.*)$"
+  },
+  {
+    "operation": "^Delete$",
+    "principal": "^(test\\-admin)$",
+    "principal_type": "User",
+    "resource": "^Topic:(.*)$"
+  },
+  {
+    "operation": "^(.*)$",
+    "principal": "^(.*)$",
+    "principal_type": "Service",
+    "resource": "^(.*)$"
+  }
+]
