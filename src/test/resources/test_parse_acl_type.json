@@ -1,0 +1,37 @@
+[
+  {
+    "principal_type": "User",
+    "principal": "^allow$",
+    "operation": "^Read$",
+    "resource": "^(.*)$",
+    "permission_type": null
+  },
+  {
+    "principal_type": "User",
+    "principal": "^allow$",
+    "operation": "^Read$",
+    "resource": "^(.*)$",
+    "permission_type": "ALLOW"
+  },
+  {
+    "principal_type": "User",
+    "principal": "^allow$",
+    "operation": "^Read$",
+    "resource": "^(.*)$",
+    "permission_type": "allow"
+  },
+  {
+    "principal_type": "User",
+    "principal": "^deny$",
+    "operation": "^Read$",
+    "resource": "^(.*)$",
+    "permission_type": "DENY"
+  },
+  {
+    "principal_type": "User",
+    "principal": "^deny$",
+    "operation": "^Read$",
+    "resource": "^(.*)$",
+    "permission_type": "deny"
+  }
+]

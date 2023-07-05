@@ -16,6 +16,9 @@ used internally in Aiven to map project id from certificate subject into
 project specific management topics. We can thus avoid encoding separate rules
 for each project.
 
+Permission type allows to define the verification result in case of an ACL match.
+By default, the permission type is `ALLOW`.
+
 ### Example
 
     [
@@ -32,7 +35,8 @@ for each project.
             "operation": "^(Describe|DescribeConfigs|Read|Write)$",
             "principal": "^CN=(?<vmname>[a-z0-9-]+),OU=(?<nodeid>n[0-9]+),O=(?<projectid>[a-f0-9-]+),ST=vm$",
             "principal_type": "Prune",
-            "resource_pattern": "^Topic:${projectid}-(.*)",
+            "resource_pattern": "^Topic:${projectid}-(.*),
+            "permission_type": "DENY"
         }
     ]
 

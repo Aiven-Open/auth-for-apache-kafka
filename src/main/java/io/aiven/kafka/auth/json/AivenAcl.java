@@ -38,26 +38,38 @@ public class AivenAcl {
     @SerializedName("resource_pattern")
     public final String resourceRePattern;
 
+    @SerializedName("permission_type")
+    private final AclPermissionType permissionType;
+
     public AivenAcl(final String principalType,
                     final String principal,
                     final String operation,
                     final String resource,
-                    final String resourcePattern) {
+                    final String resourcePattern,
+                    final AclPermissionType permissionType) {
         this.principalType = principalType;
         this.principalRe = Pattern.compile(principal);
         this.operationRe = Pattern.compile(operation);
-        this.resourceRe = Objects.nonNull(resource)
-            ? Pattern.compile(resource) : null;
+        this.resourceRe = Objects.nonNull(resource) ? Pattern.compile(resource) : null;
         this.resourceRePattern = resourcePattern;
+        this.permissionType = Objects.requireNonNullElse(permissionType, AclPermissionType.ALLOW);
+    }
+
+    public AclPermissionType getPermissionType() {
+        // Gson does not call the constructor, and the default deserializer will set `this.permissionType` to null
+        // if `permission_type` is not included in the json to be deserialized.
+        // Therefore, this method should be the only way to correctly retrieve the permission type.
+        // In order to fix this, a custom deserializer for `AivenAcl` should be implemented.
+        return permissionType == null ? AclPermissionType.ALLOW : permissionType;
     }
 
     /**
      * Check if request matches this rule.
      */
-    public Boolean check(final String principalType,
-                         final String principal,
-                         final String operation,
-                         final String resource) {
+    public Boolean match(final String principalType,
+                            final String principal,
+                            final String operation,
+                            final String resource) {
         if (this.principalType == null || this.principalType.equals(principalType)) {
             final Matcher mp = this.principalRe.matcher(principal);
             final Matcher mo = this.operationRe.matcher(operation);
@@ -76,5 +88,42 @@ public class AivenAcl {
             }
         }
         return false;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        final AivenAcl aivenAcl = (AivenAcl) o;
+        return Objects.equals(principalType, aivenAcl.principalType)
+            && comparePattern(principalRe, aivenAcl.principalRe)
+            && comparePattern(operationRe, aivenAcl.operationRe)
+            && comparePattern(resourceRe, aivenAcl.resourceRe)
+            && Objects.equals(resourceRePattern, aivenAcl.resourceRePattern)
+            && getPermissionType() == aivenAcl.getPermissionType(); // always compare permission type using getter
+    }
+
+    private boolean comparePattern(final Pattern p1, final Pattern p2) {
+        // this method should be used only for testing purposes, as it does not represent a complete
+        // comparison of two Patterns.
+        if (p1 == null && p2 == null) {
+            return true;
+        }
+        if (p1 == null || p2 == null) {
+            return false;
+        }
+
+        return p1.toString().equals(p2.toString());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(
+            principalType, principalRe, operationRe, resourceRe, resourceRePattern, getPermissionType()
+        );
     }
 }

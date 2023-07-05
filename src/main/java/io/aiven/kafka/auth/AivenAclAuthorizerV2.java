@@ -244,7 +244,7 @@ public class AivenAclAuthorizerV2 implements Authorizer {
     @Override
     public final Iterable<AclBinding> acls(final AclBindingFilter filter) {
         if (this.config.listAclsEnabled()) {
-            return this.cacheReference.get().aclEntries().stream()
+            return this.cacheReference.get().aclEntries()
                     .flatMap(acl -> AclAivenToNativeConverter.convert(acl).stream())
                     .filter(filter::matches)
                     .collect(Collectors.toList());

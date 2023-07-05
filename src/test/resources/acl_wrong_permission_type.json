@@ -1,0 +1,9 @@
+[
+  {
+    "principal_type": "User",
+    "principal": "^p$",
+    "operation": "^Read$",
+    "resource": "^(.*)$",
+    "permission_type": "wrong"
+  }
+]

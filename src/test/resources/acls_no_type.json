@@ -1,0 +1,7 @@
+[
+  {
+    "principal": "^pass$",
+    "operation": "^Read$",
+    "resource": "^Topic:(.*)$"
+  }
+]

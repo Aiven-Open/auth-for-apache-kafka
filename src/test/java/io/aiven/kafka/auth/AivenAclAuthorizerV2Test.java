@@ -71,44 +71,6 @@ public class AivenAclAuthorizerV2Test {
     );
     static final AclOperation READ_OPERATION = AclOperation.READ;
     static final AclOperation CREATE_OPERATION = AclOperation.CREATE;
-    static final String ACL_JSON =
-        "[{\"principal_type\":\"User\",\"principal\":\"^pass$\","
-            + "\"operation\":\"^Read$\",\"resource\":\"^Topic:(.*)$\"}]";
-    static final String ACL_JSON_NOTYPE =
-        "[{\"principal\":\"^pass$\",\"operation\":\"^Read$\",\"resource\":\"^Topic:(.*)$\"}]";
-    static final String ACL_TOPIC_PREFIX_JSON =
-        "[{\"principal_type\":\"User\",\"principal\":\"^pass$\","
-            + "\"operation\":\"^Read$\",\"resource\":\"^Topic:(prefix-(.*))$\"}]";
-    static final String ACL_JSON_LONG = "["
-        + "{\"principal_type\":\"User\",\"principal\":\"^pass-0$\","
-        + "\"operation\":\"^Read$\",\"resource\":\"^Topic:(.*)$\"},"
-        + "{\"principal_type\":\"User\",\"principal\":\"^pass-1$\","
-        + "\"operation\":\"^Read$\",\"resource\":\"^Topic:(.*)$\"},"
-        + "{\"principal_type\":\"User\",\"principal\":\"^pass-2$\","
-        + "\"operation\":\"^Read$\",\"resource\":\"^Topic:(.*)$\"},"
-        + "{\"principal_type\":\"User\",\"principal\":\"^pass-3$\","
-        + "\"operation\":\"^Read$\",\"resource\":\"^Topic:(.*)$\"},"
-        + "{\"principal_type\":\"User\",\"principal\":\"^pass-4$\","
-        + "\"operation\":\"^Read$\",\"resource\":\"^Topic:(.*)$\"},"
-        + "{\"principal_type\":\"User\",\"principal\":\"^pass-5$\","
-        + "\"operation\":\"^Read$\",\"resource\":\"^Topic:(.*)$\"},"
-        + "{\"principal_type\":\"User\",\"principal\":\"^pass-6$\","
-        + "\"operation\":\"^Read$\",\"resource\":\"^Topic:(.*)$\"},"
-        + "{\"principal_type\":\"User\",\"principal\":\"^pass-7$\","
-        + "\"operation\":\"^Read$\",\"resource\":\"^Topic:(.*)$\"},"
-        + "{\"principal_type\":\"User\",\"principal\":\"^pass-8$\","
-        + "\"operation\":\"^Read$\",\"resource\":\"^Topic:(.*)$\"},"
-        + "{\"principal_type\":\"User\",\"principal\":\"^pass-9$\","
-        + "\"operation\":\"^Read$\",\"resource\":\"^Topic:(.*)$\"},"
-        + "{\"principal_type\":\"User\",\"principal\":\"^pass-10$\","
-        + "\"operation\":\"^Read$\",\"resource\":\"^Topic:(.*)$\"},"
-        + "{\"principal_type\":\"User\",\"principal\":\"^pass-11$\","
-        + "\"operation\":\"^Read$\",\"resource\":\"^Topic:(.*)$\"},"
-        + "{\"principal_type\":\"User\",\"principal\":\"^pass-12$\","
-        + "\"operation\":\"^Read$\",\"resource\":\"^Topic:(.*)$\"},"
-        + "{\"principal\":\"^pass-notype$\",\"operation\":\"^Read$\","
-        + "\"resource\":\"^Topic:(.*)$\"}"
-        + "]";
 
     @TempDir
     Path tmpDir;
@@ -248,7 +210,7 @@ public class AivenAclAuthorizerV2Test {
 
     @Test
     public void testAivenAclAuthorizer() throws IOException, InterruptedException {
-        Files.write(configFilePath, ACL_JSON.getBytes());
+        Files.copy(this.getClass().getResourceAsStream("/acls_plain.json"), configFilePath);
         startAuthorizer();
 
         // basic ACL checks
@@ -270,43 +232,102 @@ public class AivenAclAuthorizerV2Test {
             AuthorizationResult.DENIED,
             AuthorizationResult.DENIED
         ));
+    }
 
-        // Check support for undefined principal type
-        Files.write(configFilePath, ACL_JSON_NOTYPE.getBytes());
-        Thread.sleep(100);
+    @Test
+    public void testUndefinedPrincipalType() throws IOException, InterruptedException {
+        Files.copy(this.getClass().getResourceAsStream("/acls_no_type.json"), configFilePath);
+        startAuthorizer();
 
         checkSingleAction(requestCtx("User", "pass"), action(READ_OPERATION, TOPIC_RESOURCE), true);
         checkSingleAction(requestCtx("NonUser", "pass"), action(READ_OPERATION, TOPIC_RESOURCE), true);
+    }
 
-        Files.write(configFilePath, ACL_TOPIC_PREFIX_JSON.getBytes());
-        Thread.sleep(100);
+    @Test
+    public void testTopicPrefix() throws IOException, InterruptedException {
+        Files.copy(this.getClass().getResourceAsStream("/acls_topic_prefix.json"), configFilePath);
+        startAuthorizer();
 
         checkSingleAction(requestCtx("User", "pass"), action(READ_OPERATION, new ResourcePattern(
             org.apache.kafka.common.resource.ResourceType.TOPIC,
             "prefix-topic",
             PatternType.LITERAL
         )), true);
+    }
 
-        Files.write(configFilePath, ACL_JSON_LONG.getBytes());
-        Thread.sleep(100);
+    @Test
+    public void testDeny() throws IOException, InterruptedException {
+        Files.copy(this.getClass().getResourceAsStream("/acls_deny.json"), configFilePath);
+        startAuthorizer();
+
+        checkSingleAction(requestCtx("User", "whatever"), action(READ_OPERATION, new ResourcePattern(
+            org.apache.kafka.common.resource.ResourceType.TOPIC,
+            "test-topic",
+            PatternType.LITERAL
+        )), true);
+
+        checkSingleAction(requestCtx("User", "whatever"), action(READ_OPERATION, new ResourcePattern(
+            org.apache.kafka.common.resource.ResourceType.TOPIC,
+            "topic-denied",
+            PatternType.LITERAL
+        )), false);
+    }
+
+    @Test
+    public void testDenyPrefix() throws IOException, InterruptedException {
+        Files.copy(this.getClass().getResourceAsStream("/acls_deny_prefix.json"), configFilePath);
+        startAuthorizer();
+
+        checkSingleAction(requestCtx("User", "user"), action(READ_OPERATION, TOPIC_RESOURCE), true);
+        checkSingleAction(requestCtx("User", "user"), action(CREATE_OPERATION, TOPIC_RESOURCE), true);
+
+        final ResourcePattern deniedTopicResource = new ResourcePattern(
+            org.apache.kafka.common.resource.ResourceType.TOPIC,
+            "denied-topic",
+            PatternType.LITERAL
+        );
+
+        checkSingleAction(requestCtx("User", "user"), action(READ_OPERATION, deniedTopicResource), true);
+        checkSingleAction(requestCtx("User", "user"), action(CREATE_OPERATION, deniedTopicResource), false);
+    }
+
+    @Test
+    public void testAuthorizerCache() throws IOException, InterruptedException {
+        Files.copy(this.getClass().getResourceAsStream("/acls_full.json"), configFilePath);
+        startAuthorizer();
+        final var deniedResource = new ResourcePattern(
+            org.apache.kafka.common.resource.ResourceType.TOPIC,
+            "denied",
+            PatternType.LITERAL
+        );
 
         // first iteration without cache
         checkSingleAction(requestCtx("User", "pass-1"), action(READ_OPERATION, TOPIC_RESOURCE), true);
+        checkSingleAction(requestCtx("User", "pass-3"), action(READ_OPERATION, TOPIC_RESOURCE), true);
+        checkSingleAction(requestCtx("User", "pass-3"), action(READ_OPERATION, deniedResource), false);
         checkSingleAction(requestCtx("User", "fail-1"), action(READ_OPERATION, TOPIC_RESOURCE), false);
 
         // second iteration from cache
         checkSingleAction(requestCtx("User", "pass-1"), action(READ_OPERATION, TOPIC_RESOURCE), true);
+        checkSingleAction(requestCtx("User", "pass-3"), action(READ_OPERATION, TOPIC_RESOURCE), true);
+        checkSingleAction(requestCtx("User", "pass-3"), action(READ_OPERATION, deniedResource), false);
         checkSingleAction(requestCtx("User", "fail-1"), action(READ_OPERATION, TOPIC_RESOURCE), false);
+    }
 
-        // Checking that wrong configuration leads to failed auth
+    @Test
+    public void testWrongConfiguration() throws IOException, InterruptedException {
         Files.write(configFilePath, "]".getBytes());
-        Thread.sleep(100);
+        startAuthorizer();
+
         checkSingleAction(requestCtx("User", "pass-1"), action(READ_OPERATION, TOPIC_RESOURCE), false);
         checkSingleAction(requestCtx("User", "fail-1"), action(READ_OPERATION, TOPIC_RESOURCE), false);
+    }
 
-        // Checking that empty configuration leads to failed auth
+    @Test
+    public void testEmptyConfiguration() throws IOException, InterruptedException {
         Files.write(configFilePath, "".getBytes());
-        Thread.sleep(100);
+        startAuthorizer();
+
         checkSingleAction(requestCtx("User", "pass-1"), action(READ_OPERATION, TOPIC_RESOURCE), false);
         checkSingleAction(requestCtx("User", "fail-1"), action(READ_OPERATION, TOPIC_RESOURCE), false);
     }
@@ -318,7 +339,7 @@ public class AivenAclAuthorizerV2Test {
         checkSingleAction(requestCtx("User", "pass"), action(READ_OPERATION, TOPIC_RESOURCE), false);
 
         // check that config is reloaded after file modification
-        Files.write(configFilePath, ACL_JSON_LONG.getBytes());
+        Files.copy(this.getClass().getResourceAsStream("/acls_full.json"), configFilePath);
         Thread.sleep(100);
 
         checkSingleAction(requestCtx("User", "pass-1"), action(READ_OPERATION, TOPIC_RESOURCE), true);
@@ -338,7 +359,7 @@ public class AivenAclAuthorizerV2Test {
         // check that config reloaded after file and directory re-creation
         assertThat(tmpDir.toFile().mkdir()).isTrue();
         Thread.sleep(100);
-        Files.write(configFilePath, ACL_JSON.getBytes());
+        Files.copy(this.getClass().getResourceAsStream("/acls_plain.json"), configFilePath);
         Thread.sleep(100);
         checkSingleAction(requestCtx("User", "pass"), action(READ_OPERATION, TOPIC_RESOURCE), true);
     }

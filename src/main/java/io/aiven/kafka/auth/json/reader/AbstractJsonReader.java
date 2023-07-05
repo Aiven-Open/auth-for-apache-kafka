@@ -21,11 +21,14 @@ import java.nio.file.Path;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
+import io.aiven.kafka.auth.json.AclPermissionType;
+
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
+
 
 public abstract class AbstractJsonReader<T> implements JsonReader<T> {
 
@@ -33,7 +36,8 @@ public abstract class AbstractJsonReader<T> implements JsonReader<T> {
 
     protected final GsonBuilder gsonBuilder =
         new GsonBuilder()
-            .registerTypeAdapter(Pattern.class, new RegexpJsonDeserializer());
+            .registerTypeAdapter(Pattern.class, new RegexpJsonDeserializer())
+            .registerTypeAdapter(AclPermissionType.class, new AclPermissionTypeDeserializer());
 
     protected AbstractJsonReader(final Path configFile) {
         this.configFile = configFile;
@@ -48,6 +52,22 @@ public abstract class AbstractJsonReader<T> implements JsonReader<T> {
                 return !jsonElement.isJsonNull() ? Pattern.compile(jsonElement.getAsString()) : null;
             } catch (final PatternSyntaxException e) {
                 throw new JsonParseException("Couldn't compile pattern", e);
+            }
+        }
+    }
+
+    protected static class AclPermissionTypeDeserializer implements JsonDeserializer<AclPermissionType> {
+        @Override
+        public AclPermissionType deserialize(final JsonElement jsonElement,
+                                             final Type type,
+                                             final JsonDeserializationContext ctx) throws JsonParseException {
+            try {
+                if (jsonElement.isJsonNull()) {
+                    return AclPermissionType.ALLOW;
+                }
+                return AclPermissionType.valueOf(jsonElement.getAsString().toUpperCase());
+            } catch (final IllegalArgumentException e) {
+                throw new JsonParseException("Cannot deserialize permission type", e);
             }
         }
     }
