@@ -1,0 +1,98 @@
+[
+  {
+    "principal_type": "User",
+    "principal": "^pass-3$",
+    "operation": "^Read$",
+    "resource": "^Topic:denied$",
+    "permission_type": "DENY"
+  },
+  {
+    "principal_type": "User",
+    "principal": "^pass-0$",
+    "operation": "^Read$",
+    "resource": "^Topic:(.*)$"
+  },
+  {
+    "principal_type": "User",
+    "principal": "^pass-1$",
+    "operation": "^Read$",
+    "resource": "^Topic:(.*)$"
+  },
+  {
+    "principal_type": "User",
+    "principal": "^pass-2$",
+    "operation": "^Read$",
+    "resource": "^Topic:(.*)$"
+  },
+  {
+    "principal_type": "User",
+    "principal": "^pass-3$",
+    "operation": "^Read$",
+    "resource": "^Topic:(.*)$"
+  },
+  {
+    "principal_type": "User",
+    "principal": "^pass-4$",
+    "operation": "^Read$",
+    "resource": "^Topic:(.*)$"
+  },
+  {
+    "principal_type": "User",
+    "principal": "^pass-5$",
+    "operation": "^Read$",
+    "resource": "^Topic:(.*)$"
+  },
+  {
+    "principal_type": "User",
+    "principal": "^pass-6$",
+    "operation": "^Read$",
+    "resource": "^Topic:(.*)$"
+  },
+  {
+    "principal_type": "User",
+    "principal": "^pass-7$",
+    "operation": "^Read$",
+    "resource": "^Topic:(.*)$"
+  },
+  {
+    "principal_type": "User",
+    "principal": "^pass-8$",
+    "operation": "^Read$",
+    "resource": "^Topic:(.*)$"
+  },
+  {
+    "principal_type": "User",
+    "principal": "^pass-9$",
+    "operation": "^Read$",
+    "resource": "^Topic:(.*)$"
+  },
+  {
+    "principal_type": "User",
+    "principal": "^pass-10$",
+    "operation": "^Read$",
+    "resource": "^Topic:(.*)$"
+  },
+  {
+    "principal_type": "User",
+    "principal": "^pass-11$",
+    "operation": "^Read$",
+    "resource": "^Topic:(.*)$"
+  },
+  {
+    "principal_type": "User",
+    "principal": "^pass-12$",
+    "operation": "^Read$",
+    "resource": "^Topic:(.*)$"
+  },
+  {
+    "principal": "^pass-notype$",
+    "operation": "^Read$",
+    "resource": "^Topic:(.*)$"
+  },
+  {
+    "principal_type": "User",
+    "principal": "^pass-resource-pattern$",
+    "operation": "^Read$",
+    "resource_pattern": "^Topic:${projectid}-(.*)"
+  }
+]

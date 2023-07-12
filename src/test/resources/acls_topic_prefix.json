@@ -1,0 +1,8 @@
+[
+  {
+    "principal_type": "User",
+    "principal": "^pass$",
+    "operation": "^Read$",
+    "resource": "^Topic:(prefix-(.*))$"
+  }
+]

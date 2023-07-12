@@ -1,0 +1,16 @@
+[
+  {
+    "principal_type": "User",
+    "principal": "^(.*)$",
+    "operation": "^Read$",
+    "resource": "^Topic:(.*)$",
+    "permission_type": "ALLOW"
+  },
+  {
+    "principal_type": "User",
+    "principal": "^(.*)$",
+    "operation": "^Read$",
+    "resource": "^Topic:(topic-denied)$",
+    "permission_type": "DENY"
+  }
+]

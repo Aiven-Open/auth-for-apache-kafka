@@ -42,7 +42,8 @@ public class AclAivenToNativeConverterTest {
                 "^(test\\-user)$",
                 "^(Alter|AlterConfigs|Delete|Read|Write)$",
                 "^Topic:(xxx)$",
-                null
+                null,
+                io.aiven.kafka.auth.json.AclPermissionType.ALLOW
             )
         );
         final ResourcePattern resourcePattern = new ResourcePattern(ResourceType.TOPIC, "xxx", PatternType.LITERAL);
@@ -66,6 +67,26 @@ public class AclAivenToNativeConverterTest {
     }
 
     @Test
+    public final void testNullPermissionTypeIsAllow() {
+        final var result = AclAivenToNativeConverter.convert(
+            new AivenAcl(
+                "User",
+                "^(test\\-user)$",
+                "^Read$",
+                "^Topic:(xxx)$",
+                null,
+                null
+            )
+        );
+        final ResourcePattern resourcePattern = new ResourcePattern(ResourceType.TOPIC, "xxx", PatternType.LITERAL);
+        assertThat(result).containsExactly(
+            new AclBinding(
+                resourcePattern,
+                new AccessControlEntry("User:test\\-user", "*", AclOperation.READ, AclPermissionType.ALLOW))
+        );
+    }
+
+    @Test
     public final void testConvertPrefix() {
         final var result = AclAivenToNativeConverter.convert(
             new AivenAcl(
@@ -73,6 +94,7 @@ public class AclAivenToNativeConverterTest {
                 "^(test\\-user)$",
                 "^Read$",
                 "^Topic:(topic\\.(.*))$",
+                null,
                 null
             )
         );
@@ -85,6 +107,26 @@ public class AclAivenToNativeConverterTest {
     }
 
     @Test
+    public final void testDeny() {
+        final var result = AclAivenToNativeConverter.convert(
+            new AivenAcl(
+                "User",
+                "^(test\\-user)$",
+                "^Read$",
+                "^Topic:(topic\\.(.*))$",
+                null,
+                io.aiven.kafka.auth.json.AclPermissionType.DENY
+            )
+        );
+        assertThat(result).containsExactly(
+            new AclBinding(
+                new ResourcePattern(ResourceType.TOPIC, "topic\\.", PatternType.PREFIXED),
+                new AccessControlEntry("User:test\\-user", "*", AclOperation.READ, AclPermissionType.DENY)
+            )
+        );
+    }
+
+    @Test
     public final void testConvertMultiplePrefixes() {
         final var result = AclAivenToNativeConverter.convert(
             new AivenAcl(
@@ -92,6 +134,7 @@ public class AclAivenToNativeConverterTest {
                 "^(test\\-user)$",
                 "^(Delete|Read|Write)$",
                 "^Topic:(topic\\.(.*)|prefix\\-(.*))$",
+                null,
                 null
             )
         );
@@ -131,6 +174,7 @@ public class AclAivenToNativeConverterTest {
                 "^(admin)$",
                 "^(.*)$",
                 "^(.*)$",
+                null,
                 null
             )
         );
@@ -163,6 +207,7 @@ public class AclAivenToNativeConverterTest {
                 "^(.*)$",
                 "^Read$",
                 "^Topic:(xxx)$",
+                null,
                 null
             )
         );
@@ -183,6 +228,7 @@ public class AclAivenToNativeConverterTest {
                 "^example$",
                 "^Read$",
                 "^Topic:(xxx)$",
+                null,
                 null
             )
         );

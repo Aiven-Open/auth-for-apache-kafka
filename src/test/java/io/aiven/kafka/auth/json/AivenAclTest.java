@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-package io.aiven.kafka.auth;
-
-import io.aiven.kafka.auth.json.AivenAcl;
+package io.aiven.kafka.auth.json;
 
 import org.junit.jupiter.api.Test;
 
@@ -24,7 +22,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class AivenAclTest {
-
     @Test
     public void testAivenAclEntry() {
         // Basic test: defined principal type plus principal, operation and resource regex
@@ -33,14 +30,15 @@ public class AivenAclTest {
             "^CN=p_(.*)_s$", // principal
             "^(Describe|Read)$", // operation
             "^Topic:p_(.*)_s", // resource,
-            null // resource pattern
+            null, // resource pattern
+            null
         );
 
-        assertTrue(entry.check("User", "CN=p_pass_s", "Read", "Topic:p_pass_s"));
-        assertFalse(entry.check("User", "CN=fail", "Read", "Topic:p_pass_s"));
-        assertFalse(entry.check("User", "CN=p_pass_s", "Write", "Topic:p_pass_s"));
-        assertFalse(entry.check("User", "CN=p_pass_s", "Read", "Topic:fail"));
-        assertFalse(entry.check("NonUser", "CN=p_pass_s", "Read", "Topic:p_pass_s"));
+        assertTrue(entry.match("User", "CN=p_pass_s", "Read", "Topic:p_pass_s"));
+        assertFalse(entry.match("User", "CN=fail", "Read", "Topic:p_pass_s"));
+        assertFalse(entry.match("User", "CN=p_pass_s", "Write", "Topic:p_pass_s"));
+        assertFalse(entry.match("User", "CN=p_pass_s", "Read", "Topic:fail"));
+        assertFalse(entry.match("NonUser", "CN=p_pass_s", "Read", "Topic:p_pass_s"));
 
         // Test with principal undefined
         entry = new AivenAcl(
@@ -48,13 +46,14 @@ public class AivenAclTest {
             "^CN=p_(.*)_s$", // principal
             "^(Describe|Read)$", // operation
             "^Topic:p_(.*)_s", // resource
-            null // resource pattern
+            null, // resource pattern
+            null
         );
 
-        assertTrue(entry.check("User", "CN=p_pass_s", "Read", "Topic:p_pass_s"));
-        assertTrue(entry.check("NonUser", "CN=p_pass_s", "Read", "Topic:p_pass_s"));
-        assertFalse(entry.check("User", "CN=fail", "Read", "Topic:p_pass_s"));
-        assertFalse(entry.check("User", "CN=p_pass_s", "Read", "Topic:fail"));
+        assertTrue(entry.match("User", "CN=p_pass_s", "Read", "Topic:p_pass_s"));
+        assertTrue(entry.match("NonUser", "CN=p_pass_s", "Read", "Topic:p_pass_s"));
+        assertFalse(entry.match("User", "CN=fail", "Read", "Topic:p_pass_s"));
+        assertFalse(entry.match("User", "CN=p_pass_s", "Read", "Topic:fail"));
 
         // Test resources defined by pattern
         entry = new AivenAcl(
@@ -62,12 +61,13 @@ public class AivenAclTest {
             "^CN=p_(?<username>[a-z0-9]+)_s$", // principal
             "^(Describe|Read)$", // operation
             null, // resource
-            "^Topic:p_${username}_s\\$" // resource pattern
+            "^Topic:p_${username}_s\\$", // resource pattern
+            null
         );
 
-        assertTrue(entry.check("User", "CN=p_user1_s", "Read", "Topic:p_user1_s"));
-        assertTrue(entry.check("User", "CN=p_user2_s", "Read", "Topic:p_user2_s"));
-        assertFalse(entry.check("User", "CN=p_user1_s", "Read", "Topic:p_user2_s"));
-        assertFalse(entry.check("User", "CN=p_user2_s", "Read", "Topic:p_user1_s"));
+        assertTrue(entry.match("User", "CN=p_user1_s", "Read", "Topic:p_user1_s"));
+        assertTrue(entry.match("User", "CN=p_user2_s", "Read", "Topic:p_user2_s"));
+        assertFalse(entry.match("User", "CN=p_user1_s", "Read", "Topic:p_user2_s"));
+        assertFalse(entry.match("User", "CN=p_user2_s", "Read", "Topic:p_user1_s"));
     }
 }

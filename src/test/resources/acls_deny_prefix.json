@@ -1,0 +1,15 @@
+[
+  {
+    "principal_type": "User",
+    "principal": "^(.*)$",
+    "operation": "^(.*)$",
+    "resource": "^Topic:(.*)$"
+  },
+  {
+    "principal_type": "User",
+    "principal": "^(.*)$",
+    "operation": "^Create",
+    "resource": "^Topic:denied-(.*)$",
+    "permission_type": "DENY"
+  }
+]

@@ -22,7 +22,6 @@ import java.util.Objects;
 
 import org.apache.kafka.common.acl.AccessControlEntry;
 import org.apache.kafka.common.acl.AclBinding;
-import org.apache.kafka.common.acl.AclPermissionType;
 
 import io.aiven.kafka.auth.json.AivenAcl;
 
@@ -43,7 +42,7 @@ public class AclAivenToNativeConverter {
             );
             for (final var principal : principals) {
                 final var accessControlEntry = new AccessControlEntry(
-                    principal, "*", operation, AclPermissionType.ALLOW);
+                    principal, "*", operation, aivenAcl.getPermissionType().nativeType);
                 for (final var resourcePattern : ResourcePatternParser.parse(aivenAcl.resourceRe.pattern())) {
                     result.add(new AclBinding(resourcePattern, accessControlEntry));
                 }
