@@ -83,7 +83,7 @@ dependencies {
     implementation "com.google.code.gson:gson:2.10.1"
 
     compileOnly "org.apache.kafka:kafka_2.12:${kafkaVersion}"
-    compileOnly "org.slf4j:slf4j-api:1.7.36"
+    compileOnly "org.slf4j:slf4j-api:2.0.7"
 
     testImplementation "org.apache.kafka:kafka_2.12:${kafkaVersion}"
 
