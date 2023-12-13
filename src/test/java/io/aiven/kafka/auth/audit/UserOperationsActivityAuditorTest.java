@@ -44,6 +44,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 
@@ -133,7 +134,7 @@ class UserOperationsActivityAuditorTest {
 
     @Test
     void shouldAggregateOperationsForSameUserAndPrincipalGrouping() throws Exception {
-
+        fail();
         final Session anotherSession =
                 new Session(principal, InetAddress.getByName("127.0.0.2"));
 
