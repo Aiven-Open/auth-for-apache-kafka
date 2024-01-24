@@ -93,7 +93,7 @@ public class AivenSaslPlainServerCallbackHandler implements AuthenticateCallback
                             LOGGER.error("Authentication failed for {}, no password set", username);
                             return false;
                         } else if (storedPassword.equals(strPassword)) {
-                            LOGGER.info("Authentication successful for {}", username);
+                            LOGGER.debug("Authentication successful for {}", username);
                             return true;
                         } else {
                             LOGGER.error("Authentication failed for {}, invalid password", username);
