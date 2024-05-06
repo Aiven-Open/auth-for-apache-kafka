@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -55,6 +56,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
+import static org.awaitility.Awaitility.await;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -340,28 +342,48 @@ public class AivenAclAuthorizerV2Test {
 
         // check that config is reloaded after file modification
         Files.copy(this.getClass().getResourceAsStream("/acls_full.json"), configFilePath);
-        Thread.sleep(100);
-
-        checkSingleAction(requestCtx("User", "pass-1"), action(READ_OPERATION, TOPIC_RESOURCE), true);
-
+        await().atMost(Duration.ofSeconds(1)).pollDelay(Duration.ofMillis(100))
+            .untilAsserted(() -> checkSingleAction(
+                requestCtx("User", "pass-1"),
+                action(READ_OPERATION, TOPIC_RESOURCE),
+                true));
         // check that config is reloaded after file deletion
         assertThat(configFilePath.toFile().delete()).isTrue();
-        Thread.sleep(100);
 
-        checkSingleAction(requestCtx("User", "pass-1"), action(READ_OPERATION, TOPIC_RESOURCE), false);
+        await().atMost(Duration.ofSeconds(1)).pollDelay(Duration.ofMillis(100))
+            .untilAsserted(() -> checkSingleAction(
+                requestCtx("User", "pass-1"),
+                action(READ_OPERATION, TOPIC_RESOURCE),
+                false));
 
-        // check that config is reloaded after directory deletion
+        // restoring the config back to check that it's again properly loaded
+        Files.copy(this.getClass().getResourceAsStream("/acls_full.json"), configFilePath);
+        await().atMost(Duration.ofSeconds(2)).pollDelay(Duration.ofMillis(100)).pollInterval(Duration.ofMillis(100))
+            .untilAsserted(() -> checkSingleAction(
+                requestCtx("User", "pass-1"),
+                action(READ_OPERATION, TOPIC_RESOURCE),
+                true));
+
+        // check that config is reloaded after directory and file deletion
+        // needed because WatchService is used under the hood,
+        // and we are subscribing to parent directory changes not file itself
+        assertThat(Files.deleteIfExists(configFilePath)).isTrue();
         assertThat(Files.deleteIfExists(configFilePath.getParent().toAbsolutePath())).isTrue();
-        Thread.sleep(100);
-
-        checkSingleAction(requestCtx("User", "pass-1"), action(READ_OPERATION, TOPIC_RESOURCE), false);
+        await().atMost(Duration.ofSeconds(1)).pollDelay(Duration.ofMillis(100))
+            .untilAsserted(() -> checkSingleAction(
+                requestCtx("User", "pass-1"),
+                action(READ_OPERATION, TOPIC_RESOURCE),
+                false));
 
         // check that config reloaded after file and directory re-creation
         assertThat(tmpDir.toFile().mkdir()).isTrue();
-        Thread.sleep(100);
+        await().atMost(Duration.ofSeconds(1)).until(() -> Files.exists(tmpDir));
         Files.copy(this.getClass().getResourceAsStream("/acls_plain.json"), configFilePath);
-        Thread.sleep(100);
-        checkSingleAction(requestCtx("User", "pass"), action(READ_OPERATION, TOPIC_RESOURCE), true);
+        await().atMost(Duration.ofSeconds(1)).pollDelay(Duration.ofMillis(100))
+            .untilAsserted(() -> checkSingleAction(
+                requestCtx("User", "pass"),
+                action(READ_OPERATION, TOPIC_RESOURCE),
+                true));
     }
 
     @Test
