@@ -75,7 +75,7 @@ jmh {
 
 ext {
     kafkaVersion = "2.8.0"
-    mockitoVersion = "5.11.0"
+    mockitoVersion = "5.12.0"
 }
 
 dependencies {
