@@ -23,7 +23,6 @@ import org.apache.kafka.common.acl.AclOperation;
 import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.common.resource.ResourcePattern;
 
-import kafka.network.RequestChannel;
 import org.slf4j.Logger;
 
 public class UserActivityAuditor extends Auditor {
@@ -46,11 +45,11 @@ public class UserActivityAuditor extends Auditor {
     }
 
     @Override
-    protected void addActivity0(final RequestChannel.Session session,
+    protected void addActivity0(final Session session,
                                 final AclOperation operation,
                                 final ResourcePattern resource,
                                 final boolean hasAccess) {
-        final AuditKey auditKey = new AuditKey(session.principal(), session.clientAddress());
+        final AuditKey auditKey = new AuditKey(session.getPrincipal(), session.getClientAddress());
 
         auditStorage.compute(auditKey, (key, userActivity) -> Objects.isNull(userActivity)
                 ? new UserActivity.UserActivityOperations()

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Aiven Oy https://aiven.io
+ * Copyright 2024 Aiven Oy https://aiven.io
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,25 @@
 
 package io.aiven.kafka.auth.audit;
 
-import org.apache.kafka.common.Configurable;
-import org.apache.kafka.common.acl.AclOperation;
-import org.apache.kafka.common.resource.ResourcePattern;
+import java.net.InetAddress;
 
-public interface AuditorAPI extends Configurable {
-    void addActivity(final Session session,
-                     final AclOperation operation,
-                     final ResourcePattern resource,
-                     final boolean hasAccess);
+import org.apache.kafka.common.security.auth.KafkaPrincipal;
 
-    void stop();
+
+public class Session {
+    private final KafkaPrincipal principal;
+    private final InetAddress clientAddress;
+
+    public Session(final KafkaPrincipal principal, final InetAddress clientAddress) {
+        this.principal = principal;
+        this.clientAddress = clientAddress;
+    }
+
+    public KafkaPrincipal getPrincipal() {
+        return principal;
+    }
+
+    public InetAddress getClientAddress() {
+        return clientAddress;
+    }
 }

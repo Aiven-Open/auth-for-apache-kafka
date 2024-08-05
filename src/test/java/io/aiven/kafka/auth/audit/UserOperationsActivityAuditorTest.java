@@ -31,7 +31,6 @@ import org.apache.kafka.common.resource.ResourcePattern;
 import org.apache.kafka.common.resource.ResourceType;
 import org.apache.kafka.common.security.auth.KafkaPrincipal;
 
-import kafka.network.RequestChannel.Session;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -115,16 +114,16 @@ class UserOperationsActivityAuditorTest {
                 2,
                 cast(auditor.auditStorage.get(
                         new Auditor.AuditKey(
-                                session.principal(),
-                                session.clientAddress())
+                                session.getPrincipal(),
+                                session.getClientAddress())
                 ), UserActivity.UserActivityOperations.class).operations.size()
         );
         assertEquals(
                 1,
                 cast(auditor.auditStorage.get(
                         new Auditor.AuditKey(
-                                anotherSession.principal(),
-                                anotherSession.clientAddress())
+                                anotherSession.getPrincipal(),
+                                anotherSession.getClientAddress())
                 ), UserActivity.UserActivityOperations.class).operations.size()
         );
         auditor.dump();
@@ -152,7 +151,7 @@ class UserOperationsActivityAuditorTest {
                 2,
                 cast(auditor.auditStorage.get(
                         new Auditor.AuditKey(
-                                session.principal(),
+                                session.getPrincipal(),
                                 null)
                 ), UserActivity.UserActivityOperationsGropedByIP.class).operations.size()
         );

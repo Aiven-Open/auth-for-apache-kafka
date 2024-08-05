@@ -30,13 +30,11 @@ import org.apache.kafka.common.resource.ResourcePattern;
 import org.apache.kafka.common.resource.ResourceType;
 import org.apache.kafka.common.security.auth.KafkaPrincipal;
 
-import kafka.network.RequestChannel;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class FormatterTestBase {
 
-    protected RequestChannel.Session session;
+    protected Session session;
 
     protected AclOperation operation;
 
@@ -48,7 +46,7 @@ public class FormatterTestBase {
 
     protected ResourcePattern anotherResource;
 
-    protected RequestChannel.Session anotherSession;
+    protected Session anotherSession;
 
     protected InetAddress anotherInetAddress;
 
@@ -60,9 +58,9 @@ public class FormatterTestBase {
 
     void setUp() throws Exception {
         final KafkaPrincipal principal = new KafkaPrincipal("PRINCIPAL_TYPE", "PRINCIPAL_NAME");
-        session = new RequestChannel.Session(principal, InetAddress.getLocalHost());
+        session = new Session(principal, InetAddress.getLocalHost());
         anotherInetAddress = InetAddress.getByName("192.168.0.1");
-        anotherSession = new RequestChannel.Session(principal, anotherInetAddress);
+        anotherSession = new Session(principal, anotherInetAddress);
         resource =
                 new ResourcePattern(
                         ResourceType.CLUSTER,
@@ -88,20 +86,20 @@ public class FormatterTestBase {
     protected void twoOperations(final ZonedDateTime now, final String expected) {
         final Map<Auditor.AuditKey, UserActivity> dump = new HashMap<>();
         final UserActivity userActivity = createUserActivity(now);
-        userActivity.addOperation(new UserOperation(session.clientAddress(), operation, resource, false));
+        userActivity.addOperation(new UserOperation(session.getClientAddress(), operation, resource, false));
         userActivity.addOperation(
-                new UserOperation(session.clientAddress(), anotherOperation, anotherResource, true));
+                new UserOperation(session.getClientAddress(), anotherOperation, anotherResource, true));
         dump.put(createAuditKey(session), userActivity);
 
         formatAndAssert(dump, expected);
     }
 
-    protected Auditor.AuditKey createAuditKey(final RequestChannel.Session session) {
+    protected Auditor.AuditKey createAuditKey(final Session session) {
         switch (aggregationGrouping) {
             case USER:
-                return new Auditor.AuditKey(session.principal(), null);
+                return new Auditor.AuditKey(session.getPrincipal(), null);
             case USER_AND_IP:
-                return new Auditor.AuditKey(session.principal(), session.clientAddress());
+                return new Auditor.AuditKey(session.getPrincipal(), session.getClientAddress());
             default:
                 throw new IllegalArgumentException("Unknown aggregation grouping: " + aggregationGrouping);
         }

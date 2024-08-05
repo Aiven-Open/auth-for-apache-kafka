@@ -86,12 +86,12 @@ public class PrincipalAndIpFormatterTest extends FormatterTestBase {
         final Map<Auditor.AuditKey, UserActivity> dump = new HashMap<>();
 
         final UserActivity userActivity = createUserActivity(now);
-        userActivity.addOperation(new UserOperation(session.clientAddress(), operation, resource, false));
+        userActivity.addOperation(new UserOperation(session.getClientAddress(), operation, resource, false));
         dump.put(createAuditKey(session), userActivity);
 
         final UserActivity anotherUserActivity = createUserActivity(now);
         anotherUserActivity.addOperation(
-                new UserOperation(anotherSession.clientAddress(), anotherOperation, anotherResource, true));
+                new UserOperation(anotherSession.getClientAddress(), anotherOperation, anotherResource, true));
         dump.put(createAuditKey(anotherSession), anotherUserActivity);
 
         formatAndAssert(dump, expected);

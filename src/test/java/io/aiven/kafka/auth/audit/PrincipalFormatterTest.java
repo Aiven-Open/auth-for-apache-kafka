@@ -78,9 +78,9 @@ public class PrincipalFormatterTest extends FormatterTestBase {
 
         final UserActivity userActivity = createUserActivity(now);
         userActivity.addOperation(
-                new UserOperation(session.clientAddress(), operation, resource, false));
+                new UserOperation(session.getClientAddress(), operation, resource, false));
         userActivity.addOperation(
-                new UserOperation(anotherSession.clientAddress(), anotherOperation, anotherResource, true));
+                new UserOperation(anotherSession.getClientAddress(), anotherOperation, anotherResource, true));
         dump.put(createAuditKey(session), userActivity);
 
         formatAndAssert(dump, expected);
