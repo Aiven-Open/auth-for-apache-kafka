@@ -21,7 +21,6 @@ import java.util.Objects;
 import org.apache.kafka.common.acl.AclOperation;
 import org.apache.kafka.common.resource.ResourcePattern;
 
-import kafka.network.RequestChannel;
 import org.slf4j.Logger;
 
 public class UserOperationsActivityAuditor extends Auditor {
@@ -35,7 +34,7 @@ public class UserOperationsActivityAuditor extends Auditor {
     }
 
     @Override
-    protected void addActivity0(final RequestChannel.Session session,
+    protected void addActivity0(final Session session,
                                 final AclOperation operation,
                                 final ResourcePattern resource,
                                 final boolean hasAccess) {
@@ -46,18 +45,18 @@ public class UserOperationsActivityAuditor extends Auditor {
             } else {
                 ua = userActivity;
             }
-            ua.addOperation(new UserOperation(session.clientAddress(), operation, resource, hasAccess));
+            ua.addOperation(new UserOperation(session.getClientAddress(), operation, resource, hasAccess));
             return ua;
         });
     }
 
-    private AuditKey createAuditKey(final RequestChannel.Session session) {
+    private AuditKey createAuditKey(final Session session) {
         final var grouping = auditorConfig.getAggregationGrouping();
         switch (grouping) {
             case USER:
-                return new AuditKey(session.principal(), null);
+                return new AuditKey(session.getPrincipal(), null);
             case USER_AND_IP:
-                return new AuditKey(session.principal(), session.clientAddress());
+                return new AuditKey(session.getPrincipal(), session.getClientAddress());
             default:
                 throw new IllegalArgumentException("Unknown aggregation grouping type: " + grouping);
         }

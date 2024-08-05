@@ -52,6 +52,7 @@ import org.apache.kafka.server.authorizer.Authorizer;
 import org.apache.kafka.server.authorizer.AuthorizerServerInfo;
 
 import io.aiven.kafka.auth.audit.AuditorAPI;
+import io.aiven.kafka.auth.audit.Session;
 import io.aiven.kafka.auth.json.AivenAcl;
 import io.aiven.kafka.auth.json.reader.AclJsonReader;
 import io.aiven.kafka.auth.json.reader.JsonReaderException;
@@ -59,7 +60,6 @@ import io.aiven.kafka.auth.nameformatters.LegacyOperationNameFormatter;
 import io.aiven.kafka.auth.nameformatters.LegacyResourceTypeNameFormatter;
 import io.aiven.kafka.auth.nativeacls.AclAivenToNativeConverter;
 
-import kafka.network.RequestChannel.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

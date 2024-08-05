@@ -30,7 +30,6 @@ import org.apache.kafka.common.acl.AclOperation;
 import org.apache.kafka.common.resource.ResourcePattern;
 import org.apache.kafka.common.security.auth.KafkaPrincipal;
 
-import kafka.network.RequestChannel.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

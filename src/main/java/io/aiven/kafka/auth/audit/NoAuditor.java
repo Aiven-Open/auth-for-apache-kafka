@@ -21,8 +21,6 @@ import java.util.Map;
 import org.apache.kafka.common.acl.AclOperation;
 import org.apache.kafka.common.resource.ResourcePattern;
 
-import kafka.network.RequestChannel;
-
 /**
  * A no-op {@link AuditorAPI}.
  */
@@ -33,7 +31,7 @@ public class NoAuditor implements AuditorAPI {
     }
 
     @Override
-    public void addActivity(final RequestChannel.Session session,
+    public void addActivity(final Session session,
                             final AclOperation operation,
                             final ResourcePattern resource,
                             final boolean hasAccess) {
