@@ -41,8 +41,11 @@ import org.apache.kafka.common.Endpoint;
 import org.apache.kafka.common.acl.AclBinding;
 import org.apache.kafka.common.acl.AclBindingFilter;
 import org.apache.kafka.common.acl.AclOperation;
+import org.apache.kafka.common.metrics.MetricConfig;
+import org.apache.kafka.common.metrics.Sensor;
 import org.apache.kafka.common.resource.ResourcePattern;
 import org.apache.kafka.common.security.auth.KafkaPrincipal;
+import org.apache.kafka.common.utils.Time;
 import org.apache.kafka.server.authorizer.AclCreateResult;
 import org.apache.kafka.server.authorizer.AclDeleteResult;
 import org.apache.kafka.server.authorizer.Action;
@@ -63,24 +66,45 @@ import io.aiven.kafka.auth.nativeacls.AclAivenToNativeConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static io.aiven.kafka.auth.AivenAclAuthorizerConfig.METRICS_NUM_SAMPLES_CONFIG;
+import static io.aiven.kafka.auth.AivenAclAuthorizerConfig.METRICS_RECORDING_LEVEL_CONFIG;
+import static io.aiven.kafka.auth.AivenAclAuthorizerConfig.METRICS_SAMPLE_WINDOW_MS_CONFIG;
+
 public class AivenAclAuthorizerV2 implements Authorizer {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AivenAclAuthorizerV2.class);
+
     private File configFile;
     private AuditorAPI auditor;
     private boolean logDenials;
     private ScheduledExecutorService scheduledExecutorService;
+
     private volatile WatchService watchService;
+    
     private final AtomicReference<VerdictCache> cacheReference = new AtomicReference<>();
+    private final Time time;
 
     private AivenAclAuthorizerConfig config;
+    private AivenAclAuthorizerMetrics metrics;
 
     public AivenAclAuthorizerV2() {
+        this(Time.SYSTEM);
+    }
+
+    // for testing
+    AivenAclAuthorizerV2(final Time time) {
+        this.time = time;
     }
 
     @Override
     public void configure(final java.util.Map<String, ?> configs) {
         config = new AivenAclAuthorizerConfig(configs);
+
+        final MetricConfig metricConfig = new MetricConfig()
+            .samples(config.getInt(METRICS_NUM_SAMPLES_CONFIG))
+            .timeWindow(config.getLong(METRICS_SAMPLE_WINDOW_MS_CONFIG), TimeUnit.MILLISECONDS)
+            .recordLevel(Sensor.RecordingLevel.forName(config.getString(METRICS_RECORDING_LEVEL_CONFIG)));
+        metrics = new AivenAclAuthorizerMetrics(time, metricConfig);
     }
 
     @Override
@@ -171,13 +195,16 @@ public class AivenAclAuthorizerV2 implements Authorizer {
             final boolean verdict = cacheReference.get().get(principal,
                                                              LegacyOperationNameFormatter.format(operation),
                                                              resourceToCheck);
+            final var authResult = verdict ? AuthorizationResult.ALLOWED : AuthorizationResult.DENIED;
+
+            metrics.recordLogAuthResult(authResult, operation, resourcePattern, principal);
             logAuthVerdict(verdict, operation, resourcePattern, principal, requestContext,
                            action.logIfAllowed(), action.logIfDenied());
 
             final var session = new Session(principal, requestContext.clientAddress());
             auditor.addActivity(session, action.operation(), action.resourcePattern(), verdict);
 
-            result.add(verdict ? AuthorizationResult.ALLOWED : AuthorizationResult.DENIED);
+            result.add(authResult);
         }
         return result;
     }

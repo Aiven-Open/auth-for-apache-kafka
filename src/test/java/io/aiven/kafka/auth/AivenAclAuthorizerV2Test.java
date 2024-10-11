@@ -16,7 +16,11 @@
 
 package io.aiven.kafka.auth;
 
+import javax.management.MBeanServer;
+import javax.management.ObjectName;
+
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -61,6 +65,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class AivenAclAuthorizerV2Test {
+    static final MBeanServer MBEAN_SERVER = ManagementFactory.getPlatformMBeanServer();
     static final ResourcePattern TOPIC_RESOURCE = new ResourcePattern(
         org.apache.kafka.common.resource.ResourceType.TOPIC,
         "Target",
@@ -246,7 +251,7 @@ public class AivenAclAuthorizerV2Test {
     }
 
     @Test
-    public void testTopicPrefix() throws IOException, InterruptedException {
+    public void testTopicPrefix() throws Exception {
         Files.copy(this.getClass().getResourceAsStream("/acls_topic_prefix.json"), configFilePath);
         startAuthorizer();
 
@@ -255,10 +260,12 @@ public class AivenAclAuthorizerV2Test {
             "prefix-topic",
             PatternType.LITERAL
         )), true);
+
+        checkMetrics(1.0, 0.0);
     }
 
     @Test
-    public void testDeny() throws IOException, InterruptedException {
+    public void testDeny() throws Exception {
         Files.copy(this.getClass().getResourceAsStream("/acls_deny.json"), configFilePath);
         startAuthorizer();
 
@@ -273,6 +280,8 @@ public class AivenAclAuthorizerV2Test {
             "topic-denied",
             PatternType.LITERAL
         )), false);
+
+        checkMetrics(1.0, 1.0);
     }
 
     @Test
@@ -430,5 +439,14 @@ public class AivenAclAuthorizerV2Test {
                                    final boolean allowed) {
         final List<AuthorizationResult> result = auth.authorize(requestCtx, List.of(action));
         assertThat(result).isEqualTo(List.of(allowed ? AuthorizationResult.ALLOWED : AuthorizationResult.DENIED));
+    }
+
+    private static void checkMetrics(final double allowed, final double denied) throws Exception {
+        final var name = "aiven.kafka.auth:type=auth-metrics";
+        final var metricMBean = new ObjectName(name);
+        assertThat(MBEAN_SERVER.getAttribute(metricMBean, "auth-ops-allow-total"))
+            .isEqualTo(allowed);
+        assertThat(MBEAN_SERVER.getAttribute(metricMBean, "auth-ops-deny-total"))
+            .isEqualTo(denied);
     }
 }
