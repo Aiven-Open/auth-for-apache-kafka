@@ -54,7 +54,7 @@ public class AivenSaslPlainServerCallbackHandler implements AuthenticateCallback
                           final List<AppConfigurationEntry> jaasConfigEntries) {
         configFileLocation = JaasContext.configEntryOption(
             jaasConfigEntries, "users.config", PlainLoginModule.class.getName());
-        LOGGER.info("Using configuration file {}", configFileLocation);
+        LOGGER.debug("Using configuration file {}", configFileLocation);
         jsonReader = new UsernamePasswordJsonReader(Paths.get(configFileLocation));
     }
 

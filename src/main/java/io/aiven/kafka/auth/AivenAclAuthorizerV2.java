@@ -186,7 +186,7 @@ public class AivenAclAuthorizerV2 implements Authorizer {
      * Read ACL entries from config file.
      */
     private List<AivenAcl> loadAcls(final AclJsonReader jsonReader) {
-        LOGGER.info("Reloading ACL configuration...");
+        LOGGER.debug("Reloading ACL configuration...");
         try {
             return jsonReader.read();
         } catch (final JsonReaderException ex) {
