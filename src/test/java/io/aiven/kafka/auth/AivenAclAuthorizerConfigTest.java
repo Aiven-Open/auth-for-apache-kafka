@@ -22,6 +22,7 @@ import java.util.Map;
 
 import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.config.ConfigException;
+import org.apache.kafka.common.metrics.Sensor;
 
 import io.aiven.kafka.auth.audit.NoAuditor;
 import io.aiven.kafka.auth.audit.UserActivityAuditor;
@@ -29,6 +30,7 @@ import io.aiven.kafka.auth.audit.UserOperationsActivityAuditor;
 
 import org.junit.jupiter.api.Test;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -46,6 +48,13 @@ class AivenAclAuthorizerConfigTest {
         assertEquals(NoAuditor.class, config.getAuditor().getClass());
         assertTrue(config.logDenials());
         assertTrue(config.listAclsEnabled());
+        // metric configs
+        assertThat(config.getLong(AivenAclAuthorizerConfig.METRICS_SAMPLE_WINDOW_MS_CONFIG))
+            .isEqualTo(30_000);
+        assertThat(config.getInt(AivenAclAuthorizerConfig.METRICS_NUM_SAMPLES_CONFIG))
+            .isEqualTo(2);
+        assertThat(config.getString(AivenAclAuthorizerConfig.METRICS_RECORDING_LEVEL_CONFIG))
+            .isEqualTo(Sensor.RecordingLevel.INFO.name());
     }
 
     @Test
@@ -57,6 +66,9 @@ class AivenAclAuthorizerConfigTest {
         userActivityProps.put("aiven.acl.authorizer.log.denials", "false");
         userActivityProps.put("aiven.acl.authorizer.config.refresh.interval", "10");
         userActivityProps.put("aiven.acl.authorizer.list.acls.enabled", "false");
+        userActivityProps.put("aiven.acl.authorizer.metrics.sample.window.ms", "10000");
+        userActivityProps.put("aiven.acl.authorizer.metrics.num.samples", "10");
+        userActivityProps.put("aiven.acl.authorizer.metrics.recording.level", "DEBUG");
 
         var config = new AivenAclAuthorizerConfig(userActivityProps);
         assertEquals("/test", config.getConfigFile().getAbsolutePath());
@@ -64,6 +76,13 @@ class AivenAclAuthorizerConfigTest {
         assertFalse(config.logDenials());
         assertEquals(10, config.configRefreshInterval());
         assertFalse(config.listAclsEnabled());
+        // metrics
+        assertThat(config.getLong(AivenAclAuthorizerConfig.METRICS_SAMPLE_WINDOW_MS_CONFIG))
+            .isEqualTo(10_000);
+        assertThat(config.getInt(AivenAclAuthorizerConfig.METRICS_NUM_SAMPLES_CONFIG))
+            .isEqualTo(10);
+        assertThat(config.getString(AivenAclAuthorizerConfig.METRICS_RECORDING_LEVEL_CONFIG))
+            .isEqualTo(Sensor.RecordingLevel.DEBUG.name());
 
         final Map<String, String> userActivityOpsProps = new HashMap<>();
         userActivityOpsProps.put("aiven.acl.authorizer.configuration", "/test");
