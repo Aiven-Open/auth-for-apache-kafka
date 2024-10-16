@@ -61,7 +61,7 @@ public class AivenSaslScramServerCallbackHandler implements AuthenticateCallback
                           final List<AppConfigurationEntry> jaasConfigEntries) {
         configFileLocation = JaasContext.configEntryOption(
             jaasConfigEntries, "users.config", ScramLoginModule.class.getName());
-        LOGGER.info("Using configuration file {}", configFileLocation);
+        LOGGER.debug("Using configuration file {}", configFileLocation);
         mechanismName = mechanism;
         final ScramMechanism scramMechanism = ScramMechanism.forMechanismName(mechanismName);
         if (scramMechanism != null) {
