@@ -229,26 +229,23 @@ public class AivenAclAuthorizerV2 implements Authorizer {
                                 final AuthorizableRequestContext requestContext,
                                 final boolean actionLogIfAllowed,
                                 final boolean actionLogIfDenied) {
-        if (verdict && actionLogIfAllowed) {
-            LOGGER.debug("[ALLOW] Auth request {} on {}:{} by {} {} from {} ({})",
+        if (verdict) {
+            LOGGER.info("[ALLOW] Auth request {} on {}:{} by {} {} from {} ({})",
                 operation.name(), resourcePattern.resourceType(), resourcePattern.name(),
                          principal.getPrincipalType(), principal.getName(),
                          requestContext.clientAddress().getHostAddress(),
                          requestContext.clientId());
-        } else if (actionLogIfDenied) {
-            if (logDenials) {
-                LOGGER.info("[DENY] Auth request {} on {}:{} by {} {} from {} ({})",
-                    operation.name(), resourcePattern.resourceType(), resourcePattern.name(),
-                    principal.getPrincipalType(), principal.getName(),
-                         requestContext.clientAddress().getHostAddress(),
-                         requestContext.clientId());
-            } else {
-                LOGGER.debug("[DENY] Auth request {} on {}:{} by {} {} from {} ({})",
-                    operation.name(), resourcePattern.resourceType(), resourcePattern.name(),
-                    principal.getPrincipalType(), principal.getName(),
-                         requestContext.clientAddress().getHostAddress(),
-                         requestContext.clientId());
-            }
+        } else {
+            LOGGER.info(
+                "[DENY] Auth request {} on {}:{} by {} {} from {} ({})",
+                operation.name(),
+                resourcePattern.resourceType(),
+                resourcePattern.name(),
+                principal.getPrincipalType(),
+                principal.getName(),
+                requestContext.clientAddress().getHostAddress(),
+                requestContext.clientId()
+            );
         }
     }
 
