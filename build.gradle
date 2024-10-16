@@ -42,6 +42,10 @@ plugins {
 
 repositories {
     mavenCentral()
+    // This allows installing release candidates.
+    maven {
+        url = uri("https://repository.apache.org/content/groups/staging/")
+    }
 }
 
 java {
@@ -74,7 +78,7 @@ jmh {
 }
 
 ext {
-    kafkaVersion = "2.8.0"
+    kafkaVersion = "3.9.0"
     mockitoVersion = "5.14.1"
 }
 
