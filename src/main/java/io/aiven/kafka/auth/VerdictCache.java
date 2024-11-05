@@ -41,18 +41,22 @@ public class VerdictCache {
         this.allowAclEntries = allowAclEntries;
     }
 
-    public boolean get(final KafkaPrincipal principal,
-                       final String operation,
-                       final String resource) {
+    public boolean get(
+        final KafkaPrincipal principal,
+        final String host,
+        final String operation,
+        final String resource
+    ) {
         final String principalType = principal.getPrincipalType();
         final String cacheKey = resource
             + "|" + operation
+            + "|" + host
             + "|" + principal.getName()
             + "|" + principalType;
 
         return cache.computeIfAbsent(cacheKey, key -> {
             final Predicate<AivenAcl> matcher = acl ->
-                acl.match(principalType, principal.getName(), operation, resource);
+                acl.match(principalType, principal.getName(), host, operation, resource);
             if (denyAclEntries.stream().anyMatch(matcher)) {
                 return false;
             } else {

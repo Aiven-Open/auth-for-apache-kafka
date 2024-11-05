@@ -42,7 +42,7 @@ public class AclAivenToNativeConverter {
             );
             for (final var principal : principals) {
                 final var accessControlEntry = new AccessControlEntry(
-                    principal, "*", operation, aivenAcl.getPermissionType().nativeType);
+                    principal, aivenAcl.getHostMatcher(), operation, aivenAcl.getPermissionType().nativeType);
                 for (final var resourcePattern : ResourcePatternParser.parse(aivenAcl.resourceRe.pattern())) {
                     result.add(new AclBinding(resourcePattern, accessControlEntry));
                 }

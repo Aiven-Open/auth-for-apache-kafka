@@ -23,6 +23,9 @@ import java.util.regex.Pattern;
 import com.google.gson.annotations.SerializedName;
 
 public class AivenAcl {
+
+    private static final String WILDCARD_HOST = "*";
+
     @SerializedName("principal_type")
     public final String principalType;
 
@@ -41,14 +44,19 @@ public class AivenAcl {
     @SerializedName("permission_type")
     private final AclPermissionType permissionType;
 
+    @SerializedName("host")
+    private final String hostMatcher;
+
     public AivenAcl(final String principalType,
                     final String principal,
+                    final String host,
                     final String operation,
                     final String resource,
                     final String resourcePattern,
                     final AclPermissionType permissionType) {
         this.principalType = principalType;
         this.principalRe = Pattern.compile(principal);
+        this.hostMatcher = host;
         this.operationRe = Pattern.compile(operation);
         this.resourceRe = Objects.nonNull(resource) ? Pattern.compile(resource) : null;
         this.resourceRePattern = resourcePattern;
@@ -63,17 +71,24 @@ public class AivenAcl {
         return permissionType == null ? AclPermissionType.ALLOW : permissionType;
     }
 
+    public String getHostMatcher() {
+        // Same thing as getPermissionType(), host matching has been added later, and to be backward compatible
+        // we consider a missing "host" field in the ACL json the same as WILDCARD_HOST ("*")
+        return hostMatcher == null ? WILDCARD_HOST : hostMatcher;
+    }
+
     /**
      * Check if request matches this rule.
      */
     public Boolean match(final String principalType,
                             final String principal,
+                            final String host,
                             final String operation,
                             final String resource) {
         if (this.principalType == null || this.principalType.equals(principalType)) {
             final Matcher mp = this.principalRe.matcher(principal);
             final Matcher mo = this.operationRe.matcher(operation);
-            if (mp.find() && mo.find()) {
+            if (mp.find() && mo.find() && this.hostMatch(host)) {
                 Matcher mr = null;
                 if (this.resourceRe != null) {
                     mr = this.resourceRe.matcher(resource);
@@ -90,6 +105,11 @@ public class AivenAcl {
         return false;
     }
 
+    private boolean hostMatch(final String host) {
+        return getHostMatcher().equals(WILDCARD_HOST)
+            || getHostMatcher().equals(host);
+    }
+
     @Override
     public boolean equals(final Object o) {
         if (this == o) {
@@ -101,6 +121,7 @@ public class AivenAcl {
         final AivenAcl aivenAcl = (AivenAcl) o;
         return Objects.equals(principalType, aivenAcl.principalType)
             && comparePattern(principalRe, aivenAcl.principalRe)
+            && getHostMatcher().equals(aivenAcl.getHostMatcher())
             && comparePattern(operationRe, aivenAcl.operationRe)
             && comparePattern(resourceRe, aivenAcl.resourceRe)
             && Objects.equals(resourceRePattern, aivenAcl.resourceRePattern)
@@ -123,7 +144,20 @@ public class AivenAcl {
     @Override
     public int hashCode() {
         return Objects.hash(
-            principalType, principalRe, operationRe, resourceRe, resourceRePattern, getPermissionType()
+            principalType, principalRe, hostMatcher, operationRe, resourceRe, resourceRePattern, getPermissionType()
         );
+    }
+
+    @Override
+    public String toString() {
+        return "AivenAcl{"
+                + "principalType='" + principalType
+                + "', principalRe=" + principalRe
+                + ", operationRe=" + operationRe
+                + ", resourceRe=" + resourceRe
+                + ", resourceRePattern='" + resourceRePattern
+                + "', permissionType=" + getPermissionType()
+                + ", hostMatcher='" + getHostMatcher()
+                + "'}";
     }
 }

@@ -40,6 +40,7 @@ public class AclAivenToNativeConverterTest {
             new AivenAcl(
                 "User",
                 "^(test\\-user)$",
+                "*",
                 "^(Alter|AlterConfigs|Delete|Read|Write)$",
                 "^Topic:(xxx)$",
                 null,
@@ -72,6 +73,7 @@ public class AclAivenToNativeConverterTest {
             new AivenAcl(
                 "User",
                 "^(test\\-user)$",
+                "*",
                 "^Read$",
                 "^Topic:(xxx)$",
                 null,
@@ -92,6 +94,7 @@ public class AclAivenToNativeConverterTest {
             new AivenAcl(
                 "User",
                 "^(test\\-user)$",
+                "*",
                 "^Read$",
                 "^Topic:(topic\\.(.*))$",
                 null,
@@ -112,6 +115,7 @@ public class AclAivenToNativeConverterTest {
             new AivenAcl(
                 "User",
                 "^(test\\-user)$",
+                "*",
                 "^Read$",
                 "^Topic:(topic\\.(.*))$",
                 null,
@@ -132,6 +136,7 @@ public class AclAivenToNativeConverterTest {
             new AivenAcl(
                 "User",
                 "^(test\\-user)$",
+                "*",
                 "^(Delete|Read|Write)$",
                 "^Topic:(topic\\.(.*)|prefix\\-(.*))$",
                 null,
@@ -172,6 +177,7 @@ public class AclAivenToNativeConverterTest {
             new AivenAcl(
                 "User",
                 "^(admin)$",
+                "*",
                 "^(.*)$",
                 "^(.*)$",
                 null,
@@ -205,6 +211,7 @@ public class AclAivenToNativeConverterTest {
             new AivenAcl(
                 "User",
                 "^(.*)$",
+                "*",
                 "^Read$",
                 "^Topic:(xxx)$",
                 null,
@@ -226,6 +233,7 @@ public class AclAivenToNativeConverterTest {
             new AivenAcl(
                 "Group",
                 "^example$",
+                "*",
                 "^Read$",
                 "^Topic:(xxx)$",
                 null,
@@ -234,5 +242,27 @@ public class AclAivenToNativeConverterTest {
         );
 
         assertThat(result).isEmpty();
+    }
+
+    @Test
+    public final void testConvertHostMatcher() {
+        final var result = AclAivenToNativeConverter.convert(
+            new AivenAcl(
+                "User",
+                "^(test\\-user)$",
+                "12.34.56.78",
+                "^Read$",
+                "^Topic:(xxx)$",
+                null,
+                null
+            )
+        );
+
+        assertThat(result).containsExactly(
+            new AclBinding(
+                new ResourcePattern(ResourceType.TOPIC, "xxx", PatternType.LITERAL),
+                new AccessControlEntry("User:test\\-user", "12.34.56.78", AclOperation.READ, AclPermissionType.ALLOW)
+            )
+        );
     }
 }

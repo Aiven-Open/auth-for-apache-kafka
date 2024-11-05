@@ -192,7 +192,9 @@ public class AivenAclAuthorizerV2 implements Authorizer {
             final String resourceToCheck =
                 LegacyResourceTypeNameFormatter.format(resourcePattern.resourceType())
                 + ":" + resourcePattern.name();
+            final String host = requestContext.clientAddress().getHostAddress();
             final boolean verdict = cacheReference.get().get(principal,
+                                                             host,
                                                              LegacyOperationNameFormatter.format(operation),
                                                              resourceToCheck);
             final var authResult = verdict ? AuthorizationResult.ALLOWED : AuthorizationResult.DENIED;
