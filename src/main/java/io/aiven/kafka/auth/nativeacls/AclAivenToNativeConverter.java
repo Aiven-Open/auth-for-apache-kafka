@@ -28,7 +28,7 @@ import io.aiven.kafka.auth.json.AivenAcl;
 public class AclAivenToNativeConverter {
     public static List<AclBinding> convert(final AivenAcl aivenAcl) {
         final List<AclBinding> result = new ArrayList<>();
-        if (aivenAcl.resourceRe == null) {
+        if (aivenAcl.resourceRePattern != null) {
             return result;
         }
 
@@ -43,8 +43,18 @@ public class AclAivenToNativeConverter {
             for (final var principal : principals) {
                 final var accessControlEntry = new AccessControlEntry(
                     principal, aivenAcl.getHostMatcher(), operation, aivenAcl.getPermissionType().nativeType);
-                for (final var resourcePattern : ResourcePatternParser.parse(aivenAcl.resourceRe.pattern())) {
-                    result.add(new AclBinding(resourcePattern, accessControlEntry));
+                if (aivenAcl.resourceRe != null) {
+                    for (final var resourcePattern : ResourcePatternParser.parse(aivenAcl.resourceRe.pattern())) {
+                        result.add(new AclBinding(resourcePattern, accessControlEntry));
+                    }
+                } else if (aivenAcl.resourceLiteral != null) {
+                    ResourcePatternParser.parseLiteral(aivenAcl.resourceLiteral).ifPresent(
+                            resourcePattern -> result.add(new AclBinding(resourcePattern, accessControlEntry))
+                    );
+                } else if (aivenAcl.resourcePrefix != null) {
+                    ResourcePatternParser.parsePrefixed(aivenAcl.resourcePrefix).ifPresent(
+                            resourcePattern -> result.add(new AclBinding(resourcePattern, accessControlEntry))
+                    );
                 }
             }
         }

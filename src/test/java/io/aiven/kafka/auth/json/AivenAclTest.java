@@ -32,7 +32,10 @@ public class AivenAclTest {
             "^(Describe|Read)$", // operation
             "^Topic:p_(.*)_s", // resource,
             null, // resource pattern
-            null, false
+            null, // resource literal
+            null, // resource prefix
+            null, // permission type
+            false // hidden
         );
 
         assertTrue(entry.match("User",  "CN=p_pass_s", "*", "Read", "Topic:p_pass_s"));
@@ -49,7 +52,10 @@ public class AivenAclTest {
             "^(Describe|Read)$", // operation
             "^Topic:p_(.*)_s", // resource
             null, // resource pattern
-            null, false
+            null, // resource literal
+            null, // resource prefix
+            null, // permission type
+            false // hidden
         );
 
         assertTrue(entry.match("User", "CN=p_pass_s", "*", "Read", "Topic:p_pass_s"));
@@ -65,12 +71,53 @@ public class AivenAclTest {
             "^(Describe|Read)$", // operation
             null, // resource
             "^Topic:p_${username}_s\\$", // resource pattern
-            null, false
+            null, // resource literal
+            null, // resource prefix
+            null, // permission type
+            false // hidden
         );
 
         assertTrue(entry.match("User", "CN=p_user1_s", "*", "Read", "Topic:p_user1_s"));
         assertTrue(entry.match("User", "CN=p_user2_s", "*", "Read", "Topic:p_user2_s"));
         assertFalse(entry.match("User", "CN=p_user1_s", "*", "Read", "Topic:p_user2_s"));
         assertFalse(entry.match("User", "CN=p_user2_s", "*", "Read", "Topic:p_user1_s"));
+
+        // Test resources defined by literal match
+        entry = new AivenAcl(
+                "User", // principal type
+                "^CN=p_(?<username>[a-z0-9]+)_s$", // principal
+                "*", // host
+                "^(Describe|Read)$", // operation
+                null, // resource
+                null, // resource pattern
+                "Topic:^(][", // invalid regex just to show that the match is a literal string
+                null, // resource prefix
+                null, // permission type
+                false // hidden
+        );
+
+        assertTrue(entry.match("User", "CN=p_user1_s", "*", "Read", "Topic:^(]["));
+        assertFalse(entry.match("User", "CN=p_user1_s", "*", "Read", "Topic:wrong_topic"));
+
+
+        // Test resources defined by prefix match
+        entry = new AivenAcl(
+                "User", // principal type
+                "^CN=p_(?<username>[a-z0-9]+)_s$", // principal
+                "*", // host
+                "^(Describe|Read)$", // operation
+                null, // resource
+                null, // resource pattern
+                null, // resource literal
+                "Topic:organizationA.", // invalid regex just to show that the match is a literal string
+                null, // permission type
+                false // hidden
+        );
+        assertTrue(entry.match("User", "CN=p_user1_s", "*", "Read", "Topic:organizationA.topic1"));
+        assertTrue(entry.match("User", "CN=p_user1_s", "*", "Read", "Topic:organizationA.topic2"));
+        assertTrue(entry.match("User", "CN=p_user1_s", "*", "Read", "Topic:organizationA."));
+        assertFalse(entry.match("User", "CN=p_user1_s", "*", "Read", "Topic:organizationB.topic1"));
+        assertFalse(entry.match("User", "CN=p_user1_s", "*", "Read", "Topic:organizationA"));
+        assertFalse(entry.match("User", "CN=p_user1_s", "*", "Read", "Topic:AAAorganizationA."));
     }
 }

@@ -11,10 +11,12 @@ Class implementing a single ACL entry verification. Principal, operation and
 resource are expressed as regular expressions.
 
 Alternatively to straight regular expression for resource, AivenAclEntry can
-be given a resource pattern with back references to principal regex. This is
-used internally in Aiven to map project id from certificate subject into
-project specific management topics. We can thus avoid encoding separate rules
-for each project.
+be given a resource pattern with back references to principal regex, a literal
+match or a prefixed match. The first is used internally in Aiven to map project
+id from certificate subject into project specific management topics. We can thus
+avoid encoding separate rules for each project. Literal and prefixed matchers
+work as defined in the Apache Kafka documentation. Only one resource matcher can be
+specified per acl.
 
 Permission type allows to define the verification result in case of an ACL match.
 By default, the permission type is `ALLOW`.
