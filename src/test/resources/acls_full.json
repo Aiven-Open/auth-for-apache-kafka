@@ -94,5 +94,19 @@
     "principal": "^pass-resource-pattern$",
     "operation": "^Read$",
     "resource_pattern": "^Topic:${projectid}-(.*)"
+  },
+  {
+    "principal_type": "User",
+    "principal": "^pass-13$",
+    "host": "*",
+    "operation": "^Read$",
+    "resource": "^Topic:(.*)$"
+  },
+  {
+    "principal_type": "User",
+    "principal": "^pass-14$",
+    "host": "example.com",
+    "operation": "^Read$",
+    "resource": "^Topic:(.*)$"
   }
 ]

@@ -29,12 +29,14 @@ By default, the permission type is `ALLOW`.
                 "O=00000000-0000-a000-1000-(500000000005|a00000000001|b00000000001|d00000000001),ST=vm$"
             ),
             "principal_type": "Prune",
+            "host": "*",
             "resource": "^(.*)$",
         },
         {
             "operation": "^(Describe|DescribeConfigs|Read|Write)$",
             "principal": "^CN=(?<vmname>[a-z0-9-]+),OU=(?<nodeid>n[0-9]+),O=(?<projectid>[a-f0-9-]+),ST=vm$",
             "principal_type": "Prune",
+            "host": "*",
             "resource_pattern": "^Topic:${projectid}-(.*),
             "permission_type": "DENY"
         }

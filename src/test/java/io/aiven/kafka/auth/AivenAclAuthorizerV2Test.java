@@ -21,6 +21,7 @@ import javax.management.ObjectName;
 
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
+import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -411,23 +412,59 @@ public class AivenAclAuthorizerV2Test {
         );
     }
 
+    @Test
+    public void testHostMatcherWildcard() throws IOException {
+        Files.copy(this.getClass().getResourceAsStream("/acls_host_match.json"), configFilePath);
+        startAuthorizer();
+        final var topic1 = new ResourcePattern(ResourceType.TOPIC, "topic-1", PatternType.LITERAL);
+        final var topic2 = new ResourcePattern(ResourceType.TOPIC, "topic-2", PatternType.LITERAL);
+
+        // test host rule with wildcard
+        checkSingleAction(requestCtx("User", "user"), action(READ_OPERATION, topic1), true);
+        // test specific host rule with allowed host
+        checkSingleAction(
+            requestCtxWithHost("User", "user", Inet4Address.getByName("192.168.123.45")),
+            action(READ_OPERATION, topic2), true
+        );
+        // test specific host rule with not matching host
+        checkSingleAction(
+            requestCtxWithHost("User", "user", Inet4Address.getByName("192.168.123.46")),
+            action(READ_OPERATION, topic2),
+            false
+        );
+        // test specific host rule with specific denied host
+        checkSingleAction(
+            requestCtxWithHost("User", "user", Inet4Address.getByName("192.168.123.47")),
+            action(READ_OPERATION, topic1),
+            false
+        );
+    }
+
     private void startAuthorizer() {
         final AuthorizerServerInfo serverInfo = mock(AuthorizerServerInfo.class);
         when(serverInfo.endpoints()).thenReturn(List.of());
         auth.start(serverInfo);
     }
 
-    private AuthorizableRequestContext requestCtx(final String principalType, final String name) {
+    private AuthorizableRequestContext requestCtxWithHost(
+        final String principalType,
+        final String name,
+        final InetAddress host
+    ) {
         return new RequestContext(
             new RequestHeader(ApiKeys.METADATA, (short) 0, "some-client-id", 123),
             "connection-id",
-            InetAddress.getLoopbackAddress(),
+            host,
             new KafkaPrincipal(principalType, name),
             new ListenerName("SSL"),
             SecurityProtocol.SSL,
             ClientInformation.EMPTY,
             false
         );
+    }
+
+    private AuthorizableRequestContext requestCtx(final String principalType, final String name) {
+        return requestCtxWithHost(principalType, name, InetAddress.getLoopbackAddress());
     }
 
     private Action action(final AclOperation operation, final ResourcePattern resource) {
