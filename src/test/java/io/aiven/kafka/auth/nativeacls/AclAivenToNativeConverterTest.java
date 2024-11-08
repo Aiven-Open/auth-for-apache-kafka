@@ -189,20 +189,12 @@ public class AclAivenToNativeConverterTest {
         final List<ResourceType> expectedResourceTypes = List.of(
             ResourceType.TOPIC, ResourceType.GROUP, ResourceType.CLUSTER,
             ResourceType.TRANSACTIONAL_ID, ResourceType.DELEGATION_TOKEN);
-        final List<AclOperation> expectedAclOperations = List.of(
-            AclOperation.READ, AclOperation.WRITE, AclOperation.CREATE,
-            AclOperation.DELETE, AclOperation.ALTER, AclOperation.DESCRIBE,
-            AclOperation.CLUSTER_ACTION, AclOperation.DESCRIBE_CONFIGS,
-            AclOperation.ALTER_CONFIGS, AclOperation.IDEMPOTENT_WRITE);
         for (final var resourceType : expectedResourceTypes) {
-            for (final var aclOperation : expectedAclOperations) {
-                expected.add(new AclBinding(
+            expected.add(new AclBinding(
                     new ResourcePattern(resourceType, "*", PatternType.LITERAL),
-                    new AccessControlEntry("User:admin", "*", aclOperation, AclPermissionType.ALLOW))
-                );
-            }
+                    new AccessControlEntry("User:admin", "*", AclOperation.ALL, AclPermissionType.ALLOW)));
         }
-        assertThat(result).containsAll(expected);
+        assertThat(result).hasSameElementsAs(expected);
     }
 
     @Test
