@@ -36,27 +36,28 @@ public class AclJsonReaderTest {
         final var jsonReader = new AclJsonReader(path);
         final var acls = jsonReader.read();
         assertThat(acls).containsExactly(
-            new AivenAcl("User", "^pass-3$", "*", "^Read$", "^Topic:denied$", null, AclPermissionType.DENY),
-            new AivenAcl("User", "^pass-0$", "*", "^Read$", "^Topic:(.*)$", null, AclPermissionType.ALLOW),
-            new AivenAcl("User", "^pass-1$", "*", "^Read$", "^Topic:(.*)$", null, AclPermissionType.ALLOW),
-            new AivenAcl("User", "^pass-2$", "*", "^Read$", "^Topic:(.*)$", null, AclPermissionType.ALLOW),
-            new AivenAcl("User", "^pass-3$", "*", "^Read$", "^Topic:(.*)$", null, AclPermissionType.ALLOW),
-            new AivenAcl("User", "^pass-4$", "*", "^Read$", "^Topic:(.*)$", null, AclPermissionType.ALLOW),
-            new AivenAcl("User", "^pass-5$", "*", "^Read$", "^Topic:(.*)$", null, AclPermissionType.ALLOW),
-            new AivenAcl("User", "^pass-6$", "*", "^Read$", "^Topic:(.*)$", null, AclPermissionType.ALLOW),
-            new AivenAcl("User", "^pass-7$", "*", "^Read$", "^Topic:(.*)$", null, AclPermissionType.ALLOW),
-            new AivenAcl("User", "^pass-8$", "*", "^Read$", "^Topic:(.*)$", null, AclPermissionType.ALLOW),
-            new AivenAcl("User", "^pass-9$", "*", "^Read$", "^Topic:(.*)$", null, AclPermissionType.ALLOW),
-            new AivenAcl("User", "^pass-10$", "*", "^Read$", "^Topic:(.*)$", null, AclPermissionType.ALLOW),
-            new AivenAcl("User", "^pass-11$", "*", "^Read$", "^Topic:(.*)$", null, AclPermissionType.ALLOW),
-            new AivenAcl("User", "^pass-12$", "*", "^Read$", "^Topic:(.*)$", null, AclPermissionType.ALLOW),
-            new AivenAcl(null, "^pass-notype$", "*", "^Read$", "^Topic:(.*)$", null, AclPermissionType.ALLOW),
+            new AivenAcl("User", "^pass-3$", "*", "^Read$", "^Topic:denied$", null, AclPermissionType.DENY, false),
+            new AivenAcl("User", "^pass-0$", "*", "^Read$", "^Topic:(.*)$", null, AclPermissionType.ALLOW, false),
+            new AivenAcl("User", "^pass-1$", "*", "^Read$", "^Topic:(.*)$", null, AclPermissionType.ALLOW, false),
+            new AivenAcl("User", "^pass-2$", "*", "^Read$", "^Topic:(.*)$", null, AclPermissionType.ALLOW, false),
+            new AivenAcl("User", "^pass-3$", "*", "^Read$", "^Topic:(.*)$", null, AclPermissionType.ALLOW, false),
+            new AivenAcl("User", "^pass-4$", "*", "^Read$", "^Topic:(.*)$", null, AclPermissionType.ALLOW, false),
+            new AivenAcl("User", "^pass-5$", "*", "^Read$", "^Topic:(.*)$", null, AclPermissionType.ALLOW, false),
+            new AivenAcl("User", "^pass-6$", "*", "^Read$", "^Topic:(.*)$", null, AclPermissionType.ALLOW, false),
+            new AivenAcl("User", "^pass-7$", "*", "^Read$", "^Topic:(.*)$", null, AclPermissionType.ALLOW, false),
+            new AivenAcl("User", "^pass-8$", "*", "^Read$", "^Topic:(.*)$", null, AclPermissionType.ALLOW, false),
+            new AivenAcl("User", "^pass-9$", "*", "^Read$", "^Topic:(.*)$", null, AclPermissionType.ALLOW, false),
+            new AivenAcl("User", "^pass-10$", "*", "^Read$", "^Topic:(.*)$", null, AclPermissionType.ALLOW, false),
+            new AivenAcl("User", "^pass-11$", "*", "^Read$", "^Topic:(.*)$", null, AclPermissionType.ALLOW, false),
+            new AivenAcl("User", "^pass-12$", "*", "^Read$", "^Topic:(.*)$", null, AclPermissionType.ALLOW, false),
+            new AivenAcl(null, "^pass-notype$", "*", "^Read$", "^Topic:(.*)$", null, AclPermissionType.ALLOW, false),
             new AivenAcl(
                 "User", "^pass-resource-pattern$", "*", "^Read$",
-                null, "^Topic:${projectid}-(.*)", AclPermissionType.ALLOW
+                null, "^Topic:${projectid}-(.*)", AclPermissionType.ALLOW, false
             ),
-            new AivenAcl("User", "^pass-13$", "*", "^Read$", "^Topic:(.*)$", null, AclPermissionType.ALLOW),
-            new AivenAcl("User", "^pass-14$", "example.com", "^Read$", "^Topic:(.*)$", null, AclPermissionType.ALLOW)
+            new AivenAcl("User", "^pass-13$", "*", "^Read$", "^Topic:(.*)$", null, AclPermissionType.ALLOW, false),
+            new AivenAcl("User", "^pass-14$", "example.com", "^Read$", "^Topic:(.*)$",
+                null, AclPermissionType.ALLOW, true)
         );
     }
 
@@ -72,7 +73,7 @@ public class AclJsonReaderTest {
             "^Read$",
             "^(.*)$",
             null,
-            AclPermissionType.ALLOW
+            AclPermissionType.ALLOW, false
         );
         final var denyAcl = new AivenAcl(
             "User",
@@ -81,7 +82,7 @@ public class AclJsonReaderTest {
             "^Read$",
             "^(.*)$",
             null,
-            AclPermissionType.DENY
+            AclPermissionType.DENY, false
         );
         assertThat(acls).containsExactly(allowAcl, allowAcl, allowAcl, denyAcl, denyAcl);
     }

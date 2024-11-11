@@ -44,7 +44,7 @@ public class AclAivenToNativeConverterTest {
                 "^(Alter|AlterConfigs|Delete|Read|Write)$",
                 "^Topic:(xxx)$",
                 null,
-                io.aiven.kafka.auth.json.AclPermissionType.ALLOW
+                io.aiven.kafka.auth.json.AclPermissionType.ALLOW, false
             )
         );
         final ResourcePattern resourcePattern = new ResourcePattern(ResourceType.TOPIC, "xxx", PatternType.LITERAL);
@@ -77,7 +77,7 @@ public class AclAivenToNativeConverterTest {
                 "^Read$",
                 "^Topic:(xxx)$",
                 null,
-                null
+                null, false
             )
         );
         final ResourcePattern resourcePattern = new ResourcePattern(ResourceType.TOPIC, "xxx", PatternType.LITERAL);
@@ -98,7 +98,7 @@ public class AclAivenToNativeConverterTest {
                 "^Read$",
                 "^Topic:(topic\\.(.*))$",
                 null,
-                null
+                null, false
             )
         );
         assertThat(result).containsExactly(
@@ -119,7 +119,7 @@ public class AclAivenToNativeConverterTest {
                 "^Read$",
                 "^Topic:(topic\\.(.*))$",
                 null,
-                io.aiven.kafka.auth.json.AclPermissionType.DENY
+                io.aiven.kafka.auth.json.AclPermissionType.DENY, false
             )
         );
         assertThat(result).containsExactly(
@@ -140,7 +140,7 @@ public class AclAivenToNativeConverterTest {
                 "^(Delete|Read|Write)$",
                 "^Topic:(topic\\.(.*)|prefix\\-(.*))$",
                 null,
-                null
+                null, false
             )
         );
         assertThat(result).containsExactly(
@@ -181,7 +181,7 @@ public class AclAivenToNativeConverterTest {
                 "^(.*)$",
                 "^(.*)$",
                 null,
-                null
+                null, false
             )
         );
 
@@ -215,7 +215,7 @@ public class AclAivenToNativeConverterTest {
                 "^Read$",
                 "^Topic:(xxx)$",
                 null,
-                null
+                null, false
             )
         );
 
@@ -237,7 +237,7 @@ public class AclAivenToNativeConverterTest {
                 "^Read$",
                 "^Topic:(xxx)$",
                 null,
-                null
+                null, false
             )
         );
 
@@ -254,7 +254,7 @@ public class AclAivenToNativeConverterTest {
                 "^Read$",
                 "^Topic:(xxx)$",
                 null,
-                null
+                null, false
             )
         );
 
