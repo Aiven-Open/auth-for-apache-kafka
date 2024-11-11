@@ -47,13 +47,16 @@ public class AivenAcl {
     @SerializedName("host")
     private final String hostMatcher;
 
+    private final boolean hidden;
+
     public AivenAcl(final String principalType,
                     final String principal,
                     final String host,
                     final String operation,
                     final String resource,
                     final String resourcePattern,
-                    final AclPermissionType permissionType) {
+                    final AclPermissionType permissionType,
+                    final boolean hidden) {
         this.principalType = principalType;
         this.principalRe = Pattern.compile(principal);
         this.hostMatcher = host;
@@ -61,6 +64,7 @@ public class AivenAcl {
         this.resourceRe = Objects.nonNull(resource) ? Pattern.compile(resource) : null;
         this.resourceRePattern = resourcePattern;
         this.permissionType = Objects.requireNonNullElse(permissionType, AclPermissionType.ALLOW);
+        this.hidden = hidden;
     }
 
     public AclPermissionType getPermissionType() {
@@ -119,13 +123,22 @@ public class AivenAcl {
             return false;
         }
         final AivenAcl aivenAcl = (AivenAcl) o;
-        return Objects.equals(principalType, aivenAcl.principalType)
-            && comparePattern(principalRe, aivenAcl.principalRe)
+        return equalsPrincipal(aivenAcl)
             && getHostMatcher().equals(aivenAcl.getHostMatcher())
             && comparePattern(operationRe, aivenAcl.operationRe)
-            && comparePattern(resourceRe, aivenAcl.resourceRe)
-            && Objects.equals(resourceRePattern, aivenAcl.resourceRePattern)
-            && getPermissionType() == aivenAcl.getPermissionType(); // always compare permission type using getter
+            && equalsResource(aivenAcl)
+            && getPermissionType() == aivenAcl.getPermissionType() // always compare permission type using getter
+            && hidden == aivenAcl.hidden;
+    }
+
+    private boolean equalsPrincipal(final AivenAcl aivenAcl) {
+        return Objects.equals(principalType, aivenAcl.principalType)
+            && comparePattern(principalRe, aivenAcl.principalRe);
+    }
+
+    private boolean equalsResource(final AivenAcl aivenAcl) {
+        return comparePattern(resourceRe, aivenAcl.resourceRe)
+            && Objects.equals(resourceRePattern, aivenAcl.resourceRePattern);
     }
 
     private boolean comparePattern(final Pattern p1, final Pattern p2) {
@@ -158,6 +171,11 @@ public class AivenAcl {
                 + ", resourceRePattern='" + resourceRePattern
                 + "', permissionType=" + getPermissionType()
                 + ", hostMatcher='" + getHostMatcher()
+                + ", hidden=" + hidden
                 + "'}";
+    }
+
+    public boolean isHidden() {
+        return hidden;
     }
 }

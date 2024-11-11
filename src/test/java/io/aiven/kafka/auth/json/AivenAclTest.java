@@ -32,7 +32,7 @@ public class AivenAclTest {
             "^(Describe|Read)$", // operation
             "^Topic:p_(.*)_s", // resource,
             null, // resource pattern
-            null
+            null, false
         );
 
         assertTrue(entry.match("User",  "CN=p_pass_s", "*", "Read", "Topic:p_pass_s"));
@@ -49,7 +49,7 @@ public class AivenAclTest {
             "^(Describe|Read)$", // operation
             "^Topic:p_(.*)_s", // resource
             null, // resource pattern
-            null
+            null, false
         );
 
         assertTrue(entry.match("User", "CN=p_pass_s", "*", "Read", "Topic:p_pass_s"));
@@ -65,7 +65,7 @@ public class AivenAclTest {
             "^(Describe|Read)$", // operation
             null, // resource
             "^Topic:p_${username}_s\\$", // resource pattern
-            null
+            null, false
         );
 
         assertTrue(entry.match("User", "CN=p_user1_s", "*", "Read", "Topic:p_user1_s"));

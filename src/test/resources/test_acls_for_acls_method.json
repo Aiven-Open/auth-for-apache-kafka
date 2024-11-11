@@ -34,5 +34,12 @@
     "principal": "^(.*)$",
     "principal_type": "Service",
     "resource": "^(.*)$"
+  },
+  {
+    "operation": "^(Delete)$",
+    "principal": "^(test\\-user)$",
+    "principal_type": "User",
+    "resource": "^Topic:(hidden\\.(.*))$",
+    "hidden": true
   }
 ]

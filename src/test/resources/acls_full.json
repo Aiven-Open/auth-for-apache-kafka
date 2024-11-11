@@ -107,6 +107,7 @@
     "principal": "^pass-14$",
     "host": "example.com",
     "operation": "^Read$",
-    "resource": "^Topic:(.*)$"
+    "resource": "^Topic:(.*)$",
+    "hidden": true
   }
 ]

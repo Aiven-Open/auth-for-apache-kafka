@@ -19,6 +19,8 @@ for each project.
 Permission type allows to define the verification result in case of an ACL match.
 By default, the permission type is `ALLOW`.
 
+A specific ACL entry can be hidden from public listing by setting hidden flag.
+
 ### Example
 
     [
@@ -31,6 +33,7 @@ By default, the permission type is `ALLOW`.
             "principal_type": "Prune",
             "host": "*",
             "resource": "^(.*)$",
+            "hidden": true
         },
         {
             "operation": "^(Describe|DescribeConfigs|Read|Write)$",
