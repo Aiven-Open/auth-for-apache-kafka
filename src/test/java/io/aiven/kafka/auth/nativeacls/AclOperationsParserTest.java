@@ -64,16 +64,7 @@ public class AclOperationsParserTest {
     public final void parseAclOperationsGlobalWildcard(final String value) {
         assertThat(AclOperationsParser.parse(value))
             .containsExactly(
-                AclOperation.READ,
-                AclOperation.WRITE,
-                AclOperation.CREATE,
-                AclOperation.DELETE,
-                AclOperation.ALTER,
-                AclOperation.DESCRIBE,
-                AclOperation.CLUSTER_ACTION,
-                AclOperation.DESCRIBE_CONFIGS,
-                AclOperation.ALTER_CONFIGS,
-                AclOperation.IDEMPOTENT_WRITE
+                AclOperation.ALL
             );
     }
 
