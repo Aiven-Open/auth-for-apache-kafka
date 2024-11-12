@@ -1,0 +1,15 @@
+[
+  {
+    "principal_type": "User",
+    "principal": "^(user1)$",
+    "operation": "^(.*)$",
+    "resource_prefix": "Topic:groupA."
+  },
+  {
+    "principal_type": "User",
+    "principal": "^(user2)$",
+    "operation": "^(.*)$",
+    "resource_prefix": "Topic:groupB.",
+    "permission_type": "DENY"
+  }
+]

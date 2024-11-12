@@ -44,7 +44,10 @@ public class AclAivenToNativeConverterTest {
                 "^(Alter|AlterConfigs|Delete|Read|Write)$",
                 "^Topic:(xxx)$",
                 null,
-                io.aiven.kafka.auth.json.AclPermissionType.ALLOW, false
+                null,
+                null,
+                io.aiven.kafka.auth.json.AclPermissionType.ALLOW,
+                false
             )
         );
         final ResourcePattern resourcePattern = new ResourcePattern(ResourceType.TOPIC, "xxx", PatternType.LITERAL);
@@ -77,7 +80,10 @@ public class AclAivenToNativeConverterTest {
                 "^Read$",
                 "^Topic:(xxx)$",
                 null,
-                null, false
+                null,
+                null,
+                null,
+                false
             )
         );
         final ResourcePattern resourcePattern = new ResourcePattern(ResourceType.TOPIC, "xxx", PatternType.LITERAL);
@@ -98,7 +104,10 @@ public class AclAivenToNativeConverterTest {
                 "^Read$",
                 "^Topic:(topic\\.(.*))$",
                 null,
-                null, false
+                null,
+                null,
+                null,
+                false
             )
         );
         assertThat(result).containsExactly(
@@ -119,7 +128,10 @@ public class AclAivenToNativeConverterTest {
                 "^Read$",
                 "^Topic:(topic\\.(.*))$",
                 null,
-                io.aiven.kafka.auth.json.AclPermissionType.DENY, false
+                null,
+                null,
+                io.aiven.kafka.auth.json.AclPermissionType.DENY,
+                false
             )
         );
         assertThat(result).containsExactly(
@@ -140,7 +152,10 @@ public class AclAivenToNativeConverterTest {
                 "^(Delete|Read|Write)$",
                 "^Topic:(topic\\.(.*)|prefix\\-(.*))$",
                 null,
-                null, false
+                null,
+                null,
+                null,
+                false
             )
         );
         assertThat(result).containsExactly(
@@ -181,7 +196,10 @@ public class AclAivenToNativeConverterTest {
                 "^(.*)$",
                 "^(.*)$",
                 null,
-                null, false
+                null,
+                null,
+                null,
+                false
             )
         );
 
@@ -207,7 +225,10 @@ public class AclAivenToNativeConverterTest {
                 "^Read$",
                 "^Topic:(xxx)$",
                 null,
-                null, false
+                null,
+                null,
+                null,
+                false
             )
         );
 
@@ -229,7 +250,10 @@ public class AclAivenToNativeConverterTest {
                 "^Read$",
                 "^Topic:(xxx)$",
                 null,
-                null, false
+                null,
+                null,
+                null,
+                false
             )
         );
 
@@ -246,13 +270,86 @@ public class AclAivenToNativeConverterTest {
                 "^Read$",
                 "^Topic:(xxx)$",
                 null,
-                null, false
+                null,
+                null,
+                null,
+                false
             )
         );
 
         assertThat(result).containsExactly(
             new AclBinding(
                 new ResourcePattern(ResourceType.TOPIC, "xxx", PatternType.LITERAL),
+                new AccessControlEntry("User:test\\-user", "12.34.56.78", AclOperation.READ, AclPermissionType.ALLOW)
+            )
+        );
+    }
+
+    @Test
+    public final void testConvertResourceRePattern() {
+        final var result = AclAivenToNativeConverter.convert(
+            new AivenAcl(
+                "Prune",
+                "^CN=(?<vmname>[a-z0-9-]+),OU=(?<nodeid>n[0-9]+),O=(?<projectid>[a-f0-9-]+),ST=vm$",
+                "12.34.56.78",
+                "^Read$",
+                null,
+                "^Topic:${projectid}-(.*)",
+                null,
+                null,
+                null,
+                false
+            )
+        );
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    public final void testConvertResourceLiteral() {
+        final var result = AclAivenToNativeConverter.convert(
+            new AivenAcl(
+                "User",
+                "^(test\\-user)$",
+                "12.34.56.78",
+                "^Read$",
+                null,
+                null,
+                "Topic:some-topic-abcde",
+                null,
+                null,
+                false
+            )
+        );
+
+        assertThat(result).containsExactly(
+            new AclBinding(
+                new ResourcePattern(ResourceType.TOPIC, "some-topic-abcde", PatternType.LITERAL),
+                new AccessControlEntry("User:test\\-user", "12.34.56.78", AclOperation.READ, AclPermissionType.ALLOW)
+            )
+        );
+    }
+
+    @Test
+    public final void testConvertResourcePrefix() {
+        final var result = AclAivenToNativeConverter.convert(
+            new AivenAcl(
+                "User",
+                "^(test\\-user)$",
+                "12.34.56.78",
+                "^Read$",
+                null,
+                null,
+                null,
+                "Topic:prefixA.",
+                null,
+                false
+            )
+        );
+
+        assertThat(result).containsExactly(
+            new AclBinding(
+                new ResourcePattern(ResourceType.TOPIC, "prefixA.", PatternType.PREFIXED),
                 new AccessControlEntry("User:test\\-user", "12.34.56.78", AclOperation.READ, AclPermissionType.ALLOW)
             )
         );

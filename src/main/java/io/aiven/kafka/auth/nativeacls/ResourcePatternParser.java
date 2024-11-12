@@ -19,6 +19,7 @@ package io.aiven.kafka.auth.nativeacls;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -27,6 +28,8 @@ import java.util.stream.Collectors;
 import org.apache.kafka.common.resource.PatternType;
 import org.apache.kafka.common.resource.ResourcePattern;
 import org.apache.kafka.common.resource.ResourceType;
+
+import io.aiven.kafka.auth.nameformatters.ResourceTypeNameFormatter;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -78,6 +81,32 @@ class ResourcePatternParser {
             }
         }
         return result;
+    }
+
+    private static Optional<ResourcePattern> parseSerializedResource(
+        final String resourcePattern,
+        final PatternType patternType
+    ) {
+        if (resourcePattern == null) {
+            return Optional.empty();
+        }
+        final String[] parts = resourcePattern.split(":", 2);
+        if (parts.length != 2 || parts[0].isBlank() || parts[1].isBlank()) {
+            LOGGER.debug("Invalid format for resource literal '{}'", resourcePattern);
+            return Optional.empty();
+        }
+        return Optional.of(new ResourcePattern(
+                ResourceTypeNameFormatter.format(parts[0]),
+                parts[1],
+                patternType));
+    }
+
+    public static Optional<ResourcePattern> parseLiteral(final String resourcePattern) {
+        return parseSerializedResource(resourcePattern, PatternType.LITERAL);
+    }
+
+    public static Optional<ResourcePattern> parsePrefixed(final String resourcePattern) {
+        return parseSerializedResource(resourcePattern, PatternType.PREFIXED);
     }
 
     private static ResourcePattern createResourcePattern(final ResourceType resourceType, final String resource) {

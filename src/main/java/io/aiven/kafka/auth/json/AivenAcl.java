@@ -20,6 +20,8 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import io.aiven.kafka.auth.utils.ResourceLiteralWildcardMatcher;
+
 import com.google.gson.annotations.SerializedName;
 
 public class AivenAcl {
@@ -41,6 +43,12 @@ public class AivenAcl {
     @SerializedName("resource_pattern")
     public final String resourceRePattern;
 
+    @SerializedName("resource_literal")
+    public final String resourceLiteral;
+
+    @SerializedName("resource_prefix")
+    public final String resourcePrefix;
+
     @SerializedName("permission_type")
     private final AclPermissionType permissionType;
 
@@ -49,20 +57,26 @@ public class AivenAcl {
 
     private final boolean hidden;
 
-    public AivenAcl(final String principalType,
-                    final String principal,
-                    final String host,
-                    final String operation,
-                    final String resource,
-                    final String resourcePattern,
-                    final AclPermissionType permissionType,
-                    final boolean hidden) {
+    public AivenAcl(
+        final String principalType,
+        final String principal,
+        final String host,
+        final String operation,
+        final String resource,
+        final String resourcePattern,
+        final String resourceLiteral,
+        final String resourcePrefix,
+        final AclPermissionType permissionType,
+        final boolean hidden
+    ) {
         this.principalType = principalType;
         this.principalRe = Pattern.compile(principal);
         this.hostMatcher = host;
         this.operationRe = Pattern.compile(operation);
         this.resourceRe = Objects.nonNull(resource) ? Pattern.compile(resource) : null;
         this.resourceRePattern = resourcePattern;
+        this.resourceLiteral = resourceLiteral;
+        this.resourcePrefix = resourcePrefix;
         this.permissionType = Objects.requireNonNullElse(permissionType, AclPermissionType.ALLOW);
         this.hidden = hidden;
     }
@@ -92,19 +106,7 @@ public class AivenAcl {
         if (this.principalType == null || this.principalType.equals(principalType)) {
             final Matcher mp = this.principalRe.matcher(principal);
             final Matcher mo = this.operationRe.matcher(operation);
-            if (mp.find() && mo.find() && this.hostMatch(host)) {
-                Matcher mr = null;
-                if (this.resourceRe != null) {
-                    mr = this.resourceRe.matcher(resource);
-                } else if (this.resourceRePattern != null) {
-                    final String resourceReStr = mp.replaceAll(this.resourceRePattern);
-                    final Pattern resourceRe = Pattern.compile(resourceReStr);
-                    mr = resourceRe.matcher(resource);
-                }
-                if (mr != null && mr.find()) {
-                    return true;
-                }
-            }
+            return mp.find() && mo.find() && this.hostMatch(host) && this.resourceMatch(resource, mp);
         }
         return false;
     }
@@ -112,6 +114,22 @@ public class AivenAcl {
     private boolean hostMatch(final String host) {
         return getHostMatcher().equals(WILDCARD_HOST)
             || getHostMatcher().equals(host);
+    }
+
+    private boolean resourceMatch(final String resource, final Matcher principalBackreference) {
+        if (this.resourceRe != null) {
+            return this.resourceRe.matcher(resource).find();
+        } else if (this.resourceRePattern != null) {
+            final String resourceReStr = principalBackreference.replaceAll(this.resourceRePattern);
+            final Pattern resourceRe = Pattern.compile(resourceReStr);
+            return resourceRe.matcher(resource).find();
+        } else if (this.resourceLiteral != null) {
+            return ResourceLiteralWildcardMatcher.match(this.resourceLiteral, resource)
+                || this.resourceLiteral.equals(resource);
+        } else if (this.resourcePrefix != null) {
+            return resource != null && resource.startsWith(this.resourcePrefix);
+        }
+        return false;
     }
 
     @Override
@@ -138,7 +156,9 @@ public class AivenAcl {
 
     private boolean equalsResource(final AivenAcl aivenAcl) {
         return comparePattern(resourceRe, aivenAcl.resourceRe)
-            && Objects.equals(resourceRePattern, aivenAcl.resourceRePattern);
+            && Objects.equals(resourceRePattern, aivenAcl.resourceRePattern)
+            && Objects.equals(resourceLiteral, aivenAcl.resourceLiteral)
+            && Objects.equals(resourcePrefix, aivenAcl.resourcePrefix);
     }
 
     private boolean comparePattern(final Pattern p1, final Pattern p2) {
@@ -157,7 +177,8 @@ public class AivenAcl {
     @Override
     public int hashCode() {
         return Objects.hash(
-            principalType, principalRe, hostMatcher, operationRe, resourceRe, resourceRePattern, getPermissionType()
+            principalType, principalRe, hostMatcher, operationRe, resourceRe,
+            resourceRePattern, resourceLiteral, resourcePrefix, getPermissionType()
         );
     }
 
@@ -167,12 +188,23 @@ public class AivenAcl {
                 + "principalType='" + principalType
                 + "', principalRe=" + principalRe
                 + ", operationRe=" + operationRe
-                + ", resourceRe=" + resourceRe
-                + ", resourceRePattern='" + resourceRePattern
+                + ", resource='" + getResourceString()
                 + "', permissionType=" + getPermissionType()
                 + ", hostMatcher='" + getHostMatcher()
                 + ", hidden=" + hidden
                 + "'}";
+    }
+
+    private String getResourceString() {
+        if (resourceRe != null) {
+            return resourceRe.toString();
+        } else if (resourceRePattern != null) {
+            return resourceRePattern;
+        } else if (resourceLiteral != null) {
+            return resourceLiteral + " (LITERAL)";
+        } else {
+            return resourcePrefix + " (PREFIXED)";
+        }
     }
 
     public boolean isHidden() {

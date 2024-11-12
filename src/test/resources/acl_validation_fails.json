@@ -1,0 +1,8 @@
+[
+  {
+    "principal_type": "User",
+    "principal": "^pass-3$",
+    "operation": "^Read$",
+    "permission_type": "ALLOW"
+  }
+]

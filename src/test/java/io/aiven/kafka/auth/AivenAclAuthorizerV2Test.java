@@ -440,6 +440,30 @@ public class AivenAclAuthorizerV2Test {
         );
     }
 
+    @Test
+    public void testResourceLiteralMatcher() throws IOException {
+        Files.copy(this.getClass().getResourceAsStream("/acls_resource_literal_match.json"), configFilePath);
+        startAuthorizer();
+        checkSingleAction(requestCtx("User", "user1"), action(READ_OPERATION, topic("topic-1")), true);
+        checkSingleAction(requestCtx("User", "user1"), action(READ_OPERATION, topic("topic-2")), false);
+        checkSingleAction(requestCtx("User", "user2"), action(READ_OPERATION, topic("topic-2")), false);
+        checkSingleAction(requestCtx("User", "user3"), action(READ_OPERATION, topic("topic-3")), true);
+    }
+
+    @Test
+    public void testResourcePrefixMatcher() throws IOException {
+        Files.copy(this.getClass().getResourceAsStream("/acls_resource_prefix_match.json"), configFilePath);
+        startAuthorizer();
+        checkSingleAction(requestCtx("User", "user1"), action(READ_OPERATION, topic("groupA.topic")), true);
+        checkSingleAction(requestCtx("User", "user1"), action(READ_OPERATION, topic("groupC.topic")), false);
+        checkSingleAction(requestCtx("User", "user2"), action(READ_OPERATION, topic("groupB.topic")), false);
+    }
+
+
+    public ResourcePattern topic(final String name) {
+        return new ResourcePattern(ResourceType.TOPIC, name, PatternType.LITERAL);
+    }
+
     private void startAuthorizer() {
         final AuthorizerServerInfo serverInfo = mock(AuthorizerServerInfo.class);
         when(serverInfo.endpoints()).thenReturn(List.of());
