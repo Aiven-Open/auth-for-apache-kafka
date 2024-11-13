@@ -17,7 +17,9 @@
 package io.aiven.kafka.auth.json.reader;
 
 import java.io.File;
+import java.util.List;
 
+import io.aiven.kafka.auth.json.AclOperationType;
 import io.aiven.kafka.auth.json.AclPermissionType;
 import io.aiven.kafka.auth.json.AivenAcl;
 
@@ -38,29 +40,29 @@ public class AclJsonReaderTest {
         assertThat(acls).containsExactly(
             new AivenAcl("User", "^pass-3$", "*", "^Read$",
                 "^Topic:denied$", null, null, null, AclPermissionType.DENY, false),
-            new AivenAcl("User", "^pass-0$", "*", "^Read$",
+            new AivenAcl("User", "^pass-0$", "*", List.of(AclOperationType.Read),
                 "^Topic:(.*)$", null, null, null, AclPermissionType.ALLOW, false),
             new AivenAcl("User", "^pass-1$", "*", "^Read$",
                 "^Topic:(.*)$", null, null, null, AclPermissionType.ALLOW, false),
-            new AivenAcl("User", "^pass-2$", "*", "^Read$",
+            new AivenAcl("User", "^pass-2$", "*", List.of(AclOperationType.Read),
                 "^Topic:(.*)$", null, null, null, AclPermissionType.ALLOW, false),
             new AivenAcl("User", "^pass-3$", "*", "^Read$",
                 "^Topic:(.*)$", null, null, null, AclPermissionType.ALLOW, false),
-            new AivenAcl("User", "^pass-4$", "*", "^Read$",
+            new AivenAcl("User", "^pass-4$", "*", List.of(AclOperationType.Read),
                 "^Topic:(.*)$", null, null, null, AclPermissionType.ALLOW, false),
             new AivenAcl("User", "^pass-5$", "*", "^Read$",
                 "^Topic:(.*)$", null, null, null, AclPermissionType.ALLOW, false),
-            new AivenAcl("User", "^pass-6$", "*", "^Read$",
+            new AivenAcl("User", "^pass-6$", "*", List.of(AclOperationType.Read),
                 "^Topic:(.*)$", null, null, null, AclPermissionType.ALLOW, false),
             new AivenAcl("User", "^pass-7$", "*", "^Read$",
                 "^Topic:(.*)$", null, null, null, AclPermissionType.ALLOW, false),
             new AivenAcl("User", "^pass-8$", "*", "^Read$",
                 "^Topic:(.*)$", null, null, null, AclPermissionType.ALLOW, false),
-            new AivenAcl("User", "^pass-9$", "*", "^Read$",
+            new AivenAcl("User", "^pass-9$", "*", List.of(AclOperationType.Read),
                 "^Topic:(.*)$", null, null, null, AclPermissionType.ALLOW, false),
             new AivenAcl("User", "^pass-10$", "*", "^Read$",
                 "^Topic:(.*)$", null, null, null, AclPermissionType.ALLOW, false),
-            new AivenAcl("User", "^pass-11$", "*", "^Read$",
+            new AivenAcl("User", "^pass-11$", "*", List.of(AclOperationType.Read),
                 "^Topic:(.*)$", null, null, null, AclPermissionType.ALLOW, false),
             new AivenAcl("User", "^pass-12$", "*", "^Read$",
                 "^Topic:(.*)$", null, null, null, AclPermissionType.ALLOW, false),
@@ -114,4 +116,10 @@ public class AclJsonReaderTest {
         assertThrows(JsonParseException.class, jsonReader::read);
     }
 
+    @Test
+    public final void parseWrongOperations() {
+        final var path = new File(this.getClass().getResource("/acl_wrong_operations.json").getPath()).toPath();
+        final var jsonReader = new AclJsonReader(path);
+        assertThrows(JsonParseException.class, jsonReader::read);
+    }
 }

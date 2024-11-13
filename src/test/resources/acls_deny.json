@@ -2,7 +2,7 @@
   {
     "principal_type": "User",
     "principal": "^(.*)$",
-    "operation": "^Read$",
+    "operations": ["Read"],
     "resource": "^Topic:(.*)$",
     "permission_type": "ALLOW"
   },

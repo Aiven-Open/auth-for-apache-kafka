@@ -8,14 +8,14 @@
   {
     "principal_type": "User",
     "principal": "^(user2)$",
-    "operation": "^(.*)$",
+    "operations": ["All"],
     "resource_literal": "Topic:topic-2",
     "permission_type": "DENY"
   },
   {
     "principal_type": "User",
     "principal": "^(user3)$",
-    "operation": "^(.*)$",
+    "operations": ["All"],
     "resource_literal": "Topic:*"
   }
 ]

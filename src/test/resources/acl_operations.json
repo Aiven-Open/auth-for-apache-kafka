@@ -1,0 +1,70 @@
+[
+    {
+        "principal_type": "User",
+        "principal": "^re_1$",
+        "operation": "^Read$",
+        "resource": "^Topic:topic1$"
+    },
+    {
+        "principal_type": "User",
+        "principal": "^enum_1$",
+        "operations": ["Read"],
+        "resource": "^Topic:topic1$"
+    },
+    {
+        "principal_type": "User",
+        "principal": "^implicit$",
+        "operation": "^(Read|Write|Alter|Delete)$",
+        "resource": "^Topic:implicit_describe_not_in_re$"
+    },
+    {
+        "principal_type": "User",
+        "principal": "^implicit1$",
+        "operations": ["Read"],
+        "resource": "^Group:implicit_describe_read$"
+    },
+    {
+        "principal_type": "User",
+        "principal": "^implicit1$",
+        "operations": ["Delete"],
+        "resource": "^Group:implicit_describe_delete$"
+    },
+    {
+        "principal_type": "User",
+        "principal": "^implicit2$",
+        "operations": ["Alter"],
+        "resource": "^Topic:implicit_describe_alter$"
+    },
+    {
+        "principal_type": "User",
+        "principal": "^implicit2$",
+        "operations": ["Write"],
+        "resource": "^Topic:implicit_describe_write$"
+    },
+    {
+        "principal_type": "User",
+        "principal": "^implicit3$",
+        "operations": ["AlterConfigs"],
+        "resource": "^Topic:implicit_describe_alterconfigs$"
+    },
+    {
+        "principal_type": "User",
+        "principal": "^implicit4$",
+        "operations": ["All"],
+        "resource": "^Topic:implicit_alterconfigs2$",
+        "permission_type": "ALLOW"
+    },
+    {
+        "principal_type": "User",
+        "principal": "^implicit4$",
+        "operations": ["AlterConfigs"],
+        "resource": "^Topic:implicit_alterconfigs2$",
+        "permission_type": "DENY"
+    },
+    {
+        "principal_type": "User",
+        "principal": "^all$",
+        "operations": ["All"],
+        "resource": "^Topic:foobar$"
+    }
+]

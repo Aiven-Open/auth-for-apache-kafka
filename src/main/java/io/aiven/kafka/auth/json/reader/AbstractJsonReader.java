@@ -21,6 +21,7 @@ import java.nio.file.Path;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
+import io.aiven.kafka.auth.json.AclOperationType;
 import io.aiven.kafka.auth.json.AclPermissionType;
 
 import com.google.gson.GsonBuilder;
@@ -37,6 +38,7 @@ public abstract class AbstractJsonReader<T> implements JsonReader<T> {
     protected final GsonBuilder gsonBuilder =
         new GsonBuilder()
             .registerTypeAdapter(Pattern.class, new RegexpJsonDeserializer())
+            .registerTypeAdapter(AclOperationType.class, new AclOperationTypeDeserializer())
             .registerTypeAdapter(AclPermissionType.class, new AclPermissionTypeDeserializer());
 
     protected AbstractJsonReader(final Path configFile) {
@@ -72,4 +74,19 @@ public abstract class AbstractJsonReader<T> implements JsonReader<T> {
         }
     }
 
+    protected static class AclOperationTypeDeserializer implements JsonDeserializer<AclOperationType> {
+        @Override
+        public AclOperationType deserialize(final JsonElement jsonElement,
+                                             final Type type,
+                                             final JsonDeserializationContext ctx) throws JsonParseException {
+            try {
+                if (jsonElement.isJsonNull()) {
+                    return AclOperationType.Unknown;
+                }
+                return AclOperationType.valueOf(jsonElement.getAsString());
+            } catch (final IllegalArgumentException e) {
+                throw new JsonParseException("Cannot deserialize operation type", e);
+            }
+        }
+    }
 }

@@ -459,9 +459,126 @@ public class AivenAclAuthorizerV2Test {
         checkSingleAction(requestCtx("User", "user2"), action(READ_OPERATION, topic("groupB.topic")), false);
     }
 
+    @Test
+    public void testAclOperations() throws IOException {
+        Files.copy(this.getClass().getResourceAsStream("/acl_operations.json"), configFilePath);
+        startAuthorizer();
+
+        assertThat(auth.acls(AclBindingFilter.ANY))
+            .containsExactly(
+                new AclBinding(
+                    new ResourcePattern(ResourceType.TOPIC, "implicit_alterconfigs2", PatternType.LITERAL),
+                    new AccessControlEntry("User:implicit4", "*", AclOperation.ALTER_CONFIGS, AclPermissionType.DENY)),
+                new AclBinding(
+                    new ResourcePattern(ResourceType.TOPIC, "topic1", PatternType.LITERAL),
+                    new AccessControlEntry("User:re_1", "*", AclOperation.READ, AclPermissionType.ALLOW)),
+                new AclBinding(
+                    new ResourcePattern(ResourceType.TOPIC, "topic1", PatternType.LITERAL),
+                    new AccessControlEntry("User:enum_1", "*", AclOperation.READ, AclPermissionType.ALLOW)),
+                new AclBinding(
+                    new ResourcePattern(ResourceType.TOPIC, "implicit_describe_not_in_re", PatternType.LITERAL),
+                    new AccessControlEntry("User:implicit", "*", AclOperation.READ, AclPermissionType.ALLOW)),
+                new AclBinding(
+                    new ResourcePattern(ResourceType.TOPIC, "implicit_describe_not_in_re", PatternType.LITERAL),
+                    new AccessControlEntry("User:implicit", "*", AclOperation.WRITE, AclPermissionType.ALLOW)),
+                new AclBinding(
+                    new ResourcePattern(ResourceType.TOPIC, "implicit_describe_not_in_re", PatternType.LITERAL),
+                    new AccessControlEntry("User:implicit", "*", AclOperation.ALTER, AclPermissionType.ALLOW)),
+                new AclBinding(
+                    new ResourcePattern(ResourceType.TOPIC, "implicit_describe_not_in_re", PatternType.LITERAL),
+                    new AccessControlEntry("User:implicit", "*", AclOperation.DELETE, AclPermissionType.ALLOW)),
+                new AclBinding(
+                    new ResourcePattern(ResourceType.GROUP, "implicit_describe_read", PatternType.LITERAL),
+                    new AccessControlEntry("User:implicit1", "*", AclOperation.READ, AclPermissionType.ALLOW)),
+                new AclBinding(
+                    new ResourcePattern(ResourceType.GROUP, "implicit_describe_delete", PatternType.LITERAL),
+                    new AccessControlEntry("User:implicit1", "*", AclOperation.DELETE, AclPermissionType.ALLOW)),
+                new AclBinding(
+                    new ResourcePattern(ResourceType.TOPIC, "implicit_describe_alter", PatternType.LITERAL),
+                    new AccessControlEntry("User:implicit2", "*", AclOperation.ALTER, AclPermissionType.ALLOW)),
+                new AclBinding(
+                    new ResourcePattern(ResourceType.TOPIC, "implicit_describe_write", PatternType.LITERAL),
+                    new AccessControlEntry("User:implicit2", "*", AclOperation.WRITE, AclPermissionType.ALLOW)),
+                new AclBinding(
+                    new ResourcePattern(ResourceType.TOPIC, "implicit_describe_alterconfigs", PatternType.LITERAL),
+                    new AccessControlEntry("User:implicit3", "*", AclOperation.ALTER_CONFIGS, AclPermissionType.ALLOW)),
+                new AclBinding(
+                    new ResourcePattern(ResourceType.TOPIC, "implicit_alterconfigs2", PatternType.LITERAL),
+                    new AccessControlEntry("User:implicit4", "*", AclOperation.ALL, AclPermissionType.ALLOW)),
+                new AclBinding(
+                    new ResourcePattern(ResourceType.TOPIC, "foobar", PatternType.LITERAL),
+                    new AccessControlEntry("User:all", "*", AclOperation.ALL, AclPermissionType.ALLOW))
+            );
+
+        // Check that implicit describe is not added in regex mode
+        checkSingleAction(requestCtx("User", "implicit"),
+            action(AclOperation.READ, topic("implicit_describe_not_in_re")), true);
+        checkSingleAction(requestCtx("User", "implicit"),
+            action(AclOperation.WRITE, topic("implicit_describe_not_in_re")), true);
+        checkSingleAction(requestCtx("User", "implicit"),
+            action(AclOperation.ALTER, topic("implicit_describe_not_in_re")), true);
+        checkSingleAction(requestCtx("User", "implicit"),
+            action(AclOperation.DELETE, topic("implicit_describe_not_in_re")), true);
+        checkSingleAction(requestCtx("User", "implicit"),
+            action(AclOperation.DESCRIBE, topic("implicit_describe_not_in_re")), false);
+
+        // check that implicit describe works in enum mode
+        checkSingleAction(requestCtx("User", "implicit1"),
+            action(AclOperation.READ, group("implicit_describe_read")), true);
+        checkSingleAction(requestCtx("User", "implicit1"),
+            action(AclOperation.DELETE, group("implicit_describe_read")), false);
+        checkSingleAction(requestCtx("User", "implicit1"),
+            action(AclOperation.DESCRIBE, group("implicit_describe_read")), true);
+
+        checkSingleAction(requestCtx("User", "implicit1"),
+            action(AclOperation.READ, group("implicit_describe_delete")), false);
+        checkSingleAction(requestCtx("User", "implicit1"),
+            action(AclOperation.DELETE, group("implicit_describe_delete")), true);
+        checkSingleAction(requestCtx("User", "implicit1"),
+            action(AclOperation.DESCRIBE, group("implicit_describe_delete")), true);
+
+        checkSingleAction(requestCtx("User", "implicit2"),
+            action(AclOperation.ALTER, topic("implicit_describe_alter")), true);
+        checkSingleAction(requestCtx("User", "implicit2"),
+            action(AclOperation.WRITE, topic("implicit_describe_alter")), false);
+        checkSingleAction(requestCtx("User", "implicit2"),
+            action(AclOperation.DESCRIBE, topic("implicit_describe_alter")), true);
+
+        checkSingleAction(requestCtx("User", "implicit2"),
+            action(AclOperation.ALTER, topic("implicit_describe_write")), false);
+        checkSingleAction(requestCtx("User", "implicit2"),
+            action(AclOperation.WRITE, topic("implicit_describe_write")), true);
+        checkSingleAction(requestCtx("User", "implicit2"),
+            action(AclOperation.DESCRIBE, topic("implicit_describe_write")), true);
+
+        checkSingleAction(requestCtx("User", "implicit3"),
+            action(AclOperation.ALTER_CONFIGS, topic("implicit_describe_alterconfigs")), true);
+        checkSingleAction(requestCtx("User", "implicit3"),
+            action(AclOperation.DESCRIBE_CONFIGS, topic("implicit_describe_alterconfigs")), true);
+
+        // Check that All operation works and denying AlterConfigs does not implicitly deny DescribeConfigs
+        checkSingleAction(requestCtx("User", "implicit4"),
+            action(AclOperation.ALTER_CONFIGS, topic("implicit_alterconfigs2")), false);
+        checkSingleAction(requestCtx("User", "implicit4"),
+            action(AclOperation.DESCRIBE_CONFIGS, topic("implicit_alterconfigs2")), true);
+
+        // Check that All operation works
+        checkSingleAction(requestCtx("User", "all"),
+            action(AclOperation.READ, topic("foobar")), true);
+        checkSingleAction(requestCtx("User", "all"),
+            action(AclOperation.WRITE, topic("foobar")), true);
+        checkSingleAction(requestCtx("User", "all"),
+            action(AclOperation.ALTER_CONFIGS, topic("foobar")), true);
+        checkSingleAction(requestCtx("User", "all"),
+            action(AclOperation.DESCRIBE_CONFIGS, topic("foobar")), true);
+    }
 
     public ResourcePattern topic(final String name) {
         return new ResourcePattern(ResourceType.TOPIC, name, PatternType.LITERAL);
+    }
+
+    public ResourcePattern group(final String name) {
+        return new ResourcePattern(ResourceType.GROUP, name, PatternType.LITERAL);
     }
 
     private void startAuthorizer() {

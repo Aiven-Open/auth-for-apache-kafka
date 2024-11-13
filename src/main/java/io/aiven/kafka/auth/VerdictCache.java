@@ -26,6 +26,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.kafka.common.acl.AclOperation;
 import org.apache.kafka.common.security.auth.KafkaPrincipal;
 
 import io.aiven.kafka.auth.json.AclPermissionType;
@@ -44,7 +45,7 @@ public class VerdictCache {
     public boolean get(
         final KafkaPrincipal principal,
         final String host,
-        final String operation,
+        final AclOperation operation,
         final String resource
     ) {
         final String principalType = principal.getPrincipalType();

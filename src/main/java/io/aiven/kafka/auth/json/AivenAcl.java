@@ -16,10 +16,17 @@
 
 package io.aiven.kafka.auth.json;
 
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.kafka.common.acl.AclOperation;
+
+import io.aiven.kafka.auth.nameformatters.LegacyOperationNameFormatter;
 import io.aiven.kafka.auth.utils.ResourceLiteralWildcardMatcher;
 
 import com.google.gson.annotations.SerializedName;
@@ -36,6 +43,8 @@ public class AivenAcl {
 
     @SerializedName("operation")
     public final Pattern operationRe;
+
+    public final List<AclOperationType> operations;
 
     @SerializedName("resource")
     public final Pattern resourceRe;
@@ -73,6 +82,32 @@ public class AivenAcl {
         this.principalRe = Pattern.compile(principal);
         this.hostMatcher = host;
         this.operationRe = Pattern.compile(operation);
+        this.operations = null;
+        this.resourceRe = Objects.nonNull(resource) ? Pattern.compile(resource) : null;
+        this.resourceRePattern = resourcePattern;
+        this.resourceLiteral = resourceLiteral;
+        this.resourcePrefix = resourcePrefix;
+        this.permissionType = Objects.requireNonNullElse(permissionType, AclPermissionType.ALLOW);
+        this.hidden = hidden;
+    }
+
+    public AivenAcl(
+        final String principalType,
+        final String principal,
+        final String host,
+        final List<AclOperationType> operations,
+        final String resource,
+        final String resourcePattern,
+        final String resourceLiteral,
+        final String resourcePrefix,
+        final AclPermissionType permissionType,
+        final boolean hidden
+    ) {
+        this.principalType = principalType;
+        this.principalRe = Pattern.compile(principal);
+        this.hostMatcher = host;
+        this.operationRe = null;
+        this.operations = operations;
         this.resourceRe = Objects.nonNull(resource) ? Pattern.compile(resource) : null;
         this.resourceRePattern = resourcePattern;
         this.resourceLiteral = resourceLiteral;
@@ -101,12 +136,63 @@ public class AivenAcl {
     public Boolean match(final String principalType,
                             final String principal,
                             final String host,
-                            final String operation,
+                            final AclOperation operation,
                             final String resource) {
         if (this.principalType == null || this.principalType.equals(principalType)) {
             final Matcher mp = this.principalRe.matcher(principal);
-            final Matcher mo = this.operationRe.matcher(operation);
-            return mp.find() && mo.find() && this.hostMatch(host) && this.resourceMatch(resource, mp);
+            return mp.find() && this.matchOperation(operation) && this.hostMatch(host)
+                    && this.resourceMatch(resource, mp);
+        }
+        return false;
+    }
+
+    /* Some operations implicitly allow describe operation, but with allow rules only */
+    private static final Set<AclOperation> IMPLIES_DESCRIBE = Collections.unmodifiableSet(
+        EnumSet.of(AclOperation.DESCRIBE, AclOperation.READ, AclOperation.WRITE,
+            AclOperation.DELETE, AclOperation.ALTER));
+
+    private static final Set<AclOperation> IMPLIES_DESCRIBE_CONFIGS = Collections.unmodifiableSet(
+        EnumSet.of(AclOperation.DESCRIBE_CONFIGS, AclOperation.ALTER_CONFIGS));
+
+
+    private boolean matchOperation(final AclOperation operation) {
+        if (this.operations != null) {
+            for (final var mo : this.operations) {
+                if (matchSingleOperation(operation, mo)) {
+                    return true;
+                }
+            }
+            return false;
+        } else {
+            final Matcher mo = this.operationRe.matcher(LegacyOperationNameFormatter.format(operation));
+            return mo.find();
+        }
+    }
+
+    private boolean matchSingleOperation(final AclOperation operation, final AclOperationType mo) {
+        if (mo.nativeType == AclOperation.ALL) {
+            return true;
+        } else if (getPermissionType() == AclPermissionType.ALLOW) {
+            switch (operation) {
+                case DESCRIBE:
+                    if (IMPLIES_DESCRIBE.contains(mo.nativeType)) {
+                        return true;
+                    }
+                    break;
+                case DESCRIBE_CONFIGS:
+                    if (IMPLIES_DESCRIBE_CONFIGS.contains(mo.nativeType)) {
+                        return true;
+                    }
+                    break;
+                default:
+                    if (operation == mo.nativeType) {
+                        return true;
+                    }
+            }
+        } else {
+            if (operation == mo.nativeType) {
+                return true;
+            }
         }
         return false;
     }
@@ -177,7 +263,7 @@ public class AivenAcl {
     @Override
     public int hashCode() {
         return Objects.hash(
-            principalType, principalRe, hostMatcher, operationRe, resourceRe,
+            principalType, principalRe, hostMatcher, operationRe, operations, resourceRe,
             resourceRePattern, resourceLiteral, resourcePrefix, getPermissionType()
         );
     }

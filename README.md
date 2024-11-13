@@ -7,7 +7,7 @@ Config file is watched for modifications and reloaded as necessary.
 
 ### AivenAclEntry
 
-Class implementing a single ACL entry verification. Principal, operation and
+Class implementing a single ACL entry verification. Principal and
 resource are expressed as regular expressions.
 
 Alternatively to straight regular expression for resource, AivenAclEntry can
@@ -18,6 +18,12 @@ avoid encoding separate rules for each project. Literal and prefixed matchers
 work as defined in the Apache Kafka documentation. Only one resource matcher can be
 specified per acl.
 
+Operations can be expressed as a list of operation names, or in deprecated mode
+as regular expression in `operation` field.  If both are defined, `operations`
+takes precedence.  For operations listed with operation names, also implicit Decribe
+is supported if Read, Write, Alter, or Delete is allowed, and implicit
+DescribeConfigs if AlterConfigs is allowed.
+
 Permission type allows to define the verification result in case of an ACL match.
 By default, the permission type is `ALLOW`.
 
@@ -27,7 +33,7 @@ A specific ACL entry can be hidden from public listing by setting hidden flag.
 
     [
         {
-            "operation": "^(.*)$",
+            "operations": ["All"],
             "principal": (
                 "^CN=(?<vmname>[a-z0-9-]+),OU=(?<nodeid>n[0-9]+),"
                 "O=00000000-0000-a000-1000-(500000000005|a00000000001|b00000000001|d00000000001),ST=vm$"
@@ -38,6 +44,7 @@ A specific ACL entry can be hidden from public listing by setting hidden flag.
             "hidden": true
         },
         {
+            "operations": ["Describe", "DescribeConfigs", "Read", "Write"],
             "operation": "^(Describe|DescribeConfigs|Read|Write)$",
             "principal": "^CN=(?<vmname>[a-z0-9-]+),OU=(?<nodeid>n[0-9]+),O=(?<projectid>[a-f0-9-]+),ST=vm$",
             "principal_type": "Prune",

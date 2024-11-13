@@ -59,7 +59,6 @@ import io.aiven.kafka.auth.audit.Session;
 import io.aiven.kafka.auth.json.AivenAcl;
 import io.aiven.kafka.auth.json.reader.AclJsonReader;
 import io.aiven.kafka.auth.json.reader.JsonReaderException;
-import io.aiven.kafka.auth.nameformatters.LegacyOperationNameFormatter;
 import io.aiven.kafka.auth.nameformatters.LegacyResourceTypeNameFormatter;
 import io.aiven.kafka.auth.nativeacls.AclAivenToNativeConverter;
 
@@ -195,7 +194,7 @@ public class AivenAclAuthorizerV2 implements Authorizer {
             final String host = requestContext.clientAddress().getHostAddress();
             final boolean verdict = cacheReference.get().get(principal,
                                                              host,
-                                                             LegacyOperationNameFormatter.format(operation),
+                                                             operation,
                                                              resourceToCheck);
             final var authResult = verdict ? AuthorizationResult.ALLOWED : AuthorizationResult.DENIED;
 

@@ -3,14 +3,14 @@
     "principal_type": "User",
     "principal": "^(.*)$",
     "host": "*",
-    "operation": "^(.*)$",
+    "operations": ["All"],
     "resource": "^Topic:topic-1$"
   },
   {
     "principal_type": "User",
     "principal": "^(.*)$",
     "host": "192.168.123.45",
-    "operation": "^(.*)$",
+    "operations": ["All"],
     "resource": "^Topic:topic-2$"
   },
   {

@@ -74,7 +74,7 @@ jmh {
 }
 
 ext {
-    kafkaVersion = "2.8.0"
+    kafkaVersion = "3.6.0"
     mockitoVersion = "5.14.2"
 }
 
