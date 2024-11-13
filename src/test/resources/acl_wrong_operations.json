@@ -1,0 +1,8 @@
+[
+    {
+      "principal_type": "User",
+      "principal": "^p$",
+      "operations": ["Read", "Ring"],
+      "resource": "^(.*)$"
+    }
+  ]

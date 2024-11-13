@@ -8,7 +8,7 @@
   {
     "principal_type": "User",
     "principal": "^(user2)$",
-    "operation": "^(.*)$",
+    "operations": ["All"],
     "resource_prefix": "Topic:groupB.",
     "permission_type": "DENY"
   }

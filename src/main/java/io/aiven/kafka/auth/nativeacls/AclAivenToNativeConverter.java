@@ -19,9 +19,11 @@ package io.aiven.kafka.auth.nativeacls;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import org.apache.kafka.common.acl.AccessControlEntry;
 import org.apache.kafka.common.acl.AclBinding;
+import org.apache.kafka.common.acl.AclOperation;
 
 import io.aiven.kafka.auth.json.AivenAcl;
 
@@ -36,7 +38,11 @@ public class AclAivenToNativeConverter {
             return result;
         }
 
-        for (final var operation : AclOperationsParser.parse(aivenAcl.operationRe.pattern())) {
+        final Iterable<AclOperation> operations = aivenAcl.operations != null
+             ? aivenAcl.operations.stream().map(o -> o.nativeType).collect(Collectors.toList())
+             : AclOperationsParser.parse(aivenAcl.operationRe.pattern());
+
+        for (final var operation : operations) {
             final List<String> principals = AclPrincipalFormatter.parse(
                 aivenAcl.principalType, aivenAcl.principalRe.pattern()
             );

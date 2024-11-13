@@ -16,6 +16,8 @@
 
 package io.aiven.kafka.auth.json;
 
+import org.apache.kafka.common.acl.AclOperation;
+
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -38,11 +40,11 @@ public class AivenAclTest {
             false // hidden
         );
 
-        assertTrue(entry.match("User",  "CN=p_pass_s", "*", "Read", "Topic:p_pass_s"));
-        assertFalse(entry.match("User", "CN=fail", "*", "Read", "Topic:p_pass_s"));
-        assertFalse(entry.match("User", "CN=p_pass_s", "*", "Write", "Topic:p_pass_s"));
-        assertFalse(entry.match("User", "CN=p_pass_s", "*", "Read", "Topic:fail"));
-        assertFalse(entry.match("NonUser", "CN=p_pass_s", "*", "Read", "Topic:p_pass_s"));
+        assertTrue(entry.match("User",  "CN=p_pass_s", "*", AclOperation.READ, "Topic:p_pass_s"));
+        assertFalse(entry.match("User", "CN=fail", "*", AclOperation.READ, "Topic:p_pass_s"));
+        assertFalse(entry.match("User", "CN=p_pass_s", "*", AclOperation.WRITE, "Topic:p_pass_s"));
+        assertFalse(entry.match("User", "CN=p_pass_s", "*", AclOperation.READ, "Topic:fail"));
+        assertFalse(entry.match("NonUser", "CN=p_pass_s", "*", AclOperation.READ, "Topic:p_pass_s"));
 
         // Test with principal undefined
         entry = new AivenAcl(
@@ -58,10 +60,10 @@ public class AivenAclTest {
             false // hidden
         );
 
-        assertTrue(entry.match("User", "CN=p_pass_s", "*", "Read", "Topic:p_pass_s"));
-        assertTrue(entry.match("NonUser", "CN=p_pass_s", "*", "Read", "Topic:p_pass_s"));
-        assertFalse(entry.match("User", "CN=fail", "*", "Read", "Topic:p_pass_s"));
-        assertFalse(entry.match("User", "CN=p_pass_s", "*", "Read", "Topic:fail"));
+        assertTrue(entry.match("User", "CN=p_pass_s", "*", AclOperation.READ, "Topic:p_pass_s"));
+        assertTrue(entry.match("NonUser", "CN=p_pass_s", "*", AclOperation.READ, "Topic:p_pass_s"));
+        assertFalse(entry.match("User", "CN=fail", "*", AclOperation.READ, "Topic:p_pass_s"));
+        assertFalse(entry.match("User", "CN=p_pass_s", "*", AclOperation.READ, "Topic:fail"));
 
         // Test resources defined by pattern
         entry = new AivenAcl(
@@ -77,10 +79,10 @@ public class AivenAclTest {
             false // hidden
         );
 
-        assertTrue(entry.match("User", "CN=p_user1_s", "*", "Read", "Topic:p_user1_s"));
-        assertTrue(entry.match("User", "CN=p_user2_s", "*", "Read", "Topic:p_user2_s"));
-        assertFalse(entry.match("User", "CN=p_user1_s", "*", "Read", "Topic:p_user2_s"));
-        assertFalse(entry.match("User", "CN=p_user2_s", "*", "Read", "Topic:p_user1_s"));
+        assertTrue(entry.match("User", "CN=p_user1_s", "*", AclOperation.READ, "Topic:p_user1_s"));
+        assertTrue(entry.match("User", "CN=p_user2_s", "*", AclOperation.READ, "Topic:p_user2_s"));
+        assertFalse(entry.match("User", "CN=p_user1_s", "*", AclOperation.READ, "Topic:p_user2_s"));
+        assertFalse(entry.match("User", "CN=p_user2_s", "*", AclOperation.READ, "Topic:p_user1_s"));
 
         // Test resources defined by literal match
         entry = new AivenAcl(
@@ -96,8 +98,8 @@ public class AivenAclTest {
                 false // hidden
         );
 
-        assertTrue(entry.match("User", "CN=p_user1_s", "*", "Read", "Topic:^(]["));
-        assertFalse(entry.match("User", "CN=p_user1_s", "*", "Read", "Topic:wrong_topic"));
+        assertTrue(entry.match("User", "CN=p_user1_s", "*", AclOperation.READ, "Topic:^(]["));
+        assertFalse(entry.match("User", "CN=p_user1_s", "*", AclOperation.READ, "Topic:wrong_topic"));
 
 
         // Test resources defined by prefix match
@@ -113,11 +115,11 @@ public class AivenAclTest {
                 null, // permission type
                 false // hidden
         );
-        assertTrue(entry.match("User", "CN=p_user1_s", "*", "Read", "Topic:organizationA.topic1"));
-        assertTrue(entry.match("User", "CN=p_user1_s", "*", "Read", "Topic:organizationA.topic2"));
-        assertTrue(entry.match("User", "CN=p_user1_s", "*", "Read", "Topic:organizationA."));
-        assertFalse(entry.match("User", "CN=p_user1_s", "*", "Read", "Topic:organizationB.topic1"));
-        assertFalse(entry.match("User", "CN=p_user1_s", "*", "Read", "Topic:organizationA"));
-        assertFalse(entry.match("User", "CN=p_user1_s", "*", "Read", "Topic:AAAorganizationA."));
+        assertTrue(entry.match("User", "CN=p_user1_s", "*", AclOperation.READ, "Topic:organizationA.topic1"));
+        assertTrue(entry.match("User", "CN=p_user1_s", "*", AclOperation.READ, "Topic:organizationA.topic2"));
+        assertTrue(entry.match("User", "CN=p_user1_s", "*", AclOperation.READ, "Topic:organizationA."));
+        assertFalse(entry.match("User", "CN=p_user1_s", "*", AclOperation.READ, "Topic:organizationB.topic1"));
+        assertFalse(entry.match("User", "CN=p_user1_s", "*", AclOperation.READ, "Topic:organizationA"));
+        assertFalse(entry.match("User", "CN=p_user1_s", "*", AclOperation.READ, "Topic:AAAorganizationA."));
     }
 }

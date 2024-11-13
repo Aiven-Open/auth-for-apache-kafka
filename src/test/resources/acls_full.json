@@ -9,7 +9,7 @@
   {
     "principal_type": "User",
     "principal": "^pass-0$",
-    "operation": "^Read$",
+    "operations": ["Read"],
     "resource": "^Topic:(.*)$"
   },
   {
@@ -21,7 +21,7 @@
   {
     "principal_type": "User",
     "principal": "^pass-2$",
-    "operation": "^Read$",
+    "operations": ["Read"],
     "resource": "^Topic:(.*)$"
   },
   {
@@ -33,7 +33,7 @@
   {
     "principal_type": "User",
     "principal": "^pass-4$",
-    "operation": "^Read$",
+    "operations": ["Read"],
     "resource": "^Topic:(.*)$"
   },
   {
@@ -45,7 +45,7 @@
   {
     "principal_type": "User",
     "principal": "^pass-6$",
-    "operation": "^Read$",
+    "operations": ["Read"],
     "resource": "^Topic:(.*)$"
   },
   {
@@ -63,7 +63,7 @@
   {
     "principal_type": "User",
     "principal": "^pass-9$",
-    "operation": "^Read$",
+    "operations": ["Read"],
     "resource": "^Topic:(.*)$"
   },
   {
@@ -75,7 +75,7 @@
   {
     "principal_type": "User",
     "principal": "^pass-11$",
-    "operation": "^Read$",
+    "operations": ["Read"],
     "resource": "^Topic:(.*)$"
   },
   {
