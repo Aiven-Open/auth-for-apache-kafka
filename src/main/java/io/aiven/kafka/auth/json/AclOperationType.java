@@ -21,7 +21,7 @@ public enum AclOperationType {
     All(org.apache.kafka.common.acl.AclOperation.ALL),
     Read(org.apache.kafka.common.acl.AclOperation.READ),
     Write(org.apache.kafka.common.acl.AclOperation.WRITE),
-    Create1(org.apache.kafka.common.acl.AclOperation.CREATE),
+    Create(org.apache.kafka.common.acl.AclOperation.CREATE),
     Delete(org.apache.kafka.common.acl.AclOperation.DELETE),
     Alter(org.apache.kafka.common.acl.AclOperation.ALTER),
     Describe(org.apache.kafka.common.acl.AclOperation.DESCRIBE),

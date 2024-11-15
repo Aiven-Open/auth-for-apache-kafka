@@ -1,0 +1,128 @@
+[
+    {
+        "principal_type": "User",
+        "principal": "^user1$",
+        "operations": ["Alter"],
+        "resource": "^Cluster:kafka-cluster$"
+    },
+    {
+        "principal_type": "User",
+        "principal": "^user1$",
+        "operations": ["Alter"],
+        "resource": "^Topic:topic1$"
+    },
+    {
+        "principal_type": "User",
+        "principal": "^user1$",
+        "operations": ["AlterConfigs"],
+        "resource": "^Cluster:kafka-cluster$"
+    },
+    {
+        "principal_type": "User",
+        "principal": "^user1$",
+        "operations": ["AlterConfigs"],
+        "resource": "^Topic:topic1$"
+    },
+    {
+        "principal_type": "User",
+        "principal": "^user1$",
+        "operations": ["ClusterAction"],
+        "resource": "^Cluster:kafka-cluster$"
+    },
+    {
+        "principal_type": "User",
+        "principal": "^user1$",
+        "operations": ["Create"],
+        "resource": "^Cluster:kafka-cluster$"
+    },
+    {
+        "principal_type": "User",
+        "principal": "^user1$",
+        "operations": ["Create"],
+        "resource": "^Topic:topic1$"
+    },
+    {
+        "principal_type": "User",
+        "principal": "^user1$",
+        "operations": ["CreateTokens"],
+        "resource": "^User:user2$"
+    },
+    {
+        "principal_type": "User",
+        "principal": "^user1$",
+        "operations": ["Delete"],
+        "resource": "^Group:group1$"
+    },
+    {
+        "principal_type": "User",
+        "principal": "^user1$",
+        "operations": ["Delete"],
+        "resource": "^Topic:topic1$"
+    },
+    {
+        "principal_type": "User",
+        "principal": "^user1$",
+        "operations": ["Describe"],
+        "resource": "^Cluster:kafka-cluster$"
+    },
+    {
+        "principal_type": "User",
+        "principal": "^user1$",
+        "operations": ["Describe"],
+        "resource": "^DelegationToken:foobar$"
+    },
+    {
+        "principal_type": "User",
+        "principal": "^user1$",
+        "operations": ["Describe", "Read"],
+        "resource": "^Group:group1$"
+    },
+    {
+        "principal_type": "User",
+        "principal": "^user1$",
+        "operations": ["Describe"],
+        "resource": "^Topic:topic1$"
+    },
+    {
+        "principal_type": "User",
+        "principal": "^user1$",
+        "operations": ["Describe", "Write"],
+        "resource": "^TransactionalId:foobar$"
+    },
+    {
+        "principal_type": "User",
+        "principal": "^user1$",
+        "operations": ["DescribeConfigs"],
+        "resource": "^Cluster:kafka-cluster$"
+    },
+    {
+        "principal_type": "User",
+        "principal": "^user1$",
+        "operations": ["DescribeConfigs"],
+        "resource": "^Topic:topic1$"
+    },
+    {
+        "principal_type": "User",
+        "principal": "^user1$",
+        "operations": ["DescribeConfigs"],
+        "resource": "^User:user2$"
+    },
+    {
+        "principal_type": "User",
+        "principal": "^user1$",
+        "operations": ["IdempotentWrite"],
+        "resource": "^Cluster:kafka-cluster$"
+    },
+    {
+        "principal_type": "User",
+        "principal": "^user1$",
+        "operations": ["Read", "Write"],
+        "resource": "^Topic:topic1$"
+    },
+    {
+        "principal_type": "User",
+        "principal": "^all$",
+        "operations": ["All"],
+        "resource": "^Topic:topic1$"
+    }
+]
