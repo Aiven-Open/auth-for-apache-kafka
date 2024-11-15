@@ -122,4 +122,12 @@ public class AclJsonReaderTest {
         final var jsonReader = new AclJsonReader(path);
         assertThrows(JsonParseException.class, jsonReader::read);
     }
+
+    @Test
+    public final void parseAllOperations() {
+        final var path = new File(this.getClass().getResource("/acl_all_operations.json").getPath()).toPath();
+        final var jsonReader = new AclJsonReader(path);
+        final var acls = jsonReader.read();
+        assertThat(acls).isNotEmpty();
+    }
 }
