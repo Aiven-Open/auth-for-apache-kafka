@@ -141,15 +141,15 @@ public class AivenAclAuthorizerMetrics {
                     metrics.metricInstance(
                         authOpDenyRateByOperationResourcePrincipal,
                         "operation", operation.name(),
-                        "resource", resourcePattern.name(),
-                        "principal", principal.getName()),
+                        "resource", EscapeTagValue.apply(resourcePattern.name()),
+                        "principal", EscapeTagValue.apply(principal.getName())),
                     new Rate());
                 authOpDenySensor.add(
                     metrics.metricInstance(
                         authOpDenyTotalByOperationResourcePrincipal,
                         "operation", operation.name(),
-                        "resource", resourcePattern.name(),
-                        "principal", principal.getName()),
+                        "resource", EscapeTagValue.apply(resourcePattern.name()),
+                        "principal", EscapeTagValue.apply(principal.getName())),
                     new CumulativeCount());
                 authOpDenySensor.record();
                 break;
