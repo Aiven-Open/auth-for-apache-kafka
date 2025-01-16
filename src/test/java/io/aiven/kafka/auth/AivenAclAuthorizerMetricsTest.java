@@ -113,9 +113,17 @@ class AivenAclAuthorizerMetricsTest {
         assertThat(MBEAN_SERVER.getAttribute(metricMBean, "auth-ops-deny-total"))
             .isEqualTo(2.0);
 
+        // u2 has now rate
         {
             final var deniedByOpMBean = new ObjectName(name + ",operation=" + AclOperation.WRITE
                 + ",resource=t2,principal=u2");
+            assertThat(MBEAN_SERVER.getAttribute(deniedByOpMBean, "auth-ops-deny-total"))
+                .isEqualTo(1.0);
+        }
+        // u1 did not increase
+        {
+            final var deniedByOpMBean = new ObjectName(name + ",operation=" + AclOperation.WRITE
+                + ",resource=t1,principal=u1");
             assertThat(MBEAN_SERVER.getAttribute(deniedByOpMBean, "auth-ops-deny-total"))
                 .isEqualTo(1.0);
         }

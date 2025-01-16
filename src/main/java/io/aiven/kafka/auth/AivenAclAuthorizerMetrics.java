@@ -121,38 +121,49 @@ public class AivenAclAuthorizerMetrics {
         final KafkaPrincipal principal
     ) {
         switch (result) {
-            case ALLOWED:
-                authOpAllowSensor.add(
-                    metrics.metricInstance(
-                        authOpAllowRateByOperation,
-                        "operation", operation.name()
-                    ),
-                    new Rate());
-                authOpAllowSensor.add(
-                    metrics.metricInstance(
-                        authOpAllowTotalByOperation,
-                        "operation", operation.name()
-                    ),
-                    new CumulativeCount());
-                authOpAllowSensor.record();
+            case ALLOWED: {
+                final String sensorName = AUTH_OP_ALLOW + "," + operation.name();
+                Sensor s = metrics.getSensor(sensorName);
+                if (s == null) {
+                    s = metrics.sensor(sensorName, RecordingLevel.INFO, authOpAllowSensor);
+                    s.add(
+                            metrics.metricInstance(
+                                    authOpAllowRateByOperation,
+                                    "operation", operation.name()),
+                            new Rate());
+                    s.add(
+                            metrics.metricInstance(
+                                    authOpAllowTotalByOperation,
+                                    "operation", operation.name()),
+                            new CumulativeCount());
+                }
+                s.record();
                 break;
-            case DENIED:
-                authOpDenySensor.add(
-                    metrics.metricInstance(
-                        authOpDenyRateByOperationResourcePrincipal,
-                        "operation", operation.name(),
-                        "resource", EscapeTagValue.apply(resourcePattern.name()),
-                        "principal", EscapeTagValue.apply(principal.getName())),
-                    new Rate());
-                authOpDenySensor.add(
-                    metrics.metricInstance(
-                        authOpDenyTotalByOperationResourcePrincipal,
-                        "operation", operation.name(),
-                        "resource", EscapeTagValue.apply(resourcePattern.name()),
-                        "principal", EscapeTagValue.apply(principal.getName())),
-                    new CumulativeCount());
-                authOpDenySensor.record();
+            }
+            case DENIED: {
+                final String sensorName = AUTH_OP_DENY + "," + operation.name() + ","
+                        + resourcePattern.name() + "," + principal.getName();
+                Sensor s = metrics.getSensor(sensorName);
+                if (s == null) {
+                    s = metrics.sensor(sensorName, RecordingLevel.INFO, authOpDenySensor);
+                    s.add(
+                            metrics.metricInstance(
+                                    authOpDenyRateByOperationResourcePrincipal,
+                                    "operation", operation.name(),
+                                    "resource", EscapeTagValue.apply(resourcePattern.name()),
+                                    "principal", EscapeTagValue.apply(principal.getName())),
+                            new Rate());
+                    s.add(
+                            metrics.metricInstance(
+                                    authOpDenyTotalByOperationResourcePrincipal,
+                                    "operation", operation.name(),
+                                    "resource", EscapeTagValue.apply(resourcePattern.name()),
+                                    "principal", EscapeTagValue.apply(principal.getName())),
+                            new CumulativeCount());
+                }
+                s.record();
                 break;
+            }
             default: break;
         }
     }
