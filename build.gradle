@@ -100,7 +100,7 @@ dependencies {
 
     testImplementation "org.openjdk.jmh:jmh-core:1.37"
     testImplementation "org.openjdk.jmh:jmh-generator-annprocess:1.37"
-    testImplementation "org.assertj:assertj-core:3.27.0"
+    testImplementation "org.assertj:assertj-core:3.27.3"
     testImplementation 'org.awaitility:awaitility:4.2.2'
 
     jmh "org.apache.kafka:kafka_2.12:${kafkaVersion}"
