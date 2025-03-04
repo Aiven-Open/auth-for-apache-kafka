@@ -34,7 +34,7 @@ plugins {
     id "maven-publish"
 
     // https://github.com/melix/jmh-gradle-plugin
-    id "me.champeau.jmh" version "0.7.2"
+    id "me.champeau.jmh" version "0.7.3"
 
     //https://plugins.gradle.org/plugin/com.github.johnrengelman.shadow
     id 'com.github.johnrengelman.shadow' version '8.1.1'
