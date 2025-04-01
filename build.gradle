@@ -80,7 +80,7 @@ ext {
 
 dependencies {
     implementation "com.google.guava:guava:33.4.0-jre"
-    implementation "com.google.code.gson:gson:2.11.0"
+    implementation "com.google.code.gson:gson:2.12.1"
 
     compileOnly "org.apache.kafka:kafka_2.12:${kafkaVersion}"
     compileOnly "org.slf4j:slf4j-api:1.7.36"
