@@ -28,6 +28,7 @@ import io.aiven.kafka.auth.audit.AuditorAPI;
 import io.aiven.kafka.auth.audit.NoAuditor;
 
 import static org.apache.kafka.common.config.ConfigDef.Range.atLeast;
+import static org.apache.kafka.common.config.ConfigDef.Range.between;
 import static org.apache.kafka.common.config.ConfigDef.ValidString.in;
 
 public final class AivenAclAuthorizerConfig extends AbstractConfig {
@@ -37,7 +38,13 @@ public final class AivenAclAuthorizerConfig extends AbstractConfig {
     private static final String LOG_DENIALS_CONF = PREFIX + "log.denials";
     private static final String CONFIG_REFRESH_CONF = PREFIX + "config.refresh.interval";
     private static final String LIST_ACLS_ENABLED_CONF = PREFIX + "list.acls.enabled";
-
+    
+    private static final String CACHE_MAX_SIZE_PERCENTAGE_CONF = PREFIX + "cache.max.size.percentage";
+    private static final String CACHE_MAX_SIZE_PERCENTAGE_DOC = 
+        "The maximum (estimated) size of the cache as a percentage of the heap size. The default value is 25%.";
+    private static final String CACHE_EXIRE_AFTER_ACCESS_MINUTES_CONF = PREFIX + "cache.expire.after.access.minutes";
+    private static final String CACHE_EXPIRE_AFTER_ACCESS_MINUTES_DOC = 
+        "The time after which the cache entries expire after last access in minutes. The default value is 60 minutes.";
 
     public static final String METRICS_NUM_SAMPLES_CONFIG = PREFIX
         + CommonClientConfigs.METRICS_NUM_SAMPLES_CONFIG;
@@ -118,6 +125,21 @@ public final class AivenAclAuthorizerConfig extends AbstractConfig {
                     Sensor.RecordingLevel.TRACE.toString()),
                 ConfigDef.Importance.LOW,
                 METRICS_RECORDING_LEVEL_DOC
+            )
+            .define(
+                CACHE_MAX_SIZE_PERCENTAGE_CONF,
+                ConfigDef.Type.INT,
+                25,
+                between(5, 50),
+                ConfigDef.Importance.LOW,
+                CACHE_MAX_SIZE_PERCENTAGE_DOC
+            )
+            .define(
+                CACHE_EXIRE_AFTER_ACCESS_MINUTES_CONF,
+                ConfigDef.Type.INT,
+                60,
+                ConfigDef.Importance.LOW,
+                CACHE_EXPIRE_AFTER_ACCESS_MINUTES_DOC
             );
     }
 
@@ -139,5 +161,13 @@ public final class AivenAclAuthorizerConfig extends AbstractConfig {
 
     public boolean listAclsEnabled() {
         return getBoolean(LIST_ACLS_ENABLED_CONF);
+    }
+
+    public int getCacheMaxSizePercentage() {
+        return getInt(CACHE_MAX_SIZE_PERCENTAGE_CONF);
+    }
+
+    public int getCacheExpireAfterAccess() {
+        return getInt(CACHE_EXIRE_AFTER_ACCESS_MINUTES_CONF);
     }
 }
