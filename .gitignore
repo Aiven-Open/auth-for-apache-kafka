@@ -8,3 +8,5 @@ docs/_build
 build/
 rpm/
 rpmbuild/
+bin
+.vscode

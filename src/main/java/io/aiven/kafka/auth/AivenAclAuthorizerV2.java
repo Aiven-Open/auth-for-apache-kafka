@@ -116,7 +116,8 @@ public class AivenAclAuthorizerV2 implements Authorizer {
 
         configFile = config.getConfigFile();
         final AclJsonReader jsonReader = new AclJsonReader(configFile.toPath());
-        cacheReference.set(VerdictCache.create(loadAcls(jsonReader)));
+        cacheReference.set(VerdictCache.create(loadAcls(jsonReader), config.getCacheMaxSizePercentage(),
+                config.getCacheExpireAfterAccess()));
         final AtomicReference<WatchKey> watchKeyReference = new AtomicReference<>(subscribeToAclChanges(configFile));
         scheduledExecutorService.scheduleWithFixedDelay(() -> {
             final WatchKey watchKey = watchKeyReference.get();
@@ -130,7 +131,8 @@ public class AivenAclAuthorizerV2 implements Authorizer {
                 }).findFirst().ifPresent(watchEvent -> {
                     LOGGER.info("{}: {}, Modified: {}",
                             watchEvent.kind(), watchEvent.context(), configFile.lastModified());
-                    cacheReference.set(VerdictCache.create(loadAcls(jsonReader)));
+                    cacheReference.set(VerdictCache.create(loadAcls(jsonReader), config.getCacheMaxSizePercentage(),
+                            config.getCacheExpireAfterAccess()));
                 });
                 if (!watchKey.reset()) {
                     watchKeyReference.compareAndSet(watchKey, subscribeToAclChanges(configFile));
