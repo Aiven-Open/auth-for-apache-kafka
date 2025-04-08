@@ -79,7 +79,7 @@ ext {
 }
 
 dependencies {
-    implementation "com.google.guava:guava:33.4.0-jre"
+    implementation "com.google.guava:guava:33.4.6-jre"
     implementation "com.google.code.gson:gson:2.12.1"
 
     implementation "com.github.ben-manes.caffeine:caffeine:3.2.0"
