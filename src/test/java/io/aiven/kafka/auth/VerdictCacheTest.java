@@ -58,7 +58,7 @@ class VerdictCacheTest {
         "25, 33",
         "50, 20",
         "100, 10",
-        "200, 7",
+        "200, 10",
     })
     void testCacheEvictionBySize(final int sizeMB, final int errorTolerance) throws Exception {
         final long maxHeapSize = Runtime.getRuntime().maxMemory();

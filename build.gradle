@@ -130,10 +130,14 @@ jacoco {
 test {
     useJUnitPlatform()
     testLogging {
-        events 'failed', 'skipped'
+        events 'passed', 'failed', 'skipped', 'standardOut', 'standardError'
         exceptionFormat 'full'
     }
-    jvmArgs '-Djol.magicFieldOffset=true'
+    jvmArgs '-Djol.magicFieldOffset=true',
+            '-Djol.tryWithSudo=true',
+            '-Djdk.attach.allowAttachSelf=true',
+            '-Xms512m',
+            '-Xmx2g'
 }
 
 jar {
