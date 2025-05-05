@@ -119,6 +119,30 @@ public class AclAivenToNativeConverterTest {
     }
 
     @Test
+    public final void testConvertWildcardLiteral() {
+        final var result = AclAivenToNativeConverter.convert(
+            new AivenAcl(
+                "User",
+                "^(test\\-user)$",
+                "*",
+                "^Read$",
+                "^Topic:(.*)$",
+                null,
+                null,
+                null,
+                null,
+                false
+            )
+        );
+        assertThat(result).containsExactly(
+            new AclBinding(
+                new ResourcePattern(ResourceType.TOPIC, "*", PatternType.LITERAL),
+                new AccessControlEntry("User:test\\-user", "*", AclOperation.READ, AclPermissionType.ALLOW)
+            )
+        );
+    }
+
+    @Test
     public final void testDeny() {
         final var result = AclAivenToNativeConverter.convert(
             new AivenAcl(
