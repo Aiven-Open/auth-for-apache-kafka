@@ -21,10 +21,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
@@ -33,11 +35,14 @@ import org.openjdk.jmh.infra.Blackhole;
 /**
  * SSL principal mapping benchmark.
  *
- * <p>Run with {@code mvn integration-test}.
+ * <p>Run with {@code gradlew jmh}
+ * or if you want to run faster, use
+ * {@code gradlew jmhJar && java -jar ./build/libs/auth-for-apache-kafka-*-jmh.jar -to 30 -w 1 -wi 0 -i 1}
  */
 @State(Scope.Benchmark)
 @BenchmarkMode(Mode.Throughput)
-public class BenchmarkRunner {
+@OutputTimeUnit(TimeUnit.MILLISECONDS)
+public class PrincipalMappingBenchmark {
     AivenKafkaPrincipalBuilderV2 builder;
     Path configFilePath;
 
@@ -54,12 +59,12 @@ public class BenchmarkRunner {
     }
 
     @Benchmark
-    public void benchmarkLastEntry(final Blackhole bh) {
+    public void benchmarkLastEntry(final Blackhole bh) throws InterruptedException {
         bh.consume(builder.mapSslPrincipal("bbb"));
     }
 
     @Benchmark
-    public void benchmarkNonExistent(final Blackhole bh) {
+    public void benchmarkNonExistent(final Blackhole bh) throws InterruptedException {
         bh.consume(builder.mapSslPrincipal("non-existent"));
     }
 }
