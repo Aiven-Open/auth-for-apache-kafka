@@ -16,8 +16,6 @@
 
 package io.aiven.kafka.auth;
 
-import javax.annotation.Nonnull;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -41,7 +39,7 @@ public class VerdictCache {
     private final Cache<String, Boolean> cache;
 
 
-    private VerdictCache(@Nonnull final List<AivenAcl> denyAclEntries, @Nonnull final List<AivenAcl> allowAclEntries,
+    private VerdictCache(final List<AivenAcl> denyAclEntries, final List<AivenAcl> allowAclEntries,
             final double maxSizePercentage, final int expireAfterAccessMinutes) {
         this.denyAclEntries = denyAclEntries;
         this.allowAclEntries = allowAclEntries;
