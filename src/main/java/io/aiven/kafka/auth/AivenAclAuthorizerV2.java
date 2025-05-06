@@ -284,4 +284,8 @@ public class AivenAclAuthorizerV2 implements Authorizer {
             return List.of();
         }
     }
+
+    final long getEstimatedCacheSizeEntries() {
+        return cacheReference.get().getEstimatesSizeEntries();
+    }
 }

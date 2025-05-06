@@ -16,6 +16,13 @@
   {
     "principal_type": "User",
     "principal": "^(.*)$",
+    "host": "*",
+    "operations": ["All"],
+    "resource": "^Topic:topic-3$"
+  },
+  {
+    "principal_type": "User",
+    "principal": "^(.*)$",
     "host": "192.168.123.47",
     "operation": "^(.*)$",
     "resource": "^Topic:topic-1$",

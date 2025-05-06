@@ -418,6 +418,7 @@ public class AivenAclAuthorizerV2Test {
         startAuthorizer();
         final var topic1 = new ResourcePattern(ResourceType.TOPIC, "topic-1", PatternType.LITERAL);
         final var topic2 = new ResourcePattern(ResourceType.TOPIC, "topic-2", PatternType.LITERAL);
+        final var topic3 = new ResourcePattern(ResourceType.TOPIC, "topic-3", PatternType.LITERAL);
 
         // test host rule with wildcard
         checkSingleAction(requestCtx("User", "user"), action(READ_OPERATION, topic1), true);
@@ -438,6 +439,38 @@ public class AivenAclAuthorizerV2Test {
             action(READ_OPERATION, topic1),
             false
         );
+
+        checkSingleAction(
+            requestCtxWithHost("User", "user", Inet4Address.getByName("192.168.123.1")),
+            action(READ_OPERATION, topic3), true
+        );
+        final long cacheSizeBefore = auth.getEstimatedCacheSizeEntries();
+        checkSingleAction(
+            requestCtxWithHost("User", "user", Inet4Address.getByName("192.168.123.2")),
+            action(READ_OPERATION, topic3), true
+        );
+        assertThat(auth.getEstimatedCacheSizeEntries()).isGreaterThan(cacheSizeBefore);
+    }
+
+    @Test
+    public void testHostMatchingCacheKeySkipped() throws IOException {
+        // acls_plain does not has any host depending acl rule
+        Files.copy(this.getClass().getResourceAsStream("/acls_plain.json"), configFilePath);
+        startAuthorizer();
+        final var topic1 = new ResourcePattern(ResourceType.TOPIC, "topic-1", PatternType.LITERAL);
+
+        checkSingleAction(
+            requestCtxWithHost("User", "pass", Inet4Address.getByName("192.168.123.1")),
+            action(READ_OPERATION, topic1), true
+        );
+        final long cacheSizeBefore = auth.getEstimatedCacheSizeEntries();
+        for (int i = 2; i < 30; i++) {
+            checkSingleAction(
+                requestCtxWithHost("User", "pass", Inet4Address.getByName("192.168.123." + i)),
+                action(READ_OPERATION, topic1), true
+            );
+            assertThat(auth.getEstimatedCacheSizeEntries()).isEqualTo(cacheSizeBefore);
+        }
     }
 
     @Test
