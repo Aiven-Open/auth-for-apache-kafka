@@ -95,6 +95,14 @@ public class VerdictCache {
         return Stream.concat(denyAclEntries.stream(), allowAclEntries.stream());
     }
 
+    public List<AivenAcl> getAllowAclEntries() {
+        return Collections.unmodifiableList(allowAclEntries);
+    }
+
+    public List<AivenAcl> getDenyAclEntries() {
+        return Collections.unmodifiableList(denyAclEntries);
+    }
+
     public static VerdictCache create(final List<AivenAcl> aclEntries, final double maxSizePercentage,
             final int expireAfterAccessMinutes) {
         if (aclEntries == null || aclEntries.isEmpty()) {

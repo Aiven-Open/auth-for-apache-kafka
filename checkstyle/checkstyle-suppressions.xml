@@ -7,13 +7,12 @@
         "https://checkstyle.org/dtds/suppressions_1_2.dtd">
 <suppressions>
     <suppress checks="VariableDeclarationUsageDistance" files=".*Test\.java"/>
-    <suppress checks="JavadocMethod" files=".*/test/java/.*/BenchmarkRunner\.java"/>
 
     <!-- FIXME will remove after cleaning the code -->
-    <suppress checks="CyclomaticComplexity" files="AivenAclAuthorizer.java" />
-    <suppress checks="ClassFanOutComplexity" files="AivenAclAuthorizer.java" />
     <suppress checks="ClassFanOutComplexity" files="AivenAclAuthorizerV2.java" />
-    <suppress checks="NPathComplexity" files="AivenAclAuthorizer.java" />
+    <suppress checks="NPathComplexity" files="AivenAclAuthorizerV2.java" />
+    <suppress checks="NCSS" files="AivenAclAuthorizerV2.java" />
+    <suppress checks="CyclomaticComplexity" files="AivenAclAuthorizerV2.java" />
     <suppress checks="MethodLength" files="AivenAclAuthorizerTest.java"/>
     <suppress checks="ClassFanOutComplexity" files="AivenAclAuthorizerV2Test.java"/>
     <suppress checks="CyclomaticComplexity" files="LegacyOperationNameFormatter.java" />

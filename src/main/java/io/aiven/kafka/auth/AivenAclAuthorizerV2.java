@@ -26,9 +26,12 @@ import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executors;
@@ -43,7 +46,9 @@ import org.apache.kafka.common.acl.AclBindingFilter;
 import org.apache.kafka.common.acl.AclOperation;
 import org.apache.kafka.common.metrics.MetricConfig;
 import org.apache.kafka.common.metrics.Sensor;
+import org.apache.kafka.common.resource.PatternType;
 import org.apache.kafka.common.resource.ResourcePattern;
+import org.apache.kafka.common.resource.ResourceType;
 import org.apache.kafka.common.security.auth.KafkaPrincipal;
 import org.apache.kafka.common.utils.Time;
 import org.apache.kafka.server.authorizer.AclCreateResult;
@@ -79,7 +84,7 @@ public class AivenAclAuthorizerV2 implements Authorizer {
     private ScheduledExecutorService scheduledExecutorService;
 
     private volatile WatchService watchService;
-    
+
     private final AtomicReference<VerdictCache> cacheReference = new AtomicReference<>();
     private final Time time;
 
@@ -205,11 +210,174 @@ public class AivenAclAuthorizerV2 implements Authorizer {
                            action.logIfAllowed(), action.logIfDenied());
 
             final var session = new Session(principal, requestContext.clientAddress());
-            auditor.addActivity(session, action.operation(), action.resourcePattern(), verdict);
+            auditor.addActivity(session, operation, resourcePattern, verdict);
 
             result.add(authResult);
         }
         return result;
+    }
+
+    /**
+     * Check if the caller is authorized to perform the given ACL operation on at least one
+     * resource of the given type.
+     *
+     * @param requestContext Request context including request resourceType, security protocol and listener name
+     * @param op             The ACL operation to check
+     * @param resourceType   The resource type to check
+     * @return               Return {@link AuthorizationResult#ALLOWED} if the caller is authorized
+     *                       to perform the given ACL operation on at least one resource of the
+     *                       given type. Return {@link AuthorizationResult#DENIED} otherwise.
+     */
+    @Override
+    public AuthorizationResult authorizeByResourceType(
+        final AuthorizableRequestContext requestContext,
+        final AclOperation op,
+        final ResourceType resourceType) {
+        final KafkaPrincipal principal =
+            Objects.requireNonNullElse(requestContext.principal(), KafkaPrincipal.ANONYMOUS);
+
+        final ResourcePattern resourcePattern = new ResourcePattern(resourceType, "", PatternType.LITERAL);
+
+        final AuthorizationResult authResult = calculateAuthorizeByResourceType(
+            requestContext, op, resourceType, principal);
+
+        final boolean verdict = authResult == AuthorizationResult.ALLOWED;
+        metrics.recordLogAuthResult(authResult, op, resourcePattern, principal);
+        logAuthVerdict(verdict, op, resourcePattern, principal, requestContext,
+                       false, false);
+
+        return authResult;
+    }
+
+    // This is for benchmarking purposes only
+    AuthorizationResult default_authorizeByResourceType(
+        final AuthorizableRequestContext requestContext,
+        final AclOperation op,
+        final ResourceType resourceType) {
+        return Authorizer.super.authorizeByResourceType(requestContext, op, resourceType);
+    }
+
+    private AuthorizationResult calculateAuthorizeByResourceType(
+        final AuthorizableRequestContext requestContext,
+        final AclOperation op,
+        final ResourceType resourceType,
+        final KafkaPrincipal principal) {
+
+        final String principalType = principal.getPrincipalType();
+        final String principalName = principal.getName();
+
+        final EnumMap<PatternType, Set<String>> denyPatterns =
+            new EnumMap<PatternType, Set<String>>(PatternType.class) {
+                {
+                    put(PatternType.LITERAL, new HashSet<>());
+                    put(PatternType.PREFIXED, new HashSet<>());
+                }
+            };
+        final EnumMap<PatternType, Set<String>> allowPatterns =
+            new EnumMap<PatternType, Set<String>>(PatternType.class) {
+                {
+                    put(PatternType.LITERAL, new HashSet<>());
+                    put(PatternType.PREFIXED, new HashSet<>());
+                }
+            };
+
+        final String hostAddr = requestContext.clientAddress().getHostAddress();
+
+        for (final AivenAcl acl : this.cacheReference.get().getDenyAclEntries()) {
+
+            if (!acl.hostMatch(hostAddr)) {
+                continue;
+            }
+
+            if (!acl.matchResourceType(resourceType)) {
+                continue;
+            }
+
+            if (!acl.matchPrincipal(principalType, principalName)) {
+                continue;
+            }
+
+            if (!acl.matchOperation(op)) {
+                continue;
+            }
+
+            for (final AclBinding binding : AclAivenToNativeConverter.convert(acl)) {
+
+                if (binding.pattern().patternType() == PatternType.LITERAL) {
+                    // If wildcard deny exists, return deny directly
+                    if (binding.pattern().name().equals(ResourcePattern.WILDCARD_RESOURCE)) {
+                        return AuthorizationResult.DENIED;
+                    }
+                    denyPatterns.get(PatternType.LITERAL).add(binding.pattern().name());
+                } else if (binding.pattern().patternType() == PatternType.PREFIXED) {
+                    denyPatterns.get(PatternType.PREFIXED).add(binding.pattern().name());
+                } else {
+                    LOGGER.error("Unknown pattern type in deny rule: {}", binding.pattern().patternType());
+                    return AuthorizationResult.DENIED;
+                }
+            }
+        }
+
+        for (final AivenAcl acl : this.cacheReference.get().getAllowAclEntries()) {
+
+            if (!acl.hostMatch(hostAddr)) {
+                continue;
+            }
+
+            if (!acl.matchResourceType(resourceType)) {
+                continue;
+            }
+
+            if (!acl.matchPrincipal(principalType, principalName)) {
+                continue;
+            }
+
+            if (!acl.matchOperation(op)) {
+                continue;
+            }
+
+            for (final AclBinding binding : AclAivenToNativeConverter.convert(acl)) {
+
+                if (binding.pattern().patternType() == PatternType.LITERAL) {
+                    if (binding.pattern().name().equals(ResourcePattern.WILDCARD_RESOURCE)) {
+                        return AuthorizationResult.ALLOWED;
+                    }
+                    allowPatterns.get(PatternType.LITERAL).add(binding.pattern().name());
+                } else if (binding.pattern().patternType() == PatternType.PREFIXED) {
+                    allowPatterns.get(PatternType.PREFIXED).add(binding.pattern().name());
+                } else {
+                    LOGGER.error("Unknown pattern type in allow rule: {}", binding.pattern().patternType());
+                    // Pass through because it is safe to allow if any other rule allows
+                    // the request.
+                }
+            }
+        }
+
+        // For any literal allowed, if there's no dominant literal and prefix denied,
+        // return allow.
+        // For any prefix allowed, if there's no dominant prefix denied, return allow.
+        for (final Map.Entry<PatternType, Set<String>> entry : allowPatterns.entrySet()) {
+            for (final String allowStr : entry.getValue()) {
+                if (entry.getKey() == PatternType.LITERAL
+                        && denyPatterns.get(PatternType.LITERAL).contains(allowStr)) {
+                    continue;
+                }
+                final StringBuilder sb = new StringBuilder();
+                boolean hasDominatedDeny = false;
+                for (final char ch : allowStr.toCharArray()) {
+                    sb.append(ch);
+                    if (denyPatterns.get(PatternType.PREFIXED).contains(sb.toString())) {
+                        hasDominatedDeny = true;
+                        break;
+                    }
+                }
+                if (!hasDominatedDeny) {
+                    return AuthorizationResult.ALLOWED;
+                }
+            }
+        }
+
+        return AuthorizationResult.DENIED;
     }
 
     /**
