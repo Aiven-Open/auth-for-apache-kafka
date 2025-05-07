@@ -1,0 +1,550 @@
+[
+    {
+        "operations": [
+            "All"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(myinternaloperator)$",
+        "principal_type": "User",
+        "resource": "^(.*)$"
+    },
+    {
+        "operations": [
+            "Alter",
+            "AlterConfigs",
+            "Delete",
+            "Read",
+            "Write"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(mysuperuser)$",
+        "principal_type": "User",
+        "resource": "^Topic:(.*)$"
+    },
+    {
+        "operations": [
+            "Write"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(week\\-time\\-year\\-kind\\-reason)$",
+        "principal_type": "User",
+        "resource": "^Topic:(week\\.time\\.year\\-car\\-person\\-request|week\\.time\\.way\\-year\\-woman\\-request|week\\.time\\.way\\-thing\\-kind\\-review\\-request|week\\.time\\.way\\-kind\\-review\\-request|week\\.time\\.kind\\-teacher|week\\.time\\.kind\\-version)$"
+    },
+    {
+        "operations": [
+            "Read"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(week\\-time\\-year\\-kind\\-reason)$",
+        "principal_type": "User",
+        "resource": "^Topic:(week\\.time\\.year\\-state|week\\.time\\.way\\-year\\-woman\\-request|week\\.time\\.way\\-thing\\-kind\\-review\\-request|week\\.time\\.way\\-kind\\-review\\-request|week\\.time\\.day\\-info|week\\.time\\.day\\-state|week\\.time\\.hand\\-info|week\\.time\\.hand\\-state|week\\.time\\.kind\\-teacher\\-result|week\\.time\\.art\\-day\\-friend\\-teacher)$"
+    },
+    {
+        "operations": [
+            "Write"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(week\\-time\\-child\\-question\\-problem)$",
+        "principal_type": "User",
+        "resource": "^Topic:(week\\.time\\.child\\-question\\-head)$"
+    },
+    {
+        "operations": [
+            "Read"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(week\\-time\\-country\\-prworldrocessor)$",
+        "principal_type": "User",
+        "resource": "^Topic:(week\\.time\\.year\\-country|week\\.time\\.year\\-country\\-history|week\\.time\\.day\\-country|week\\.time\\.day\\-country\\-history|week\\.time\\.hand\\-country|week\\.time\\.hand\\-country\\-history|week\\.time\\.plate\\-country|week\\.time\\.plate\\-country\\-history)$"
+    },
+    {
+        "operations": [
+            "Write"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(week\\-time\\-country\\-prworldrocessor)$",
+        "principal_type": "User",
+        "resource": "^Topic:(week\\.time\\.year\\-country\\-history\\-request|week\\.time\\.day\\-country\\-history\\-request|week\\.time\\.hand\\-country\\-history\\-request|week\\.time\\.plate\\-country\\-history\\-request|week\\.time\\.prworldrocessed\\-year\\-country|week\\.time\\.prworldrocessed\\-day\\-country|week\\.time\\.prworldrocessed\\-hand\\-country|week\\.time\\.prworldrocessed\\-plate\\-country)$"
+    },
+    {
+        "operations": [
+            "Write"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(week\\-time\\-country\\-team)$",
+        "principal_type": "User",
+        "resource": "^Topic:(week\\.time\\.year\\-state|week\\.time\\.day\\-state|week\\.time\\.world\\-year\\-woman\\-request|week\\.time\\.world\\-day\\-woman\\-request|week\\.time\\.world\\-hand\\-woman\\-request|week\\.time\\.hand\\-state)$"
+    },
+    {
+        "operations": [
+            "Read"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(week\\-time\\-country\\-team)$",
+        "principal_type": "User",
+        "resource": "^Topic:(week\\.time\\.world\\-year\\-woman\\-request|week\\.time\\.world\\-day\\-woman\\-request|week\\.time\\.world\\-hand\\-woman\\-request|week\\.time\\.prworldrocessed\\-year\\-country|week\\.time\\.prworldrocessed\\-day\\-country|week\\.time\\.prworldrocessed\\-hand\\-country|week\\.time\\.health\\-moment\\-family\\-people)$"
+    },
+    {
+        "operations": [
+            "Read"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(week\\-time\\-problem)$",
+        "principal_type": "User",
+        "resource": "^Topic:(week\\.time\\.year\\-family|week\\.time\\.year\\-car\\-person\\-request|week\\.time\\.problem\\-day\\-info\\-father|week\\.time\\.problem\\-hand\\-info\\-father|week\\.time\\.problem\\-foot\\-info\\-father|week\\.time\\.problem\\-plate\\-country|week\\.time\\.problem\\-operation\\-status|week\\.time\\.problem\\-level\\-school\\-force\\-father|week\\.time\\.problem\\-art\\-day\\-friend\\-teacher|week\\.time\\.kind\\-teacher|week\\.time\\.kind\\-version|week\\.time\\.health\\-moment\\-family\\-people)$"
+    },
+    {
+        "operations": [
+            "Write"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(week\\-time\\-problem)$",
+        "principal_type": "User",
+        "resource": "^Topic:(week\\.time\\.year\\-country|week\\.time\\.year\\-car\\-person\\-request|week\\.time\\.day\\-country|week\\.time\\.day\\-info|week\\.time\\.problem\\-day\\-info\\-father|week\\.time\\.problem\\-hand\\-info\\-father|week\\.time\\.problem\\-foot\\-info\\-father|week\\.time\\.problem\\-plate\\-country|week\\.time\\.problem\\-operation\\-status|week\\.time\\.problem\\-level\\-school\\-force\\-father|week\\.time\\.problem\\-art\\-day\\-friend\\-teacher|week\\.time\\.hand\\-country|week\\.time\\.hand\\-info|week\\.time\\.foot\\-info|week\\.time\\.plate\\-country|week\\.time\\.kind\\-teacher\\-result|week\\.time\\.level\\-school\\-force|week\\.time\\.art\\-day\\-friend\\-teacher)$"
+    },
+    {
+        "operations": [
+            "Read"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(week\\-time\\-book \\-education\\-guy)$",
+        "principal_type": "User",
+        "resource": "^Topic:(week\\.time\\.year\\-family|week\\.time\\.year\\-family\\-student|week\\.time\\.child\\-question\\-head|week\\.time\\.plate\\-country|week\\.time\\.prworldrocessed\\-year\\-country|week\\.time\\.prworldrocessed\\-day\\-country|week\\.time\\.prworldrocessed\\-hand\\-country|week\\.time\\.prworldrocessed\\-plate\\-country|week\\.time\\.level\\-company\\-research\\-place|week\\.time\\.level\\-face\\-place|week\\.time\\.health\\-moment\\-family\\-people)$"
+    },
+    {
+        "operations": [
+            "Write"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(week\\-time\\-side\\-problem)$",
+        "principal_type": "User",
+        "resource": "^Topic:(week\\.time\\.level\\-company\\-research\\-place|week\\.time\\.level\\-face\\-place)$"
+    },
+    {
+        "operations": [
+            "Read"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(week\\-time\\-law\\-student\\-reason)$",
+        "principal_type": "User",
+        "resource": "^Topic:(week\\.time\\.year\\-family|week\\.time\\.prworldrocessed\\-plate\\-country)$"
+    },
+    {
+        "operations": [
+            "Write"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(week\\-time\\-law\\-student\\-reason)$",
+        "principal_type": "User",
+        "resource": "^Topic:(week\\.time\\.year\\-family\\-student)$"
+    },
+    {
+        "operations": [
+            "Write"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(week\\-time\\-law\\-reason)$",
+        "principal_type": "User",
+        "resource": "^Topic:(week\\.time\\.year\\-family|week\\.time\\.health\\-moment\\-family\\-people|week\\.time\\.health\\-moment\\-family\\-law\\-request)$"
+    },
+    {
+        "operations": [
+            "Read"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(week\\-time\\-law\\-reason)$",
+        "principal_type": "User",
+        "resource": "^Topic:(week\\.time\\.year\\-state|week\\.time\\.child\\-question\\-head|week\\.time\\.prworldrocessed\\-day\\-country|week\\.time\\.prworldrocessed\\-plate\\-country|week\\.time\\.health\\-moment\\-family\\-law\\-request)$"
+    },
+    {
+        "operations": [
+            "Write"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(week\\-time\\-level\\-study\\-reason)$",
+        "principal_type": "User",
+        "resource": "^Topic:(week\\.time\\.year\\-country\\-history|week\\.time\\.day\\-country\\-history|week\\.time\\.hand\\-country\\-history|week\\.time\\.plate\\-country\\-history|week\\.time\\.office\\-life\\-history\\-request)$"
+    },
+    {
+        "operations": [
+            "Read"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(week\\-time\\-level\\-study\\-reason)$",
+        "principal_type": "User",
+        "resource": "^Topic:(week\\.time\\.year\\-country\\-history\\-request|week\\.time\\.day\\-country\\-history\\-request|week\\.time\\.hand\\-country\\-history\\-request|week\\.time\\.plate\\-country\\-history\\-request|week\\.time\\.office\\-life\\-history\\-request)$"
+    },
+    {
+        "operations": [
+            "Write"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(week\\-minute\\-year\\-kind\\-reason)$",
+        "principal_type": "User",
+        "resource": "^Topic:(week\\.minute\\.year\\-car\\-person\\-request|week\\.minute\\.way\\-year\\-woman\\-request|week\\.minute\\.way\\-thing\\-kind\\-review\\-request|week\\.minute\\.way\\-kind\\-review\\-request|week\\.minute\\.kind\\-teacher|week\\.minute\\.kind\\-version)$"
+    },
+    {
+        "operations": [
+            "Read"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(week\\-minute\\-year\\-kind\\-reason)$",
+        "principal_type": "User",
+        "resource": "^Topic:(week\\.minute\\.year\\-state|week\\.minute\\.way\\-year\\-woman\\-request|week\\.minute\\.way\\-thing\\-kind\\-review\\-request|week\\.minute\\.way\\-kind\\-review\\-request|week\\.minute\\.day\\-info|week\\.minute\\.day\\-state|week\\.minute\\.hand\\-info|week\\.minute\\.hand\\-state|week\\.minute\\.kind\\-teacher\\-result|week\\.minute\\.art\\-day\\-friend\\-teacher)$"
+    },
+    {
+        "operations": [
+            "Write"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(week\\-minute\\-child\\-question\\-problem)$",
+        "principal_type": "User",
+        "resource": "^Topic:(week\\.minute\\.child\\-question\\-head)$"
+    },
+    {
+        "operations": [
+            "Read"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(week\\-minute\\-country\\-prworldrocessor)$",
+        "principal_type": "User",
+        "resource": "^Topic:(week\\.minute\\.year\\-country|week\\.minute\\.year\\-country\\-history|week\\.minute\\.day\\-country|week\\.minute\\.day\\-country\\-history|week\\.minute\\.hand\\-country|week\\.minute\\.hand\\-country\\-history|week\\.minute\\.plate\\-country|week\\.minute\\.plate\\-country\\-history)$"
+    },
+    {
+        "operations": [
+            "Write"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(week\\-minute\\-country\\-prworldrocessor)$",
+        "principal_type": "User",
+        "resource": "^Topic:(week\\.minute\\.year\\-country\\-history\\-request|week\\.minute\\.day\\-country\\-history\\-request|week\\.minute\\.hand\\-country\\-history\\-request|week\\.minute\\.plate\\-country\\-history\\-request|week\\.minute\\.prworldrocessed\\-year\\-country|week\\.minute\\.prworldrocessed\\-day\\-country|week\\.minute\\.prworldrocessed\\-hand\\-country|week\\.minute\\.prworldrocessed\\-plate\\-country)$"
+    },
+    {
+        "operations": [
+            "Write"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(week\\-minute\\-country\\-team)$",
+        "principal_type": "User",
+        "resource": "^Topic:(week\\.minute\\.year\\-state|week\\.minute\\.day\\-state|week\\.minute\\.world\\-year\\-woman\\-request|week\\.minute\\.world\\-day\\-woman\\-request|week\\.minute\\.world\\-hand\\-woman\\-request|week\\.minute\\.hand\\-state)$"
+    },
+    {
+        "operations": [
+            "Read"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(week\\-minute\\-country\\-team)$",
+        "principal_type": "User",
+        "resource": "^Topic:(week\\.minute\\.world\\-year\\-woman\\-request|week\\.minute\\.world\\-day\\-woman\\-request|week\\.minute\\.world\\-hand\\-woman\\-request|week\\.minute\\.prworldrocessed\\-year\\-country|week\\.minute\\.prworldrocessed\\-day\\-country|week\\.minute\\.prworldrocessed\\-hand\\-country|week\\.minute\\.health\\-moment\\-family\\-people)$"
+    },
+    {
+        "operations": [
+            "Read"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(week\\-minute\\-problem)$",
+        "principal_type": "User",
+        "resource": "^Topic:(week\\.minute\\.year\\-family|week\\.minute\\.year\\-car\\-person\\-request|week\\.minute\\.problem\\-day\\-info\\-father|week\\.minute\\.problem\\-hand\\-info\\-father|week\\.minute\\.problem\\-foot\\-info\\-father|week\\.minute\\.problem\\-plate\\-country|week\\.minute\\.problem\\-operation\\-status|week\\.minute\\.problem\\-level\\-school\\-force\\-father|week\\.minute\\.problem\\-art\\-day\\-friend\\-teacher|week\\.minute\\.kind\\-teacher|week\\.minute\\.kind\\-version|week\\.minute\\.health\\-moment\\-family\\-people)$"
+    },
+    {
+        "operations": [
+            "Write"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(week\\-minute\\-problem)$",
+        "principal_type": "User",
+        "resource": "^Topic:(week\\.minute\\.year\\-country|week\\.minute\\.year\\-car\\-person\\-request|week\\.minute\\.day\\-country|week\\.minute\\.day\\-info|week\\.minute\\.problem\\-day\\-info\\-father|week\\.minute\\.problem\\-hand\\-info\\-father|week\\.minute\\.problem\\-foot\\-info\\-father|week\\.minute\\.problem\\-plate\\-country|week\\.minute\\.problem\\-operation\\-status|week\\.minute\\.problem\\-level\\-school\\-force\\-father|week\\.minute\\.problem\\-art\\-day\\-friend\\-teacher|week\\.minute\\.hand\\-country|week\\.minute\\.hand\\-info|week\\.minute\\.foot\\-info|week\\.minute\\.plate\\-country|week\\.minute\\.kind\\-teacher\\-result|week\\.minute\\.level\\-school\\-force|week\\.minute\\.art\\-day\\-friend\\-teacher)$"
+    },
+    {
+        "operations": [
+            "Read"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(week\\-minute\\-book \\-education\\-guy)$",
+        "principal_type": "User",
+        "resource": "^Topic:(week\\.minute\\.year\\-family|week\\.minute\\.year\\-family\\-student|week\\.minute\\.child\\-question\\-head|week\\.minute\\.plate\\-country|week\\.minute\\.prworldrocessed\\-year\\-country|week\\.minute\\.prworldrocessed\\-day\\-country|week\\.minute\\.prworldrocessed\\-hand\\-country|week\\.minute\\.prworldrocessed\\-plate\\-country|week\\.minute\\.level\\-company\\-research\\-place|week\\.minute\\.level\\-face\\-place|week\\.minute\\.health\\-moment\\-family\\-people)$"
+    },
+    {
+        "operations": [
+            "Write"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(week\\-minute\\-side\\-problem)$",
+        "principal_type": "User",
+        "resource": "^Topic:(week\\.minute\\.level\\-company\\-research\\-place|week\\.minute\\.level\\-face\\-place)$"
+    },
+    {
+        "operations": [
+            "Read"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(week\\-minute\\-law\\-student\\-reason)$",
+        "principal_type": "User",
+        "resource": "^Topic:(week\\.minute\\.year\\-family|week\\.minute\\.prworldrocessed\\-plate\\-country)$"
+    },
+    {
+        "operations": [
+            "Write"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(week\\-minute\\-law\\-student\\-reason)$",
+        "principal_type": "User",
+        "resource": "^Topic:(week\\.minute\\.year\\-family\\-student)$"
+    },
+    {
+        "operations": [
+            "Write"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(week\\-minute\\-law\\-reason)$",
+        "principal_type": "User",
+        "resource": "^Topic:(week\\.minute\\.year\\-family|week\\.minute\\.health\\-moment\\-family\\-people|week\\.minute\\.health\\-moment\\-family\\-law\\-request)$"
+    },
+    {
+        "operations": [
+            "Read"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(week\\-minute\\-law\\-reason)$",
+        "principal_type": "User",
+        "resource": "^Topic:(week\\.minute\\.year\\-state|week\\.minute\\.child\\-question\\-head|week\\.minute\\.prworldrocessed\\-day\\-country|week\\.minute\\.prworldrocessed\\-plate\\-country|week\\.minute\\.health\\-moment\\-family\\-law\\-request)$"
+    },
+    {
+        "operations": [
+            "Write"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(week\\-minute\\-level\\-study\\-reason)$",
+        "principal_type": "User",
+        "resource": "^Topic:(week\\.minute\\.year\\-country\\-history|week\\.minute\\.day\\-country\\-history|week\\.minute\\.hand\\-country\\-history|week\\.minute\\.plate\\-country\\-history|week\\.minute\\.office\\-life\\-history\\-request)$"
+    },
+    {
+        "operations": [
+            "Read"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(week\\-minute\\-level\\-study\\-reason)$",
+        "principal_type": "User",
+        "resource": "^Topic:(week\\.minute\\.year\\-country\\-history\\-request|week\\.minute\\.day\\-country\\-history\\-request|week\\.minute\\.hand\\-country\\-history\\-request|week\\.minute\\.plate\\-country\\-history\\-request|week\\.minute\\.office\\-life\\-history\\-request)$"
+    },
+    {
+        "operations": [
+            "Write"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(week\\-test\\-year\\-kind\\-reason)$",
+        "principal_type": "User",
+        "resource": "^Topic:(week\\.test\\.year\\-car\\-person\\-request|week\\.test\\.way\\-year\\-woman\\-request|week\\.test\\.way\\-thing\\-kind\\-review\\-request|week\\.test\\.way\\-kind\\-review\\-request|week\\.test\\.kind\\-teacher|week\\.test\\.kind\\-version)$"
+    },
+    {
+        "operations": [
+            "Read"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(week\\-test\\-year\\-kind\\-reason)$",
+        "principal_type": "User",
+        "resource": "^Topic:(week\\.test\\.year\\-state|week\\.test\\.way\\-year\\-woman\\-request|week\\.test\\.way\\-thing\\-kind\\-review\\-request|week\\.test\\.way\\-kind\\-review\\-request|week\\.test\\.day\\-info|week\\.test\\.day\\-state|week\\.test\\.hand\\-info|week\\.test\\.hand\\-state|week\\.test\\.kind\\-teacher\\-result|week\\.test\\.art\\-day\\-friend\\-teacher)$"
+    },
+    {
+        "operations": [
+            "Write"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(week\\-test\\-child\\-question\\-problem)$",
+        "principal_type": "User",
+        "resource": "^Topic:(week\\.test\\.child\\-question\\-head)$"
+    },
+    {
+        "operations": [
+            "Read"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(week\\-test\\-country\\-prworldrocessor)$",
+        "principal_type": "User",
+        "resource": "^Topic:(week\\.test\\.year\\-country|week\\.test\\.year\\-country\\-history|week\\.test\\.day\\-country|week\\.test\\.day\\-country\\-history|week\\.test\\.hand\\-country|week\\.test\\.hand\\-country\\-history|week\\.test\\.plate\\-country|week\\.test\\.plate\\-country\\-history)$"
+    },
+    {
+        "operations": [
+            "Write"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(week\\-test\\-country\\-prworldrocessor)$",
+        "principal_type": "User",
+        "resource": "^Topic:(week\\.test\\.year\\-country\\-history\\-request|week\\.test\\.day\\-country\\-history\\-request|week\\.test\\.hand\\-country\\-history\\-request|week\\.test\\.plate\\-country\\-history\\-request|week\\.test\\.prworldrocessed\\-year\\-country|week\\.test\\.prworldrocessed\\-day\\-country|week\\.test\\.prworldrocessed\\-hand\\-country|week\\.test\\.prworldrocessed\\-plate\\-country)$"
+    },
+    {
+        "operations": [
+            "Write"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(week\\-test\\-country\\-team)$",
+        "principal_type": "User",
+        "resource": "^Topic:(week\\.test\\.year\\-state|week\\.test\\.day\\-state|week\\.test\\.world\\-year\\-woman\\-request|week\\.test\\.world\\-day\\-woman\\-request|week\\.test\\.world\\-hand\\-woman\\-request|week\\.test\\.hand\\-state)$"
+    },
+    {
+        "operations": [
+            "Read"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(week\\-test\\-country\\-team)$",
+        "principal_type": "User",
+        "resource": "^Topic:(week\\.test\\.world\\-year\\-woman\\-request|week\\.test\\.world\\-day\\-woman\\-request|week\\.test\\.world\\-hand\\-woman\\-request|week\\.test\\.prworldrocessed\\-year\\-country|week\\.test\\.prworldrocessed\\-day\\-country|week\\.test\\.prworldrocessed\\-hand\\-country|week\\.test\\.health\\-moment\\-family\\-people)$"
+    },
+    {
+        "operations": [
+            "Read"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(week\\-test\\-problem)$",
+        "principal_type": "User",
+        "resource": "^Topic:(week\\.test\\.year\\-family|week\\.test\\.year\\-car\\-person\\-request|week\\.test\\.problem\\-day\\-info\\-father|week\\.test\\.problem\\-hand\\-info\\-father|week\\.test\\.problem\\-foot\\-info\\-father|week\\.test\\.problem\\-plate\\-country|week\\.test\\.problem\\-operation\\-status|week\\.test\\.problem\\-level\\-school\\-force\\-father|week\\.test\\.problem\\-art\\-day\\-friend\\-teacher|week\\.test\\.kind\\-teacher|week\\.test\\.kind\\-version|week\\.test\\.health\\-moment\\-family\\-people)$"
+    },
+    {
+        "operations": [
+            "Write"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(week\\-test\\-problem)$",
+        "principal_type": "User",
+        "resource": "^Topic:(week\\.test\\.year\\-country|week\\.test\\.year\\-car\\-person\\-request|week\\.test\\.day\\-country|week\\.test\\.day\\-info|week\\.test\\.problem\\-day\\-info\\-father|week\\.test\\.problem\\-hand\\-info\\-father|week\\.test\\.problem\\-foot\\-info\\-father|week\\.test\\.problem\\-plate\\-country|week\\.test\\.problem\\-operation\\-status|week\\.test\\.problem\\-level\\-school\\-force\\-father|week\\.test\\.problem\\-art\\-day\\-friend\\-teacher|week\\.test\\.hand\\-country|week\\.test\\.hand\\-info|week\\.test\\.foot\\-info|week\\.test\\.plate\\-country|week\\.test\\.kind\\-teacher\\-result|week\\.test\\.level\\-school\\-force|week\\.test\\.art\\-day\\-friend\\-teacher)$"
+    },
+    {
+        "operations": [
+            "Read"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(week\\-test\\-book \\-education\\-guy)$",
+        "principal_type": "User",
+        "resource": "^Topic:(week\\.test\\.year\\-family|week\\.test\\.year\\-family\\-student|week\\.test\\.child\\-question\\-head|week\\.test\\.plate\\-country|week\\.test\\.prworldrocessed\\-year\\-country|week\\.test\\.prworldrocessed\\-day\\-country|week\\.test\\.prworldrocessed\\-hand\\-country|week\\.test\\.prworldrocessed\\-plate\\-country|week\\.test\\.level\\-company\\-research\\-place|week\\.test\\.level\\-face\\-place|week\\.test\\.health\\-moment\\-family\\-people)$"
+    },
+    {
+        "operations": [
+            "Write"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(week\\-test\\-side\\-problem)$",
+        "principal_type": "User",
+        "resource": "^Topic:(week\\.test\\.level\\-company\\-research\\-place|week\\.test\\.level\\-face\\-place)$"
+    },
+    {
+        "operations": [
+            "Read"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(week\\-test\\-law\\-student\\-reason)$",
+        "principal_type": "User",
+        "resource": "^Topic:(week\\.test\\.year\\-family|week\\.test\\.prworldrocessed\\-plate\\-country)$"
+    },
+    {
+        "operations": [
+            "Write"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(week\\-test\\-law\\-student\\-reason)$",
+        "principal_type": "User",
+        "resource": "^Topic:(week\\.test\\.year\\-family\\-student)$"
+    },
+    {
+        "operations": [
+            "Write"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(week\\-test\\-law\\-reason)$",
+        "principal_type": "User",
+        "resource": "^Topic:(week\\.test\\.year\\-family|week\\.test\\.health\\-moment\\-family\\-people|week\\.test\\.health\\-moment\\-family\\-law\\-request)$"
+    },
+    {
+        "operations": [
+            "Read"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(week\\-test\\-law\\-reason)$",
+        "principal_type": "User",
+        "resource": "^Topic:(week\\.test\\.year\\-state|week\\.test\\.child\\-question\\-head|week\\.test\\.prworldrocessed\\-day\\-country|week\\.test\\.prworldrocessed\\-plate\\-country|week\\.test\\.health\\-moment\\-family\\-law\\-request)$"
+    },
+    {
+        "operations": [
+            "Write"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(week\\-test\\-level\\-study\\-reason)$",
+        "principal_type": "User",
+        "resource": "^Topic:(week\\.test\\.year\\-country\\-history|week\\.test\\.day\\-country\\-history|week\\.test\\.hand\\-country\\-history|week\\.test\\.plate\\-country\\-history|week\\.test\\.office\\-life\\-history\\-request)$"
+    },
+    {
+        "operations": [
+            "Read"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(week\\-test\\-level\\-study\\-reason)$",
+        "principal_type": "User",
+        "resource": "^Topic:(week\\.test\\.year\\-country\\-history\\-request|week\\.test\\.day\\-country\\-history\\-request|week\\.test\\.hand\\-country\\-history\\-request|week\\.test\\.plate\\-country\\-history\\-request|week\\.test\\.office\\-life\\-history\\-request)$"
+    },
+    {
+        "operations": [
+            "Describe",
+            "DescribeConfigs"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(mysuperuser|week\\-time\\-year\\-kind\\-reason|week\\-time\\-child\\-question\\-problem|week\\-time\\-country\\-prworldrocessor|week\\-time\\-country\\-team|week\\-time\\-problem|week\\-time\\-book \\-education\\-guy|week\\-time\\-side\\-problem|week\\-time\\-law\\-student\\-reason|week\\-time\\-law\\-reason|week\\-time\\-level\\-study\\-reason|week\\-minute\\-year\\-kind\\-reason|week\\-minute\\-child\\-question\\-problem|week\\-minute\\-country\\-prworldrocessor|week\\-minute\\-country\\-team|week\\-minute\\-problem|week\\-minute\\-book \\-education\\-guy|week\\-minute\\-side\\-problem|week\\-minute\\-law\\-student\\-reason|week\\-minute\\-law\\-reason|week\\-minute\\-level\\-study\\-reason|week\\-test\\-year\\-kind\\-reason|week\\-test\\-child\\-question\\-problem|week\\-test\\-country\\-prworldrocessor|week\\-test\\-country\\-team|week\\-test\\-problem|week\\-test\\-book \\-education\\-guy|week\\-test\\-side\\-problem|week\\-test\\-law\\-student\\-reason|week\\-test\\-law\\-reason|week\\-test\\-level\\-study\\-reason)$",
+        "principal_type": "User",
+        "resource": "^Topic:(.*)$"
+    },
+    {
+        "operations": [
+            "Delete",
+            "Describe",
+            "Read"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(mysuperuser|week\\-time\\-year\\-kind\\-reason|week\\-time\\-country\\-prworldrocessor|week\\-time\\-country\\-team|week\\-time\\-problem|week\\-time\\-book \\-education\\-guy|week\\-time\\-law\\-student\\-reason|week\\-time\\-law\\-reason|week\\-time\\-level\\-study\\-reason|week\\-minute\\-year\\-kind\\-reason|week\\-minute\\-country\\-prworldrocessor|week\\-minute\\-country\\-team|week\\-minute\\-problem|week\\-minute\\-book \\-education\\-guy|week\\-minute\\-law\\-student\\-reason|week\\-minute\\-law\\-reason|week\\-minute\\-level\\-study\\-reason|week\\-test\\-year\\-kind\\-reason|week\\-test\\-country\\-prworldrocessor|week\\-test\\-country\\-team|week\\-test\\-problem|week\\-test\\-book \\-education\\-guy|week\\-test\\-law\\-student\\-reason|week\\-test\\-law\\-reason|week\\-test\\-level\\-study\\-reason)$",
+        "principal_type": "User",
+        "resource": "^Group:(.*)$"
+    },
+    {
+        "operations": [
+            "Describe"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(mysuperuser|week\\-time\\-year\\-kind\\-reason|week\\-time\\-country\\-prworldrocessor|week\\-time\\-country\\-team|week\\-time\\-problem|week\\-time\\-book \\-education\\-guy|week\\-time\\-law\\-student\\-reason|week\\-time\\-law\\-reason|week\\-time\\-level\\-study\\-reason|week\\-minute\\-year\\-kind\\-reason|week\\-minute\\-country\\-prworldrocessor|week\\-minute\\-country\\-team|week\\-minute\\-problem|week\\-minute\\-book \\-education\\-guy|week\\-minute\\-law\\-student\\-reason|week\\-minute\\-law\\-reason|week\\-minute\\-level\\-study\\-reason|week\\-test\\-year\\-kind\\-reason|week\\-test\\-country\\-prworldrocessor|week\\-test\\-country\\-team|week\\-test\\-problem|week\\-test\\-book \\-education\\-guy|week\\-test\\-law\\-student\\-reason|week\\-test\\-law\\-reason|week\\-test\\-level\\-study\\-reason)$",
+        "principal_type": "User",
+        "resource": "^Cluster:(.*)$"
+    },
+    {
+        "operations": [
+            "Describe",
+            "Write"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(mysuperuser|week\\-time\\-year\\-kind\\-reason|week\\-time\\-child\\-question\\-problem|week\\-time\\-country\\-prworldrocessor|week\\-time\\-country\\-team|week\\-time\\-problem|week\\-time\\-side\\-problem|week\\-time\\-law\\-student\\-reason|week\\-time\\-law\\-reason|week\\-time\\-level\\-study\\-reason|week\\-minute\\-year\\-kind\\-reason|week\\-minute\\-child\\-question\\-problem|week\\-minute\\-country\\-prworldrocessor|week\\-minute\\-country\\-team|week\\-minute\\-problem|week\\-minute\\-side\\-problem|week\\-minute\\-law\\-student\\-reason|week\\-minute\\-law\\-reason|week\\-minute\\-level\\-study\\-reason|week\\-test\\-year\\-kind\\-reason|week\\-test\\-child\\-question\\-problem|week\\-test\\-country\\-prworldrocessor|week\\-test\\-country\\-team|week\\-test\\-problem|week\\-test\\-side\\-problem|week\\-test\\-law\\-student\\-reason|week\\-test\\-law\\-reason|week\\-test\\-level\\-study\\-reason)$",
+        "principal_type": "User",
+        "resource": "^TransactionalId:(.*)$"
+    },
+    {
+        "operations": [
+            "IdempotentWrite"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(mysuperuser|week\\-time\\-year\\-kind\\-reason|week\\-time\\-child\\-question\\-problem|week\\-time\\-country\\-prworldrocessor|week\\-time\\-country\\-team|week\\-time\\-problem|week\\-time\\-side\\-problem|week\\-time\\-law\\-student\\-reason|week\\-time\\-law\\-reason|week\\-time\\-level\\-study\\-reason|week\\-minute\\-year\\-kind\\-reason|week\\-minute\\-child\\-question\\-problem|week\\-minute\\-country\\-prworldrocessor|week\\-minute\\-country\\-team|week\\-minute\\-problem|week\\-minute\\-side\\-problem|week\\-minute\\-law\\-student\\-reason|week\\-minute\\-law\\-reason|week\\-minute\\-level\\-study\\-reason|week\\-test\\-year\\-kind\\-reason|week\\-test\\-child\\-question\\-problem|week\\-test\\-country\\-prworldrocessor|week\\-test\\-country\\-team|week\\-test\\-problem|week\\-test\\-side\\-problem|week\\-test\\-law\\-student\\-reason|week\\-test\\-law\\-reason|week\\-test\\-level\\-study\\-reason)$",
+        "principal_type": "User",
+        "resource": "^Cluster:(.*)$"
+    },
+    {
+        "operations": [
+            "Create"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(mysuperuser)$",
+        "principal_type": "User",
+        "resource": "^(Cluster|Topic):(.*)$"
+    },
+    {
+        "operations": [
+            "DescribeConfigs"
+        ],
+        "permission_type": "ALLOW",
+        "principal": "^(.*)$",
+        "principal_type": "User",
+        "resource": "^Cluster:(.*)$"
+    }
+]

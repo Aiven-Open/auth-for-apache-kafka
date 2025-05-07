@@ -16,6 +16,7 @@
 
 package io.aiven.kafka.auth.json;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
@@ -25,8 +26,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.kafka.common.acl.AclOperation;
+import org.apache.kafka.common.resource.ResourceType;
 
 import io.aiven.kafka.auth.nameformatters.LegacyOperationNameFormatter;
+import io.aiven.kafka.auth.nativeacls.ResourcePatternParser;
 import io.aiven.kafka.auth.utils.ResourceLiteralWildcardMatcher;
 
 import com.google.gson.annotations.SerializedName;
@@ -57,6 +60,8 @@ public class AivenAcl {
 
     @SerializedName("resource_prefix")
     public final String resourcePrefix;
+
+    private transient List<ResourceType> resourceTypes;
 
     @SerializedName("permission_type")
     private final AclPermissionType permissionType;
@@ -146,6 +151,14 @@ public class AivenAcl {
         return false;
     }
 
+    public boolean matchPrincipal(final String principalType, final String principal) {
+        if (this.principalType == null || this.principalType.equals(principalType)) {
+            final Matcher mp = this.principalRe.matcher(principal);
+            return mp.find();
+        }
+        return false;
+    }
+
     /* Some operations implicitly allow describe operation, but with allow rules only */
     private static final Set<AclOperation> IMPLIES_DESCRIBE = Collections.unmodifiableSet(
         EnumSet.of(AclOperation.DESCRIBE, AclOperation.READ, AclOperation.WRITE,
@@ -155,7 +168,7 @@ public class AivenAcl {
         EnumSet.of(AclOperation.DESCRIBE_CONFIGS, AclOperation.ALTER_CONFIGS));
 
 
-    private boolean matchOperation(final AclOperation operation) {
+    public boolean matchOperation(final AclOperation operation) {
         if (this.operations != null) {
             for (final var mo : this.operations) {
                 if (matchSingleOperation(operation, mo)) {
@@ -197,15 +210,14 @@ public class AivenAcl {
         return false;
     }
 
-    private boolean hostMatch(final String host) {
-        return getHostMatcher().equals(WILDCARD_HOST)
-            || getHostMatcher().equals(host);
+    public boolean hostMatch(final String host) {
+        return hostMatcher == null || hostMatcher.equals(WILDCARD_HOST) || hostMatcher.equals(host);
     }
 
     private boolean resourceMatch(final String resource, final Matcher principalBackreference) {
         if (this.resourceRe != null) {
             return this.resourceRe.matcher(resource).find();
-        } else if (this.resourceRePattern != null) {
+        } else if (this.resourceRePattern != null && principalBackreference != null) {
             final String resourceReStr = principalBackreference.replaceAll(this.resourceRePattern);
             final Pattern resourceRe = Pattern.compile(resourceReStr);
             return resourceRe.matcher(resource).find();
@@ -216,6 +228,23 @@ public class AivenAcl {
             return resource != null && resource.startsWith(this.resourcePrefix);
         }
         return false;
+    }
+
+    public boolean matchResourceType(final ResourceType resourceType) {
+        if (this.resourceTypes == null) {
+            final List<ResourceType> result = new ArrayList<>();
+            if (resourceRe != null) {
+                result.addAll(ResourcePatternParser.parseResourceTypes(resourceRe.pattern()));
+            } else if (resourceLiteral != null) {
+                ResourcePatternParser.parseLiteral(resourceLiteral).ifPresent(
+                        resourcePattern -> result.add(resourcePattern.resourceType()));
+            } else if (resourcePrefix != null) {
+                ResourcePatternParser.parsePrefixed(resourcePrefix).ifPresent(
+                        resourcePattern -> result.add(resourcePattern.resourceType()));
+            }
+            this.resourceTypes = result;
+        }
+        return this.resourceTypes.contains(resourceType);
     }
 
     @Override

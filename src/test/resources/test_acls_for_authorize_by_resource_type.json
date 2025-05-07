@@ -1,0 +1,140 @@
+[
+    {
+        "operations": [
+            "Write"
+        ],
+        "principal": "^(test_user_allow_some)$",
+        "principal_type": "User",
+        "resource": "^Topic:(some)$"
+    },
+    {
+        "operations": [
+            "Write"
+        ],
+        "principal": "^(test_user_allow_some)$",
+        "principal_type": "User",
+        "resource": "^Topic:(deniedtopic)$",
+        "permission_type": "DENY"
+    },
+    {
+        "operations": [
+            "Write"
+        ],
+        "principal": "^(test_user_deny_prefix)$",
+        "principal_type": "User",
+        "resource": "^Topic:(prefix\\.something(.*))$"
+    },
+    {
+        "operations": [
+            "Write"
+        ],
+        "principal": "^(test_user_deny_prefix)$",
+        "principal_type": "User",
+        "resource": "^Topic:(prefix(.*))$",
+        "permission_type": "DENY"
+    },
+    {
+        "operations": [
+            "Write"
+        ],
+        "principal": "^(test_user_deny_all)$",
+        "principal_type": "User",
+        "resource": "^Topic:(some)$"
+    },
+    {
+        "operations": [
+            "Write"
+        ],
+        "principal": "^(test_user_deny_all)$",
+        "principal_type": "User",
+        "resource": "^Topic:(.*)$",
+        "permission_type": "DENY"
+    },
+    {
+        "operations": [
+            "Read"
+        ],
+        "principal": "^(test_user_allow_read)$",
+        "principal_type": "User",
+        "resource": "^Topic:(.*)$"
+    },
+    {
+        "operations": [
+            "All"
+        ],
+        "principal": "^(test_user_allow_all)$",
+        "principal_type": "User",
+        "resource": "^Topic:(.*)$"
+    },
+    {
+        "operations": [
+            "All"
+        ],
+        "principal": "^(test_user_allow_wildcard_host)$",
+        "principal_type": "User",
+        "host": "*",
+        "resource": "^Topic:(.*)$"
+    },
+    {
+        "operations": [
+            "All"
+        ],
+        "principal": "^(test_user_allow_localhost)$",
+        "principal_type": "User",
+        "host": "*",
+        "resource": "^Topic:(.*)$"
+    },
+    {
+        "operations": [
+            "All"
+        ],
+        "principal": "^(test_user_deny_host)$",
+        "principal_type": "User",
+        "host": "*",
+        "resource": "^Topic:(.*)$"
+    },
+    {
+        "operations": [
+            "All"
+        ],
+        "principal": "^(test_user_deny_host)$",
+        "principal_type": "User",
+        "host": "127.0.0.1",
+        "resource": "^Topic:(.*)$",
+        "permission_type": "DENY"
+    },
+    {
+        "operations": [
+            "All"
+        ],
+        "principal": "^(test_user_deny_write)$",
+        "principal_type": "User",
+        "resource": "^Topic:(fixedtopic)$"
+    },
+    {
+        "operations": [
+            "Write"
+        ],
+        "principal": "^(test_user_deny_write)$",
+        "principal_type": "User",
+        "resource": "^Topic:(fixedtopic)$",
+        "permission_type": "DENY"
+    },
+    {
+        "operations": [
+            "All"
+        ],
+        "principal": "^(test_user_deny_prefix_write)$",
+        "principal_type": "User",
+        "resource": "^Topic:(prefix\\.foo\\.(.*))$"
+    },
+    {
+        "operations": [
+            "Write"
+        ],
+        "principal": "^(test_user_deny_prefix_write)$",
+        "principal_type": "User",
+        "resource": "^Topic:(prefix(.*))$",
+        "permission_type": "DENY"
+    }
+]

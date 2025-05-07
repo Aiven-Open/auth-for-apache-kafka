@@ -34,7 +34,7 @@ import io.aiven.kafka.auth.nameformatters.ResourceTypeNameFormatter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-class ResourcePatternParser {
+public class ResourcePatternParser {
     private static final Pattern PARSER_PATTERN = Pattern.compile("\\^\\(?(.*?)\\)?:\\(?(.*?)\\)?\\$");
     private static final Logger LOGGER = LoggerFactory.getLogger(ResourcePatternParser.class);
 
@@ -81,6 +81,37 @@ class ResourcePatternParser {
             }
         }
         return result;
+    }
+
+    public static List<ResourceType> parseResourceTypes(final String resourcePattern) {
+        if (resourcePattern == null) {
+            return List.of();
+        }
+        if (resourcePattern.equals("^.*$") || resourcePattern.equals("^(.*)$")) {
+            return List.of(
+                ResourceType.TOPIC,
+                ResourceType.GROUP,
+                ResourceType.CLUSTER,
+                ResourceType.TRANSACTIONAL_ID,
+                ResourceType.DELEGATION_TOKEN
+            );
+        }
+
+        final Matcher matcher = PARSER_PATTERN.matcher(resourcePattern);
+        if (!matcher.find() || matcher.groupCount() != 2) {
+            LOGGER.debug("Nothing parsed from resource pattern {}", resourcePattern);
+            return List.of();
+        }
+        final String resourceTypesGroup = matcher.group(1);
+        if (resourceTypesGroup.isBlank()) {
+            LOGGER.debug("Parsed empty resource type for {}", resourcePattern);
+            return List.of();
+        }
+        final List<ResourceType> resourceTypes = new ArrayList<>();
+        for (final String type : resourceTypesGroup.split("\\|")) {
+            resourceTypes.add(ResourceTypeNameFormatter.format(type));
+        }
+        return resourceTypes;
     }
 
     private static Optional<ResourcePattern> parseSerializedResource(
