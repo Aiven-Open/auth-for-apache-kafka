@@ -22,6 +22,7 @@ import java.util.UUID;
 import org.apache.kafka.common.acl.AclOperation;
 import org.apache.kafka.common.security.auth.KafkaPrincipal;
 
+import io.aiven.kafka.auth.json.AivenAcl;
 import io.aiven.kafka.auth.utils.ObjectSizeEstimator;
 
 import org.junit.jupiter.api.Test;
@@ -66,7 +67,11 @@ class VerdictCacheTest {
         final long cacheSizeBytes = sizeMB * 1024 * 1024;
         final double cacheSizePercentage = ((double) cacheSizeBytes / maxHeapSize) * 100;
 
-        final VerdictCache cache = VerdictCache.create(Collections.emptyList(), cacheSizePercentage, 60);
+        final VerdictCache cache = VerdictCache.create(
+            Collections.singletonList(
+                new AivenAcl("User", "^(.*)$", "10.0.0.1", "^(.*)$",
+                    "^Topic:(.*)$", null, null, null, null, false)),
+            cacheSizePercentage, 60);
 
         final KafkaPrincipal principal = new KafkaPrincipal("User", "testUser");
         final AclOperation operation = AclOperation.READ;

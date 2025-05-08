@@ -36,6 +36,7 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 public class VerdictCache {
     private final List<AivenAcl> allowAclEntries;
     private final List<AivenAcl> denyAclEntries;
+    private final boolean useHostnameMatching;
     private final Cache<String, Boolean> cache;
 
 
@@ -43,6 +44,10 @@ public class VerdictCache {
             final double maxSizePercentage, final int expireAfterAccessMinutes) {
         this.denyAclEntries = denyAclEntries;
         this.allowAclEntries = allowAclEntries;
+        this.useHostnameMatching = allowAclEntries.stream()
+            .anyMatch(acl -> !acl.getHostMatcher().equals("*"))
+            || denyAclEntries.stream()
+            .anyMatch(acl -> !acl.getHostMatcher().equals("*"));
 
         final long maxHeapSize = Runtime.getRuntime().maxMemory();
         final long maxSize = (long) ((maxHeapSize / 100) * maxSizePercentage);
@@ -67,6 +72,10 @@ public class VerdictCache {
         return currentWeight;
     }
 
+    public long getEstimatesSizeEntries() {
+        return cache.estimatedSize();
+    }
+
     public boolean get(
         final KafkaPrincipal principal,
         final String host,
@@ -76,7 +85,7 @@ public class VerdictCache {
         final String principalType = principal.getPrincipalType();
         final String cacheKey = resource
             + "|" + operation
-            + "|" + host
+            + "|" + (useHostnameMatching ? host : "")
             + "|" + principal.getName()
             + "|" + principalType;
 
