@@ -21,7 +21,7 @@ jobs:
       - name: Setup Java SDK
         uses: actions/setup-java@v5
         with:
-          java-version: 11
+          java-version: 17
           distribution: temurin
 
       - name: Checkout code
