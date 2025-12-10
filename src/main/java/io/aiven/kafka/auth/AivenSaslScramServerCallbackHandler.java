@@ -103,6 +103,9 @@ public class AivenSaslScramServerCallbackHandler implements AuthenticateCallback
 
     /**
      * Generate SCRAM creds for given username.
+     * Supports two modes:
+     * 1. Pre-computed SCRAM credentials (preferred) - directly uses stored salt, iterations, keys
+     * 2. Plaintext passwords (legacy) - generates SCRAM credentials from plaintext
      */
     public ScramCredential getScramCreds(final String username) {
         if (formatter == null) {
@@ -117,12 +120,33 @@ public class AivenSaslScramServerCallbackHandler implements AuthenticateCallback
             final List<UsernamePassword> usernamePasswords = jsonReader.read();
             for (final UsernamePassword usernamePassword : usernamePasswords) {
                 if (username.equals(usernamePassword.name())) {
-                    final String storedPassword = usernamePassword.password();
-                    if (storedPassword == null) {
-                        LOGGER.error("Authentication failed for {}, no password set", username);
-                        return null;
+                    // Option 1: Check for pre-computed SCRAM credentials (preferred)
+                    if (usernamePassword.scramCredentials() != null) {
+                        final UsernamePassword.ScramCredentialEntry credEntry =
+                            usernamePassword.scramCredentials().get(mechanismName);
+                        if (credEntry != null) {
+                            try {
+                                final byte[] salt = java.util.Base64.getDecoder().decode(credEntry.salt());
+                                final byte[] storedKey = java.util.Base64.getDecoder().decode(credEntry.storedKey());
+                                final byte[] serverKey = java.util.Base64.getDecoder().decode(credEntry.serverKey());
+                                LOGGER.debug("Using pre-computed SCRAM credentials for {}", username);
+                                return new ScramCredential(salt, storedKey, serverKey, credEntry.iterations());
+                            } catch (final IllegalArgumentException e) {
+                                LOGGER.error("Failed to decode SCRAM credentials for {}", username, e);
+                                return null;
+                            }
+                        }
                     }
-                    return formatter.generateCredential(storedPassword, mechanismIterations);
+
+                    // Option 2: Fall back to plaintext password (legacy)
+                    final String storedPassword = usernamePassword.password();
+                    if (storedPassword != null) {
+                        LOGGER.debug("Generating SCRAM credentials from plaintext password for {}", username);
+                        return formatter.generateCredential(storedPassword, mechanismIterations);
+                    }
+
+                    LOGGER.error("Authentication failed for {}, no password or scram_credentials set", username);
+                    return null;
                 }
             }
         } catch (final JsonReaderException ex) {
