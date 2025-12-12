@@ -45,8 +45,8 @@ repositories {
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 
     withSourcesJar()
 }
@@ -74,7 +74,7 @@ jmh {
 }
 
 ext {
-    kafkaVersion = "3.6.0"
+    kafkaVersion = "3.8.0"
     mockitoVersion = "5.20.0"
 }
 
@@ -125,7 +125,7 @@ checkstyle {
 }
 
 jacoco {
-    toolVersion = "0.8.7"
+    toolVersion = "0.8.14"
 }
 
 test {
