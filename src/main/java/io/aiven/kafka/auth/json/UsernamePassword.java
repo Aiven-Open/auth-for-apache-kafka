@@ -16,6 +16,8 @@
 
 package io.aiven.kafka.auth.json;
 
+import java.util.Map;
+
 import com.google.gson.annotations.SerializedName;
 
 public final class UsernamePassword {
@@ -26,9 +28,19 @@ public final class UsernamePassword {
     @SerializedName("password")
     private final String password;
 
+    @SerializedName("scram_credentials")
+    private final Map<String, ScramCredentialEntry> scramCredentials;
+
     public UsernamePassword(final String name, final String password) {
+        this(name, password, null);
+    }
+
+    public UsernamePassword(final String name,
+                           final String password,
+                           final Map<String, ScramCredentialEntry> scramCredentials) {
         this.name = name;
         this.password = password;
+        this.scramCredentials = scramCredentials;
     }
 
     public String name() {
@@ -37,6 +49,50 @@ public final class UsernamePassword {
 
     public String password() {
         return password;
+    }
+
+    public Map<String, ScramCredentialEntry> scramCredentials() {
+        return scramCredentials;
+    }
+
+    public static final class ScramCredentialEntry {
+        @SerializedName("salt")
+        private final String salt;
+
+        @SerializedName("stored_key")
+        private final String storedKey;
+
+        @SerializedName("server_key")
+        private final String serverKey;
+
+        @SerializedName("iterations")
+        private final int iterations;
+
+        public ScramCredentialEntry(final String salt,
+                                   final String storedKey,
+                                   final String serverKey,
+                                   final int iterations) {
+            this.salt = salt;
+            this.storedKey = storedKey;
+            this.serverKey = serverKey;
+            this.iterations = iterations;
+        }
+
+        public String salt() {
+            return salt;
+        }
+
+        public String storedKey() {
+            return storedKey;
+        }
+
+        public String serverKey() {
+            return serverKey;
+        }
+
+        public int iterations() {
+            return iterations;
+        }
     }
 
 }

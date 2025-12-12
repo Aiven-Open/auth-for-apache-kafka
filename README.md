@@ -88,6 +88,93 @@ users and system users into separate namespace.
         }
     ]
 
+## SASL Authentication Handlers
+
+`AivenSaslPlainServerCallbackHandler` implements SASL/PLAIN authentication.
+
+`AivenSaslScramServerCallbackHandler` implements SASL/SCRAM authentication using SCRAM-SHA-256 and SCRAM-SHA-512 methods.
+
+#### Configuration
+
+The handler is configured via the `users.config` JAAS option pointing to a credentials file in `server.properties`:
+
+```
+sasl.enabled.mechanisms=PLAIN,SCRAM-SHA-256,SCRAM-SHA-512
+
+listener.name.sasl_plaintext.plain.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required users.config="credentials.json";
+listener.name.sasl_plaintext.plain.sasl.server.callback.handler.class=io.aiven.kafka.auth.AivenSaslPlainServerCallbackHandler
+listener.name.sasl_plaintext.scram-sha-256.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required users.config="credentials.json";
+listener.name.sasl_plaintext.scram-sha-256.sasl.server.callback.handler.class=io.aiven.kafka.auth.AivenSaslScramServerCallbackHandler
+listener.name.sasl_plaintext.scram-sha-512.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required users.config="credentials.json";
+listener.name.sasl_plaintext.scram-sha-512.sasl.server.callback.handler.class=io.aiven.kafka.auth.AivenSaslScramServerCallbackHandler
+```
+
+#### JSON Format
+
+```json
+[
+  {
+    "username": "alice",
+    "scram_credentials": {
+      "SCRAM-SHA-256": {
+        "salt": "base64-encoded-salt",
+        "stored_key": "base64-encoded-stored-key",
+        "server_key": "base64-encoded-server-key",
+        "iterations": 4096
+      },
+      "SCRAM-SHA-512": {
+        "salt": "base64-encoded-salt",
+        "stored_key": "base64-encoded-stored-key",
+        "server_key": "base64-encoded-server-key",
+        "iterations": 4096
+      }
+    }
+  },
+  {
+    "username": "bob",
+    "password": "plaintextpassword"
+  }
+]
+```
+
+**Fields:**
+- `username` (required): The username for authentication
+- `scram_credentials` (optional): Salted, iterated hash format of SCRAM credentials
+- `password` (optional): Plaintext password for runtime credential generation
+
+**SCRAM Credentials Structure:**
+The `scram_credentials` field is a map where:
+- **Key**: SCRAM mechanism name (e.g., `"SCRAM-SHA-256"`, `"SCRAM-SHA-512"`)
+- **Value**: Credential object containing:
+  - `salt`: Base64-encoded random salt used in password hashing
+  - `stored_key`: Base64-encoded stored key derived from client key for authentication verification
+  - `server_key`: Base64-encoded server key derived from salted password for server authentication
+  - `iterations`: Number of PBKDF2 iterations used in key derivation (typically 4096)
+
+#### Generating Salted and Hashed SCRAM Credentials
+
+Salted and iterated hashed credentials can be generated using the provided Python utility. The tool generates credentials for both SCRAM-SHA-256 and SCRAM-SHA-512:
+
+```bash
+python utils/scram_credential_generator.py mysecret
+{
+  "SCRAM-SHA-256": {
+    "salt": "vqmwUqVOYjNoBL2H00xvcvnfD/jxps+9v0FCgQdjaXk=",
+    "stored_key": "n9C6ypVqZMoYaBLgtuP4oZIfaMkAl53SiTB4WOikdKM=",
+    "server_key": "H5TKKDDeoWBm6vyEqAIlCq0H0RGQ2AN4IylFHDvt9tk=",
+    "iterations": 4096
+  },
+  "SCRAM-SHA-512": {
+    "salt": "g4g/kjDiAQLKXBvDupovgVOShDRWX83V8bFm1n6yiU4=",
+    "stored_key": "T1WFWb3T3N7DuhR2KsrHI4Emx/+EzK/daMh0/noYUl/By+vI0vUOWVte4Anu6bRWaQMrCmLLEEMEfPt7FBBkQw==",
+    "server_key": "Av2+ypalfJ7Z0bpSHc9hOUZT/mjwdIJQUtWlSc1f1Qj0tZUoCzIAZmh0Bx60hEabeOY2XJFnsSjsE7SptDLOHg==",
+    "iterations": 4096
+  }
+}
+```
+
+The output JSON fragment can be copied directly into your users configuration file under the `scram_credentials` field.
+
 ## Trademarks
 
 Apache Kafka is either a registered trademark or a trademark of the Apache Software Foundation in the United States and/or other countries.
