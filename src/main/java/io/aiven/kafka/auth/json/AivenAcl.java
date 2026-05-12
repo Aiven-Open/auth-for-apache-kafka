@@ -145,7 +145,7 @@ public class AivenAcl {
                             final String resource) {
         if (this.principalType == null || this.principalType.equals(principalType)) {
             final Matcher mp = this.principalRe.matcher(principal);
-            return mp.find() && this.matchOperation(operation) && this.hostMatch(host)
+            return mp.matches() && this.matchOperation(operation) && this.hostMatch(host)
                     && this.resourceMatch(resource, mp);
         }
         return false;
@@ -154,7 +154,7 @@ public class AivenAcl {
     public boolean matchPrincipal(final String principalType, final String principal) {
         if (this.principalType == null || this.principalType.equals(principalType)) {
             final Matcher mp = this.principalRe.matcher(principal);
-            return mp.find();
+            return mp.matches();
         }
         return false;
     }
@@ -178,7 +178,7 @@ public class AivenAcl {
             return false;
         } else {
             final Matcher mo = this.operationRe.matcher(LegacyOperationNameFormatter.format(operation));
-            return mo.find();
+            return mo.matches();
         }
     }
 
@@ -216,11 +216,11 @@ public class AivenAcl {
 
     private boolean resourceMatch(final String resource, final Matcher principalBackreference) {
         if (this.resourceRe != null) {
-            return this.resourceRe.matcher(resource).find();
+            return this.resourceRe.matcher(resource).matches();
         } else if (this.resourceRePattern != null && principalBackreference != null) {
             final String resourceReStr = principalBackreference.replaceAll(this.resourceRePattern);
             final Pattern resourceRe = Pattern.compile(resourceReStr);
-            return resourceRe.matcher(resource).find();
+            return resourceRe.matcher(resource).matches();
         } else if (this.resourceLiteral != null) {
             return ResourceLiteralWildcardMatcher.match(this.resourceLiteral, resource)
                 || this.resourceLiteral.equals(resource);
