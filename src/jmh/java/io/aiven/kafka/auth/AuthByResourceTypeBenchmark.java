@@ -24,6 +24,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.kafka.common.ClusterResource;
+import org.apache.kafka.common.Endpoint;
 import org.apache.kafka.common.acl.AclOperation;
 import org.apache.kafka.common.network.ClientInformation;
 import org.apache.kafka.common.network.ListenerName;
@@ -34,7 +36,7 @@ import org.apache.kafka.common.resource.ResourceType;
 import org.apache.kafka.common.security.auth.KafkaPrincipal;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.kafka.server.authorizer.AuthorizableRequestContext;
-import org.apache.kafka.server.authorizer.AuthorizerServerInfo;
+import org.apache.kafka.server.network.KafkaAuthorizerServerInfo;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -45,9 +47,6 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.infra.Blackhole;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * Authorizer::authorizeByResourceType benchmark compares AivenAclAuthorizerV2's
@@ -84,9 +83,10 @@ public class AuthByResourceTypeBenchmark {
 
         Files.copy(this.getClass().getResourceAsStream("/benchmark_acls_for_authorize_by_resource_type.json"),
                    configFilePath);
-        final AuthorizerServerInfo serverInfo = mock(AuthorizerServerInfo.class);
-        when(serverInfo.endpoints()).thenReturn(List.of());
-        auth.start(serverInfo);
+        // The same AuthorizerServerInfo implementation the broker passes to the authorizer on startup.
+        final Endpoint endpoint = new Endpoint("SSL", SecurityProtocol.SSL, "localhost", 9093);
+        auth.start(new KafkaAuthorizerServerInfo(
+            new ClusterResource("benchmark-cluster"), 0, List.of(endpoint), endpoint, List.of()));
 
         configFilePath = Files.createTempDirectory("test-aiven-kafka-principal-builder")
             .resolve("benchmark_config.json");
