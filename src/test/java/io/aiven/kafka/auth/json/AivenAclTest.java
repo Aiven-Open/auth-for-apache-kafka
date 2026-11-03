@@ -122,4 +122,30 @@ public class AivenAclTest {
         assertFalse(entry.match("User", "CN=p_user1_s", "*", AclOperation.READ, "Topic:organizationA"));
         assertFalse(entry.match("User", "CN=p_user1_s", "*", AclOperation.READ, "Topic:AAAorganizationA."));
     }
+
+    private static AivenAcl aclWithHost(final String host) {
+        return new AivenAcl("User", "^x$", host, "^Read$", "^Topic:a$", null, null, null, null, false);
+    }
+
+    @Test
+    public void testCidrHostMatch() {
+        assertTrue(aclWithHost("10.0.0.0/8").hostMatch("10.1.2.3"));
+        assertFalse(aclWithHost("10.0.0.0/8").hostMatch("11.1.2.3"));
+        assertTrue(aclWithHost("192.168.1.0/25").hostMatch("192.168.1.127"));
+        assertFalse(aclWithHost("192.168.1.0/25").hostMatch("192.168.1.128"));
+        assertTrue(aclWithHost("0.0.0.0/0").hostMatch("1.2.3.4"));
+        assertTrue(aclWithHost("1.2.3.4/32").hostMatch("1.2.3.4"));
+        assertTrue(aclWithHost("2001:db8::/32").hostMatch("2001:db8:1::1"));
+        assertFalse(aclWithHost("2001:db8::/32").hostMatch("2001:db9::1"));
+        assertFalse(aclWithHost("2001:db8::/32").hostMatch("10.0.0.1"));
+        assertFalse(aclWithHost("10.0.0.0/8").hostMatch("example.com"));
+    }
+
+    @Test
+    public void testInvalidCidrNeverMatches() {
+        assertFalse(aclWithHost("10.0.0.0/33").hostMatch("10.0.0.1"));
+        assertFalse(aclWithHost("10.0.0.0/").hostMatch("10.0.0.1"));
+        assertFalse(aclWithHost("example.com/8").hostMatch("10.0.0.1"));
+        assertFalse(aclWithHost("10.0.0.0/-1").hostMatch("10.0.0.1"));
+    }
 }
