@@ -39,7 +39,14 @@ public class AclJsonReader extends AbstractJsonReader<AivenAcl> {
     public List<AivenAcl> read() {
         try (final Reader reader = Files.newBufferedReader(configFile)) {
             final java.lang.reflect.Type t = new TypeToken<Collection<AivenAcl>>() {}.getType();
-            return gsonBuilder.create().fromJson(reader, t);
+            final List<AivenAcl> acls = gsonBuilder.create().fromJson(reader, t);
+            if (acls != null) {
+                acls.forEach(AivenAcl::validateHost);
+            }
+            return acls;
+        } catch (final IllegalArgumentException ex) {
+            throw new JsonReaderException(
+                String.format("Invalid acl configuration file: %s", configFile), ex);
         } catch (final JsonSyntaxException | JsonIOException | IOException ex) {
             throw new JsonReaderException(
                 String.format(

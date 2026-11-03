@@ -16,6 +16,9 @@
 
 package io.aiven.kafka.auth.json;
 
+import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -33,10 +36,16 @@ import io.aiven.kafka.auth.nativeacls.ResourcePatternParser;
 import io.aiven.kafka.auth.utils.ResourceLiteralWildcardMatcher;
 
 import com.google.gson.annotations.SerializedName;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AivenAcl {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(AivenAcl.class);
+
     private static final String WILDCARD_HOST = "*";
+
+    private transient volatile CidrRange cidr;
 
     @SerializedName("principal_type")
     public final String principalType;
@@ -212,7 +221,129 @@ public class AivenAcl {
     }
 
     public boolean hostMatch(final String host) {
-        return hostMatcher == null || hostMatcher.equals(WILDCARD_HOST) || hostMatcher.equals(host);
+        if (hostMatcher == null || hostMatcher.equals(WILDCARD_HOST) || hostMatcher.equals(host)) {
+            return true;
+        }
+        if (hostMatcher.indexOf('/') < 0) {
+            return false;
+        }
+        final CidrRange range = cidrRange();
+        return range != null && range.contains(host);
+    }
+
+    private CidrRange cidrRange() {
+        CidrRange range = cidr;
+        if (range == null) {
+            range = CidrRange.parse(hostMatcher);
+            if (range == null) {
+                LOGGER.warn("Invalid CIDR host pattern '{}' in ACL, it will never match", hostMatcher);
+            }
+            cidr = range == null ? CidrRange.INVALID : range;
+        }
+        return range == CidrRange.INVALID ? null : range;
+    }
+
+    /** CIDR host pattern (KIP-1276), e.g. 10.0.0.0/8 or 2001:db8::/32. */
+    static final class CidrRange {
+        private static final Pattern IPV4_LITERAL =
+            Pattern.compile("(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})");
+        private static final Pattern IPV6_LITERAL = Pattern.compile("[0-9a-fA-F:.]*:[0-9a-fA-F:.]*");
+
+        static final CidrRange INVALID = new CidrRange(new byte[0], 0);
+
+        private final byte[] network;
+        private final int prefixLength;
+
+        private CidrRange(final byte[] network, final int prefixLength) {
+            this.network = network;
+            this.prefixLength = prefixLength;
+        }
+
+        static CidrRange parse(final String pattern) {
+            final int slash = pattern.indexOf('/');
+            if (slash <= 0 || slash != pattern.lastIndexOf('/')) {
+                return null;
+            }
+            final byte[] address = toBytes(pattern.substring(0, slash));
+            if (address == null) {
+                return null;
+            }
+            final String prefix = pattern.substring(slash + 1);
+            if (prefix.isEmpty() || prefix.length() > 3 || !prefix.chars().allMatch(c -> c >= '0' && c <= '9')) {
+                return null;
+            }
+            final int prefixLength = Integer.parseInt(prefix);
+            if (prefixLength > address.length * 8) {
+                return null;
+            }
+            return new CidrRange(address, prefixLength);
+        }
+
+        boolean contains(final String host) {
+            final byte[] address = toBytes(host);
+            if (address == null || address.length != network.length) {
+                return false;
+            }
+            final int fullBytes = prefixLength / 8;
+            for (int i = 0; i < fullBytes; i++) {
+                if (address[i] != network[i]) {
+                    return false;
+                }
+            }
+            final int remainingBits = prefixLength % 8;
+            if (remainingBits == 0) {
+                return true;
+            }
+            final int mask = (0xFF << (8 - remainingBits)) & 0xFF;
+            return (address[fullBytes] & mask) == (network[fullBytes] & mask);
+        }
+
+        // Only strict IP literals are accepted so that no DNS lookup can happen.
+        private static byte[] toBytes(final String ip) {
+            if (ip == null) {
+                return null;
+            }
+            if (ip.indexOf(':') < 0) {
+                return ipv4Bytes(ip);
+            }
+            if (!IPV6_LITERAL.matcher(ip).matches()) {
+                return null;
+            }
+            try {
+                final InetAddress address = InetAddress.getByName(ip);
+                return address instanceof Inet6Address ? address.getAddress() : null;
+            } catch (final UnknownHostException e) {
+                return null;
+            }
+        }
+
+        private static byte[] ipv4Bytes(final String ip) {
+            final Matcher m = IPV4_LITERAL.matcher(ip);
+            if (!m.matches()) {
+                return null;
+            }
+            final byte[] bytes = new byte[4];
+            for (int i = 0; i < 4; i++) {
+                final int octet = Integer.parseInt(m.group(i + 1));
+                if (octet > 255) {
+                    return null;
+                }
+                bytes[i] = (byte) octet;
+            }
+            return bytes;
+        }
+    }
+
+    /** Whether the host matcher is a syntactically valid CIDR pattern. */
+    public static boolean isValidCidr(final String pattern) {
+        return CidrRange.parse(pattern) != null;
+    }
+
+    /** Throws if the host matcher looks like a CIDR pattern (contains '/') but is not valid. */
+    public void validateHost() {
+        if (hostMatcher != null && hostMatcher.indexOf('/') >= 0 && !isValidCidr(hostMatcher)) {
+            throw new IllegalArgumentException("Invalid CIDR host pattern: '" + hostMatcher + "'");
+        }
     }
 
     private boolean resourceMatch(final String resource, final Matcher principalBackreference) {
