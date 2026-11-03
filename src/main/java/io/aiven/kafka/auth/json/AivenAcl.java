@@ -16,6 +16,8 @@
 
 package io.aiven.kafka.auth.json;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -37,6 +39,8 @@ import com.google.gson.annotations.SerializedName;
 public class AivenAcl {
 
     private static final String WILDCARD_HOST = "*";
+
+    private transient volatile CidrRange cidr;
 
     @SerializedName("principal_type")
     public final String principalType;
@@ -212,7 +216,89 @@ public class AivenAcl {
     }
 
     public boolean hostMatch(final String host) {
-        return hostMatcher == null || hostMatcher.equals(WILDCARD_HOST) || hostMatcher.equals(host);
+        if (hostMatcher == null || hostMatcher.equals(WILDCARD_HOST) || hostMatcher.equals(host)) {
+            return true;
+        }
+        if (hostMatcher.indexOf('/') < 0) {
+            return false;
+        }
+        final CidrRange range = cidrRange();
+        return range != null && range.contains(host);
+    }
+
+    private CidrRange cidrRange() {
+        CidrRange range = cidr;
+        if (range == null) {
+            range = CidrRange.parse(hostMatcher);
+            cidr = range == null ? CidrRange.INVALID : range;
+        }
+        return range == CidrRange.INVALID ? null : range;
+    }
+
+    /** CIDR host pattern (KIP-1276), e.g. 10.0.0.0/8 or 2001:db8::/32. */
+    static final class CidrRange {
+        private static final Pattern IP_LITERAL = Pattern.compile("[0-9.]+|[0-9a-fA-F:.%]*:[0-9a-fA-F:.%]*");
+
+        static final CidrRange INVALID = new CidrRange(new byte[0], 0);
+
+        private final byte[] network;
+        private final int prefixLength;
+
+        private CidrRange(final byte[] network, final int prefixLength) {
+            this.network = network;
+            this.prefixLength = prefixLength;
+        }
+
+        static CidrRange parse(final String pattern) {
+            final int slash = pattern.indexOf('/');
+            if (slash <= 0 || slash != pattern.lastIndexOf('/')) {
+                return null;
+            }
+            final byte[] address = toBytes(pattern.substring(0, slash));
+            if (address == null) {
+                return null;
+            }
+            final String prefix = pattern.substring(slash + 1);
+            if (prefix.isEmpty() || prefix.length() > 3 || !prefix.chars().allMatch(c -> c >= '0' && c <= '9')) {
+                return null;
+            }
+            final int prefixLength = Integer.parseInt(prefix);
+            if (prefixLength > address.length * 8) {
+                return null;
+            }
+            return new CidrRange(address, prefixLength);
+        }
+
+        boolean contains(final String host) {
+            final byte[] address = toBytes(host);
+            if (address == null || address.length != network.length) {
+                return false;
+            }
+            final int fullBytes = prefixLength / 8;
+            for (int i = 0; i < fullBytes; i++) {
+                if (address[i] != network[i]) {
+                    return false;
+                }
+            }
+            final int remainingBits = prefixLength % 8;
+            if (remainingBits == 0) {
+                return true;
+            }
+            final int mask = (0xFF << (8 - remainingBits)) & 0xFF;
+            return (address[fullBytes] & mask) == (network[fullBytes] & mask);
+        }
+
+        // Only IP literals are accepted so that no DNS lookup can happen.
+        private static byte[] toBytes(final String ip) {
+            if (ip == null || !IP_LITERAL.matcher(ip).matches()) {
+                return null;
+            }
+            try {
+                return InetAddress.getByName(ip).getAddress();
+            } catch (final UnknownHostException e) {
+                return null;
+            }
+        }
     }
 
     private boolean resourceMatch(final String resource, final Matcher principalBackreference) {
