@@ -286,6 +286,23 @@ public class AivenAclAuthorizerV2Test {
     }
 
     @Test
+    public void testDenyPartialMatch() throws IOException, InterruptedException {
+        Files.copy(this.getClass().getResourceAsStream("/acls_deny_partial_match.json"), configFilePath);
+        startAuthorizer();
+
+        final ResourcePattern deniedTopicResource = new ResourcePattern(
+            org.apache.kafka.common.resource.ResourceType.TOPIC,
+            "denied-topic",
+            PatternType.LITERAL
+        );
+
+        checkSingleAction(requestCtx("User", "ext-user"), action(READ_OPERATION, deniedTopicResource), false);
+        checkSingleAction(requestCtx("User", "ext-user"), action(CREATE_OPERATION, deniedTopicResource), false);
+        checkSingleAction(requestCtx("User", "ext-user"), action(READ_OPERATION, TOPIC_RESOURCE), true);
+        checkSingleAction(requestCtx("User", "user"), action(READ_OPERATION, deniedTopicResource), true);
+    }
+
+    @Test
     public void testDenyPrefix() throws IOException, InterruptedException {
         Files.copy(this.getClass().getResourceAsStream("/acls_deny_prefix.json"), configFilePath);
         startAuthorizer();

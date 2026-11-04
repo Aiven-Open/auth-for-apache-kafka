@@ -1,0 +1,16 @@
+[
+  {
+    "principal_type": "User",
+    "principal": "^(ext-user|user)$",
+    "operations": ["All"],
+    "resource": "^Topic:(.*)$",
+    "permission_type": "ALLOW"
+  },
+  {
+    "principal_type": "User",
+    "principal": "^ext-",
+    "operations": ["All"],
+    "resource": "^Topic:(denied-topic)$",
+    "permission_type": "DENY"
+  }
+]

@@ -145,7 +145,7 @@ public class AivenAcl {
                             final String resource) {
         if (this.principalType == null || this.principalType.equals(principalType)) {
             final Matcher mp = this.principalRe.matcher(principal);
-            return mp.matches() && this.matchOperation(operation) && this.hostMatch(host)
+            return matchesRule(mp) && this.matchOperation(operation) && this.hostMatch(host)
                     && this.resourceMatch(resource, mp);
         }
         return false;
@@ -154,9 +154,16 @@ public class AivenAcl {
     public boolean matchPrincipal(final String principalType, final String principal) {
         if (this.principalType == null || this.principalType.equals(principalType)) {
             final Matcher mp = this.principalRe.matcher(principal);
-            return mp.matches();
+            return matchesRule(mp);
         }
         return false;
+    }
+
+    /**
+     * ALLOW rules must match the whole input; DENY rules may match anywhere in it, as all rules did before.
+     */
+    private boolean matchesRule(final Matcher matcher) {
+        return getPermissionType() == AclPermissionType.DENY ? matcher.find() : matcher.matches();
     }
 
     /* Some operations implicitly allow describe operation, but with allow rules only */
@@ -178,7 +185,7 @@ public class AivenAcl {
             return false;
         } else {
             final Matcher mo = this.operationRe.matcher(LegacyOperationNameFormatter.format(operation));
-            return mo.matches();
+            return matchesRule(mo);
         }
     }
 
@@ -216,11 +223,11 @@ public class AivenAcl {
 
     private boolean resourceMatch(final String resource, final Matcher principalBackreference) {
         if (this.resourceRe != null) {
-            return this.resourceRe.matcher(resource).matches();
+            return matchesRule(this.resourceRe.matcher(resource));
         } else if (this.resourceRePattern != null && principalBackreference != null) {
             final String resourceReStr = principalBackreference.replaceAll(this.resourceRePattern);
             final Pattern resourceRe = Pattern.compile(resourceReStr);
-            return resourceRe.matcher(resource).matches();
+            return matchesRule(resourceRe.matcher(resource));
         } else if (this.resourceLiteral != null) {
             return ResourceLiteralWildcardMatcher.match(this.resourceLiteral, resource)
                 || this.resourceLiteral.equals(resource);
