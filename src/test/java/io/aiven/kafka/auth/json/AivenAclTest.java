@@ -134,4 +134,27 @@ public class AivenAclTest {
         assertFalse(entry.match("User", "alice", "10.0.0.1", AclOperation.WRITE, "Topic:t"));
         assertFalse(entry.match("User", "bob", "10.0.0.1", AclOperation.READ, "Topic:t"));
     }
+
+    @Test
+    public void testAllowMatchesWholeInput() {
+        final AivenAcl entry = acl("admin", "Topic:public", AclPermissionType.ALLOW);
+
+        assertTrue(entry.match("User", "admin", "*", AclOperation.READ, "Topic:public"));
+        assertFalse(entry.match("User", "sysadmin", "*", AclOperation.READ, "Topic:public"));
+        assertFalse(entry.match("User", "admin", "*", AclOperation.READ, "Topic:public-secret"));
+    }
+
+    @Test
+    public void testDenyMatchesAnywhereInInput() {
+        final AivenAcl entry = acl("^ext-", "Topic:secret", AclPermissionType.DENY);
+
+        assertTrue(entry.match("User", "ext-alice", "*", AclOperation.READ, "Topic:secret"));
+        assertTrue(entry.match("User", "ext-alice", "*", AclOperation.READ, "Topic:secret-reports"));
+        assertFalse(entry.match("User", "alice", "*", AclOperation.READ, "Topic:secret"));
+    }
+
+    private static AivenAcl acl(final String principal, final String resource, final AclPermissionType permission) {
+        return new AivenAcl("User", principal, "*", List.of(AclOperationType.All), resource,
+            null, null, null, permission, false);
+    }
 }
