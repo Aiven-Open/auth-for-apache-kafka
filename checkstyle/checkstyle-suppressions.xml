@@ -15,6 +15,7 @@
     <suppress checks="CyclomaticComplexity" files="AivenAclAuthorizerV2.java" />
     <suppress checks="MethodLength" files="AivenAclAuthorizerTest.java"/>
     <suppress checks="ClassFanOutComplexity" files="AivenAclAuthorizerV2Test.java"/>
+    <suppress checks="ClassFanOutComplexity" files="AclScaleBenchmark.java"/>
     <suppress checks="CyclomaticComplexity" files="LegacyOperationNameFormatter.java" />
 
     <!-- This is legit, it's just big switch, justified in this case -->
