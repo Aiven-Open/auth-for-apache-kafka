@@ -16,6 +16,8 @@
 
 package io.aiven.kafka.auth.json;
 
+import java.util.List;
+
 import org.apache.kafka.common.acl.AclOperation;
 
 import org.junit.jupiter.api.Test;
@@ -121,5 +123,15 @@ public class AivenAclTest {
         assertFalse(entry.match("User", "CN=p_user1_s", "*", AclOperation.READ, "Topic:organizationB.topic1"));
         assertFalse(entry.match("User", "CN=p_user1_s", "*", AclOperation.READ, "Topic:organizationA"));
         assertFalse(entry.match("User", "CN=p_user1_s", "*", AclOperation.READ, "Topic:AAAorganizationA."));
+    }
+
+    @Test
+    public void testHostAndOperations() {
+        final AivenAcl entry = new AivenAcl("User", "^alice$", "10.0.0.1", List.of(AclOperationType.Read),
+            "^Topic:t$", null, null, null, null, false);
+        assertTrue(entry.match("User", "alice", "10.0.0.1", AclOperation.READ, "Topic:t"));
+        assertFalse(entry.match("User", "alice", "10.0.0.2", AclOperation.READ, "Topic:t"));
+        assertFalse(entry.match("User", "alice", "10.0.0.1", AclOperation.WRITE, "Topic:t"));
+        assertFalse(entry.match("User", "bob", "10.0.0.1", AclOperation.READ, "Topic:t"));
     }
 }

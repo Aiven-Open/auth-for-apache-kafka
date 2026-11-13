@@ -143,10 +143,11 @@ public class AivenAcl {
                             final String host,
                             final AclOperation operation,
                             final String resource) {
-        if (this.principalType == null || this.principalType.equals(principalType)) {
+        // Cheap checks first: the principal regex allocates a Matcher.
+        if ((this.principalType == null || this.principalType.equals(principalType))
+                && this.hostMatch(host) && this.matchOperation(operation)) {
             final Matcher mp = this.principalRe.matcher(principal);
-            return mp.matches() && this.matchOperation(operation) && this.hostMatch(host)
-                    && this.resourceMatch(resource, mp);
+            return mp.matches() && this.resourceMatch(resource, mp);
         }
         return false;
     }
