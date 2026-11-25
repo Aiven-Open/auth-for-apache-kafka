@@ -23,6 +23,7 @@ import org.apache.kafka.common.acl.AclOperation;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class AivenAclTest {
@@ -133,5 +134,46 @@ public class AivenAclTest {
         assertFalse(entry.match("User", "alice", "10.0.0.2", AclOperation.READ, "Topic:t"));
         assertFalse(entry.match("User", "alice", "10.0.0.1", AclOperation.WRITE, "Topic:t"));
         assertFalse(entry.match("User", "bob", "10.0.0.1", AclOperation.READ, "Topic:t"));
+    }
+
+    private static AivenAcl aclWithHost(final String host) {
+        return new AivenAcl("User", "^x$", host, "^Read$", "^Topic:a$", null, null, null, null, false);
+    }
+
+    @Test
+    public void testCidrHostMatch() {
+        assertTrue(aclWithHost("10.0.0.0/8").hostMatch("10.1.2.3"));
+        assertFalse(aclWithHost("10.0.0.0/8").hostMatch("11.1.2.3"));
+        assertTrue(aclWithHost("192.168.1.0/25").hostMatch("192.168.1.127"));
+        assertFalse(aclWithHost("192.168.1.0/25").hostMatch("192.168.1.128"));
+        assertTrue(aclWithHost("0.0.0.0/0").hostMatch("1.2.3.4"));
+        assertTrue(aclWithHost("1.2.3.4/32").hostMatch("1.2.3.4"));
+        assertTrue(aclWithHost("2001:db8::/32").hostMatch("2001:db8:1::1"));
+        assertFalse(aclWithHost("2001:db8::/32").hostMatch("2001:db9::1"));
+        assertFalse(aclWithHost("2001:db8::/32").hostMatch("10.0.0.1"));
+        assertFalse(aclWithHost("10.0.0.0/8").hostMatch("example.com"));
+    }
+
+    @Test
+    public void testInvalidCidrNeverMatches() {
+        assertFalse(aclWithHost("10.0.0.0/33").hostMatch("10.0.0.1"));
+        assertFalse(aclWithHost("10.0.0.0/").hostMatch("10.0.0.1"));
+        assertFalse(aclWithHost("example.com/8").hostMatch("10.0.0.1"));
+        assertFalse(aclWithHost("10.0.0.0/-1").hostMatch("10.0.0.1"));
+        assertFalse(aclWithHost("10/8").hostMatch("0.0.0.10"));
+        assertFalse(aclWithHost("1.2.3/8").hostMatch("1.2.0.3"));
+        assertFalse(aclWithHost("999.1.1.1/8").hostMatch("999.1.1.1"));
+        assertFalse(aclWithHost("::ffff:10.0.0.0/104").hostMatch("10.0.0.1"));
+    }
+
+    @Test
+    public void testValidateHost() {
+        aclWithHost("10.0.0.0/8").validateHost();
+        aclWithHost("*").validateHost();
+        aclWithHost("10.0.0.1").validateHost();
+        for (final String bad : new String[] {"10.0.0.0/33", "10/8", "999.1.1.1/8", "a/8"}) {
+            assertThrows(
+                IllegalArgumentException.class, () -> aclWithHost(bad).validateHost());
+        }
     }
 }

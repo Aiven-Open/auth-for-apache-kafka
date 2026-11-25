@@ -29,6 +29,12 @@ By default, the permission type is `ALLOW`.
 
 A specific ACL entry can be hidden from public listing by setting hidden flag.
 
+### Host patterns
+
+`host` can be `*`, an exact IP address, or a CIDR range (KIP-1276), such as
+`10.0.0.0/8` or `2001:db8::/32`. IPv4 addresses must have all four octets (`10/8` is rejected).
+An invalid CIDR pattern makes the ACL file fail to load.
+
 ### Example
 
     [
